@@ -7,7 +7,8 @@
         if (!WebChat) setTimeout(load, 100);
         if (WebChat) WebChat.default({
           customData:{language:"en"},
-          socketUrl:"http://localhost:5005",
+          // our real websocket url
+          socketUrl:"https://rasa-dev.labs.jb.gg/",
           withRules: true,
         });
       }

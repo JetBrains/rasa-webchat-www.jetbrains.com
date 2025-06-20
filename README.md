@@ -1,3 +1,20 @@
+## develop
+
+```
+nvm use
+yarn install
+yarn dev
+```
+
+## build
+
+```
+yarn build
+```
+After a build you can find a file in `/lib/index.js`
+
+
+
 <p align="center">
 
 <a href="https://www.npmjs.com/package/botfront">
