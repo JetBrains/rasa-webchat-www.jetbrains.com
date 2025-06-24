@@ -34,6 +34,7 @@ const WidgetLayout = (props) => {
           fullScreenMode={props.fullScreenMode}
           disabledInput={props.disabledInput}
           params={props.params}
+          onAuthButtonClick={props.onAuthButtonClick}
           showFullScreenButton={props.showFullScreenButton}
           {...{ showCloseButton }}
           connected={props.connected}
@@ -93,7 +94,8 @@ WidgetLayout.propTypes = {
   customComponent: PropTypes.func,
   displayUnreadCount: PropTypes.bool,
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
-  tooltipPayload: PropTypes.string
+  tooltipPayload: PropTypes.string,
+  onAuthButtonClick: PropTypes.func
 };
 
 export default connect(mapStateToProps)(WidgetLayout);

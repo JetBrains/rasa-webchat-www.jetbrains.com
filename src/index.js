@@ -125,6 +125,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
       >
         <Widget
           ref={ref}
+          showAuthButton={props.showAuthButton}
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}
@@ -208,7 +209,8 @@ ConnectedWidget.propTypes = {
   userTextColor: PropTypes.string,
   userBackgroundColor: PropTypes.string,
   assistTextColor: PropTypes.string,
-  assistBackgoundColor: PropTypes.string
+  assistBackgoundColor: PropTypes.string,
+  showAuthButton: PropTypes.bool
 };
 
 ConnectedWidget.defaultProps = {
@@ -217,7 +219,7 @@ ConnectedWidget.defaultProps = {
   inputTextFieldHint: 'Type a message...',
   connectingText: 'Waiting for server...',
   fullScreenMode: false,
-  hideWhenNotConnected: true,
+  hideWhenNotConnected: false,
   autoClearCache: false,
   connectOn: 'mount',
   onSocketEvent: {},
@@ -243,7 +245,9 @@ ConnectedWidget.defaultProps = {
   tooltipPayload: null,
   tooltipDelay: 500,
   onWidgetEvent: {
-    onChatOpen: () => {},
+    onChatOpen: () => {
+      console.log('on chat open');
+    },
     onChatClose: () => {},
     onChatVisible: () => {},
     onChatHidden: () => {}
@@ -254,7 +258,8 @@ ConnectedWidget.defaultProps = {
   userTextColor: '',
   userBackgroundColor: '',
   assistTextColor: '',
-  assistBackgoundColor: ''
+  assistBackgoundColor: '',
+  showAuthButton: null
 };
 
 export default ConnectedWidget;

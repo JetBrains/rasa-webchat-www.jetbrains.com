@@ -43,6 +43,7 @@ class Widget extends Component {
   constructor(props) {
     super(props);
     this.messages = [];
+    this.isAuth = false;
     this.delayedMessage = null;
     this.messageDelayTimeout = null;
     this.onGoingMessageDelay = false;
@@ -52,8 +53,45 @@ class Widget extends Component {
     this.eventListenerCleaner = () => { };
   }
 
-
   componentDidMount() {
+
+    if (!this.isAuth) {
+      console.log('user have to auth');
+    }
+
+    this.onCdm();
+  }
+
+  componentDidUpdate() {
+    const { isChatOpen, dispatch, embedded, initialized } = this.props;
+
+    if (isChatOpen) {
+      if (!initialized) {
+        this.initializeWidget();
+      }
+      // todo: auth condition
+      if (this.isAuth) {
+        this.trySendInitPayload();
+      }
+    }
+
+    if (embedded && initialized) {
+      dispatch(showChat());
+      dispatch(openChat());
+    }
+  }
+
+  componentWillUnmount() {
+    const { socket } = this.props;
+
+    if (socket) {
+      socket.close();
+    }
+    clearTimeout(this.tooltipTimeout);
+    clearInterval(this.intervalId);
+  }
+
+  onCdm() {
     const { connectOn, autoClearCache, storage, dispatch, defaultHighlightAnimation } = this.props;
 
     // add the default highlight css to the document
@@ -61,7 +99,8 @@ class Widget extends Component {
     styleNode.innerHTML = defaultHighlightAnimation;
     document.body.appendChild(styleNode);
 
-    this.intervalId = setInterval(() => dispatch(evalUrl(window.location.href)), 500);
+    // this.intervalId = setInterval(() => dispatch(evalUrl(window.location.href)), 500);
+    dispatch(evalUrl(window.location.href));
     if (connectOn === 'mount') {
       this.initializeWidget();
       return;
@@ -82,32 +121,6 @@ class Widget extends Component {
       dispatch(pullSession());
       if (lastUpdate) this.initializeWidget();
     }
-  }
-
-  componentDidUpdate() {
-    const { isChatOpen, dispatch, embedded, initialized } = this.props;
-
-    if (isChatOpen) {
-      if (!initialized) {
-        this.initializeWidget();
-      }
-      this.trySendInitPayload();
-    }
-
-    if (embedded && initialized) {
-      dispatch(showChat());
-      dispatch(openChat());
-    }
-  }
-
-  componentWillUnmount() {
-    const { socket } = this.props;
-
-    if (socket) {
-      socket.close();
-    }
-    clearTimeout(this.tooltipTimeout);
-    clearInterval(this.intervalId);
   }
 
   getSessionId() {
@@ -445,6 +458,7 @@ class Widget extends Component {
   // behavior on first load
 
   trySendInitPayload() {
+    console.log('trySendInitPayload')
     const {
       initPayload,
       customData,
@@ -580,9 +594,17 @@ class Widget extends Component {
     event.target.message.value = '';
   }
 
+  logIn() {
+    console.log('auth')
+    this.setState({ isAuth: true });
+    this.onCdm();
+    this.trySendInitPayload();
+  }
+
   render() {
     return (
       <WidgetLayout
+        onAuthButtonClick={!this.isAuth ? () => this.logIn() : null}
         toggleChat={() => this.toggleConversation()}
         toggleFullScreen={() => this.toggleFullScreen()}
         onSendMessage={event => this.handleMessageSubmit(event)}

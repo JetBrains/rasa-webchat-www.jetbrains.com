@@ -21,6 +21,7 @@ const Conversation = props =>
       closeImage={props.closeImage}
       profileAvatar={props.profileAvatar}
     />
+    {!!props.onAuthButtonClick && <button onClick={props.onAuthButtonClick}>click to auth</button>}
     <Messages
       profileAvatar={props.profileAvatar}
       params={props.params}
@@ -51,7 +52,8 @@ Conversation.propTypes = {
   connectingText: PropTypes.string,
   closeImage: PropTypes.string,
   customComponent: PropTypes.func,
-  showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func])
+  showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
+  onAuthButtonClick: PropTypes.func
 };
 
 export default Conversation;
