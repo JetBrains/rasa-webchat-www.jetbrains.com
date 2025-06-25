@@ -38,12 +38,12 @@ import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
 import { isVideo, isImage, isButtons, isText, isCarousel } from './msgProcessor';
 import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
+import { authInRasa, exchangeTokenReq, getAuthCode } from '../../utils/auth-utils';
 
 class Widget extends Component {
   constructor(props) {
     super(props);
     this.messages = [];
-    this.isAuth = false;
     this.delayedMessage = null;
     this.messageDelayTimeout = null;
     this.onGoingMessageDelay = false;
@@ -51,11 +51,14 @@ class Widget extends Component {
     this.getSessionId = this.getSessionId.bind(this);
     this.intervalId = null;
     this.eventListenerCleaner = () => { };
+    this.logIn = this.logIn.bind(this);
+    this.state = {
+      isAuth: false
+    };
   }
 
   componentDidMount() {
-
-    if (!this.isAuth) {
+    if (!this.state.isAuth) {
       console.log('user have to auth');
     }
 
@@ -63,6 +66,25 @@ class Widget extends Component {
   }
 
   componentDidUpdate() {
+    console.log('componentDidUpdate');
+    const url = new URL(window.location.href);
+    const urlParams = new URLSearchParams(url.search);
+    const code = urlParams.get('code');
+    console.log('componentDidUpdate', code);
+    if (!code) return;
+
+    const getChatToken = async () => {
+      // eslint-disable-next-line camelcase
+      const { id_token } = await exchangeTokenReq(code);
+      const templateMessage = await authInRasa(id_token);
+      console.log('templateMessage', templateMessage);
+      if (templateMessage) {
+        this.setState({ isAuth: true });
+      }
+    };
+
+    getChatToken();
+
     const { isChatOpen, dispatch, embedded, initialized } = this.props;
 
     if (isChatOpen) {
@@ -70,7 +92,7 @@ class Widget extends Component {
         this.initializeWidget();
       }
       // todo: auth condition
-      if (this.isAuth) {
+      if (this.state.isAuth) {
         this.trySendInitPayload();
       }
     }
@@ -458,7 +480,7 @@ class Widget extends Component {
   // behavior on first load
 
   trySendInitPayload() {
-    console.log('trySendInitPayload')
+    console.log('trySendInitPayload');
     const {
       initPayload,
       customData,
@@ -594,17 +616,14 @@ class Widget extends Component {
     event.target.message.value = '';
   }
 
-  logIn() {
-    console.log('auth')
-    this.setState({ isAuth: true });
-    this.onCdm();
-    this.trySendInitPayload();
+  logIn = async () => {
+    await getAuthCode();
   }
 
   render() {
     return (
       <WidgetLayout
-        onAuthButtonClick={!this.isAuth ? () => this.logIn() : null}
+        onAuthButtonClick={!this.state.isAuth ? this.logIn : null}
         toggleChat={() => this.toggleConversation()}
         toggleFullScreen={() => this.toggleFullScreen()}
         onSendMessage={event => this.handleMessageSubmit(event)}
