@@ -252,7 +252,7 @@ ConnectedWidget.defaultProps = {
     onChatVisible: () => {},
     onChatHidden: () => {}
   },
-  disableTooltips: false,
+  disableTooltips: true,
   mainColor: '',
   conversationBackgroundColor: '',
   userTextColor: '',

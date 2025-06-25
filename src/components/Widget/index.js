@@ -717,7 +717,7 @@ Widget.defaultProps = {
   tooltipPayload: null,
   inputTextFieldHint: 'Type a message...',
   oldUrl: '',
-  disableTooltips: false,
+  disableTooltips: true,
   defaultHighlightClassname: '',
   defaultHighlightCss: 'animation: 0.5s linear infinite alternate default-botfront-blinker-animation; outline-style: solid;',
   // unfortunately it looks like outline-style is not an animatable property on Safari
