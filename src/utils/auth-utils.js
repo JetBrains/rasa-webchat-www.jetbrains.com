@@ -12,10 +12,19 @@ export const codeStatic = 'OmmxIlFVy-vEdYn05v7nEBzgI6HwxlzrfEhV5hy8zWE.60PLBQBc8
 export const clientId = 'support-chat-staging';
 export const redirectUri = 'http://localhost:9000/support';
 export const scope = 'openid offline_access r_assets';
-// const codeVerifier = generateCodeVerifier();
-// export const codeVerifier =
-//   'SoQrv596CYq3WGdgezWy6HdUuZp_2QCJH-h9eVFfs3XPOzf-Ybdvy2TokO0xDMaq';
-const codeVerifier = 'minimum64bytesminimum64bytesminimum64bytesminimum64bytesminimum6';
+
+export function generateCodeVerifier(length = 64) {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/[=]/g, '')
+    .slice(0, length);
+}
+
+
+const codeVerifier = generateCodeVerifier();
 
 export const state = crypto.randomUUID();
 
@@ -32,15 +41,6 @@ export async function hashToBase64Url(input) {
     .replace(/[=]+$/, '');
 }
 
-export function generateCodeVerifier(length = 64) {
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/[=]/g, '')
-    .slice(0, length);
-}
 
 export const getAuthCode = async () => {
   const codeChallenge = await hashToBase64Url(codeVerifier);
@@ -56,10 +56,7 @@ export const getAuthCode = async () => {
   };
 
   const queryString = new URLSearchParams(params).toString();
-
-  // todo: open in a small window
-  // window.open(`${authBaseUrl1}?${queryString}`, 'popup', strWindowFeatures);
-  window.location.href = `${authBaseUrl1}?${queryString}`;
+  window.open(`${authBaseUrl1}?${queryString}`, 'popup', strWindowFeatures);
 };
 
 export const exchangeTokenReq = async (code) => {

@@ -52,6 +52,7 @@ class Widget extends Component {
     this.intervalId = null;
     this.eventListenerCleaner = () => { };
     this.logIn = this.logIn.bind(this);
+    this.authCallback = this.authCallback.bind(this);
     this.state = {
       isAuth: false
     };
@@ -60,31 +61,14 @@ class Widget extends Component {
   componentDidMount() {
     if (!this.state.isAuth) {
       console.log('user have to auth');
+
+      window.addEventListener('message', this.authCallback);
     }
 
     this.onCdm();
   }
 
   componentDidUpdate() {
-    console.log('componentDidUpdate');
-    const url = new URL(window.location.href);
-    const urlParams = new URLSearchParams(url.search);
-    const code = urlParams.get('code');
-    console.log('componentDidUpdate', code);
-    if (!code) return;
-
-    const getChatToken = async () => {
-      // eslint-disable-next-line camelcase
-      const { id_token } = await exchangeTokenReq(code);
-      const templateMessage = await authInRasa(id_token);
-      console.log('templateMessage', templateMessage);
-      if (templateMessage) {
-        this.setState({ isAuth: true });
-      }
-    };
-
-    getChatToken();
-
     const { isChatOpen, dispatch, embedded, initialized } = this.props;
 
     if (isChatOpen) {
@@ -111,6 +95,7 @@ class Widget extends Component {
     }
     clearTimeout(this.tooltipTimeout);
     clearInterval(this.intervalId);
+    window.removeEventListener('message', this.this.authCallback);
   }
 
   onCdm() {
@@ -151,6 +136,24 @@ class Widget extends Component {
     const localSession = getLocalSession(storage, SESSION_NAME);
     const localId = localSession ? localSession.session_id : null;
     return localId;
+  }
+
+  authCallback(event) {
+    if (event.data?.type === 'oauth-code') {
+      const code = event.data.code;
+
+      const getChatToken = async () => {
+        // eslint-disable-next-line camelcase
+        const { id_token } = await exchangeTokenReq(code);
+        const templateMessage = await authInRasa(id_token);
+        console.log('templateMessage', templateMessage);
+        if (templateMessage) {
+          this.setState({ isAuth: true });
+        }
+      };
+
+      getChatToken();
+    }
   }
 
   sendMessage(payload, text = '', when = 'always', tooltipSelector = false) {
@@ -436,7 +439,7 @@ class Widget extends Component {
 
           storeLocalSession(storage, SESSION_NAME, remoteId);
           dispatch(pullSession());
-          if (sendInitPayload) {
+          if (sendInitPayload && this.state.isAuth) {
             this.trySendInitPayload();
           }
         } else {
