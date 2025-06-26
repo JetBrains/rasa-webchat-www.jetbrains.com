@@ -55,7 +55,6 @@ class Widget extends Component {
 
   componentDidMount() {
     const { connectOn, autoClearCache, storage, dispatch, defaultHighlightAnimation } = this.props;
-
     // add the default highlight css to the document
     const styleNode = document.createElement('style');
     styleNode.innerHTML = defaultHighlightAnimation;
@@ -86,7 +85,7 @@ class Widget extends Component {
   }
 
   componentDidUpdate() {
-    const { isChatOpen, dispatch, embedded, initialized } = this.props;
+    const { dispatch, embedded, initialized } = this.props;
     //
     // if (isChatOpen) {
     //   if (!initialized) {

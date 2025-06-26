@@ -25,6 +25,11 @@ const socketTemplate = {
   isDummy: true
 };
 
+// const dummyMessage = {
+//   recipient_id: 'test_user',
+//   text: 'Hi there! What question do you have about JetBrains products or services?'
+// };
+
 const ConnectedWidget = forwardRef((props, ref) => {
   class Socket {
     constructor(
@@ -100,7 +105,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
   const instanceSocket = useRef(null);
   const store = useRef(null);
   const [isAuth, setIsAuth] = useState(false);
-  const [token, setToken] = useState('token22');
+  const [token, setToken] = useState(null);
   const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
@@ -112,12 +117,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
         // eslint-disable-next-line camelcase
         const { id_token } = await exchangeTokenReq(code);
         setToken(id_token);
-        const templateMessage = await authInRasa(id_token);
-        // todo: pass to the chat
-        console.log('templateMessage', templateMessage);
-        if (templateMessage) {
-          setIsAuth(true);
-        }
+        // const templateMessage = await authInRasa(id_token);
+        // // todo: pass to the chat
+        // console.log('templateMessage', templateMessage);
+        // if (templateMessage) {
+        setIsAuth(true);
+        // }
       };
 
       getChatToken();
@@ -132,13 +137,16 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   // Create socket only after authentication
   useEffect(() => {
-    if (isAuth) {
+    console.log('token', token);
+    if (isAuth && token) {
       instanceSocket.current = new Socket(
-        props.socketUrl,
+        // props.socketUrl,
+        //   todo: which url to use?
+        'https://rasa-dev.labs.jb.gg/',
         { ...props.customData, token },
         props.socketPath,
         props.protocol,
-        props.protocolOptions,
+        { ...props.protocolOptions, authToken: token }, // Передаем token в protocolOptions
         props.onSocketEvent
       );
 
@@ -192,7 +200,6 @@ const ConnectedWidget = forwardRef((props, ref) => {
           key={socketKey}
           ref={ref}
           onAuthButtonClick={!isAuth ? logIn : null}
-          showAuthButton={props.showAuthButton}
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}
@@ -276,9 +283,7 @@ ConnectedWidget.propTypes = {
   userTextColor: PropTypes.string,
   userBackgroundColor: PropTypes.string,
   assistTextColor: PropTypes.string,
-  assistBackgoundColor: PropTypes.string,
-  showAuthButton: PropTypes.bool,
-  isAuth: PropTypes.bool
+  assistBackgoundColor: PropTypes.string
 };
 
 ConnectedWidget.defaultProps = {
@@ -316,9 +321,15 @@ ConnectedWidget.defaultProps = {
     onChatOpen: () => {
       console.log('on chat open');
     },
-    onChatClose: () => {},
-    onChatVisible: () => {},
-    onChatHidden: () => {}
+    onChatClose: () => {
+      console.log('on chat close');
+    },
+    onChatVisible: () => {
+      console.log('on chat visible');
+    },
+    onChatHidden: () => {
+      console.log('on chat hidden');
+    }
   },
   disableTooltips: true,
   mainColor: '',

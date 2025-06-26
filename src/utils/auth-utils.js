@@ -3,7 +3,7 @@ export const authBaseUrl1 =
 export const tokenEndpoint =
   'https://public.staging.oauth.intservices.aws.intellij.net/oauth2/token';
 export const rasaEndpoint =
-  'https://rasa-dev-jb.labs.jb.gg/webhooks/rest/webhook';
+    'https://rasa-dev-jb.labs.jb.gg/webhooks/rest/webhook';
 // const rasaEndpoint2 = 'https://rasa-dev.labs.jb.gg/webhooks/rest/webhook';
 const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=100, left=100';
 
