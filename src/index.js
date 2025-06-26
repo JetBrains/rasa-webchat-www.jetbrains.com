@@ -10,6 +10,21 @@ import ThemeContext from '../src/components/Widget/ThemeContext';
 import { authInRasa, exchangeTokenReq, getAuthCode } from './utils/auth-utils';
 // eslint-disable-next-line import/no-mutable-exports
 
+
+const socketTemplate = {
+  isInitialized: () => false,
+  on: () => {
+  },
+  emit: () => {
+  },
+  close: () => {
+  },
+  createSocket: () => {
+  },
+  marker: Math.random(),
+  isDummy: true
+};
+
 const ConnectedWidget = forwardRef((props, ref) => {
   class Socket {
     constructor(
@@ -82,10 +97,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
   }
 
-  const instanceSocket = useRef({});
+  const instanceSocket = useRef(null);
   const store = useRef(null);
   const [isAuth, setIsAuth] = useState(false);
-
+  const [token, setToken] = useState('token22');
+  const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
+  const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
   const authCallback = () => {
     if (event.data?.type === 'oauth-code') {
@@ -94,7 +111,9 @@ const ConnectedWidget = forwardRef((props, ref) => {
       const getChatToken = async () => {
         // eslint-disable-next-line camelcase
         const { id_token } = await exchangeTokenReq(code);
+        setToken(id_token);
         const templateMessage = await authInRasa(id_token);
+        // todo: pass to the chat
         console.log('templateMessage', templateMessage);
         if (templateMessage) {
           setIsAuth(true);
@@ -111,38 +130,51 @@ const ConnectedWidget = forwardRef((props, ref) => {
     return () => window.removeEventListener('message', authCallback);
   }, []);
 
-  if (!instanceSocket.current.url && !(store && store.current && store.current.socketRef)) {
-    instanceSocket.current = new Socket(
-      props.socketUrl,
-      props.customData,
-      props.socketPath,
-      props.protocol,
-      props.protocolOptions,
-      props.onSocketEvent
-    );
+  // Create socket only after authentication
+  useEffect(() => {
+    if (isAuth) {
+      instanceSocket.current = new Socket(
+        props.socketUrl,
+        { ...props.customData, token },
+        props.socketPath,
+        props.protocol,
+        props.protocolOptions,
+        props.onSocketEvent
+      );
+
+      // Recreate store with the new socket
+      store.current = initStore(
+        props.connectingText,
+        instanceSocket.current,
+        storage,
+        props.docViewer,
+        props.onWidgetEvent
+      );
+      store.current.socketRef = instanceSocket.current.marker;
+      store.current.socket = instanceSocket.current;
+
+      setSocketKey(`authenticated-${instanceSocket.current.marker}`);
+    }
+  }, [isAuth, token]);
+
+
+  if (!store.current && !instanceSocket.current) {
+    instanceSocket.current = socketTemplate;
   }
 
-  if (!instanceSocket.current.url && store && store.current && store.current.socketRef) {
-    instanceSocket.current = store.socket;
-  }
-
-  const storage =
-    props.params.storage === 'session' ? sessionStorage : localStorage;
-
-  if (!store || !store.current) {
-    store.current = initStore(
-      props.connectingText,
-      instanceSocket.current,
-      storage,
-      props.docViewer,
-      props.onWidgetEvent
-    );
-    store.current.socketRef = instanceSocket.current.marker;
-    store.current.socket = instanceSocket.current;
-  }
+  store.current = initStore(
+    props.connectingText,
+    instanceSocket.current,
+    storage,
+    props.docViewer,
+    props.onWidgetEvent
+  );
+  store.current.socketRef = instanceSocket.current.marker;
+  store.current.socket = instanceSocket.current;
 
 
   const logIn = async () => {
+    // setIsAuth(true);
     await getAuthCode();
   };
 
@@ -157,6 +189,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           assistBackgoundColor: props.assistBackgoundColor }}
       >
         <Widget
+          key={socketKey}
           ref={ref}
           onAuthButtonClick={!isAuth ? logIn : null}
           showAuthButton={props.showAuthButton}
@@ -244,7 +277,8 @@ ConnectedWidget.propTypes = {
   userBackgroundColor: PropTypes.string,
   assistTextColor: PropTypes.string,
   assistBackgoundColor: PropTypes.string,
-  showAuthButton: PropTypes.bool
+  showAuthButton: PropTypes.bool,
+  isAuth: PropTypes.bool
 };
 
 ConnectedWidget.defaultProps = {

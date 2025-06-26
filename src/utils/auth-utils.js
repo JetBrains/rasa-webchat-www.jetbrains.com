@@ -6,7 +6,6 @@ export const rasaEndpoint =
   'https://rasa-dev-jb.labs.jb.gg/webhooks/rest/webhook';
 // const rasaEndpoint2 = 'https://rasa-dev.labs.jb.gg/webhooks/rest/webhook';
 const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=100, left=100';
-export const codeStatic = 'OmmxIlFVy-vEdYn05v7nEBzgI6HwxlzrfEhV5hy8zWE.60PLBQBc8S2mzqPLX0KFv0J6GEb0Yh3oUuarcslRjD8';
 
 
 export const clientId = 'support-chat-staging';
