@@ -38,7 +38,7 @@ import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
 import { isVideo, isImage, isButtons, isText, isCarousel } from './msgProcessor';
 import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
-import { authInRasa, exchangeTokenReq, getAuthCode } from '../../utils/auth-utils';
+
 
 class Widget extends Component {
   constructor(props) {
@@ -51,54 +51,9 @@ class Widget extends Component {
     this.getSessionId = this.getSessionId.bind(this);
     this.intervalId = null;
     this.eventListenerCleaner = () => { };
-    this.logIn = this.logIn.bind(this);
-    this.authCallback = this.authCallback.bind(this);
-    this.state = {
-      isAuth: false
-    };
   }
 
   componentDidMount() {
-    if (!this.state.isAuth) {
-      console.log('user have to auth');
-
-      window.addEventListener('message', this.authCallback);
-    }
-
-    this.onCdm();
-  }
-
-  componentDidUpdate() {
-    const { isChatOpen, dispatch, embedded, initialized } = this.props;
-
-    if (isChatOpen) {
-      if (!initialized) {
-        this.initializeWidget();
-      }
-      // todo: auth condition
-      if (this.state.isAuth) {
-        this.trySendInitPayload();
-      }
-    }
-
-    if (embedded && initialized) {
-      dispatch(showChat());
-      dispatch(openChat());
-    }
-  }
-
-  componentWillUnmount() {
-    const { socket } = this.props;
-
-    if (socket) {
-      socket.close();
-    }
-    clearTimeout(this.tooltipTimeout);
-    clearInterval(this.intervalId);
-    window.removeEventListener('message', this.this.authCallback);
-  }
-
-  onCdm() {
     const { connectOn, autoClearCache, storage, dispatch, defaultHighlightAnimation } = this.props;
 
     // add the default highlight css to the document
@@ -130,6 +85,35 @@ class Widget extends Component {
     }
   }
 
+  componentDidUpdate() {
+    const { isChatOpen, dispatch, embedded, initialized } = this.props;
+    //
+    // if (isChatOpen) {
+    //   if (!initialized) {
+    //     this.initializeWidget();
+    //   }
+    //   // todo: auth condition
+    //   if (this.state.isAuth) {
+    //     this.trySendInitPayload();
+    //   }
+    // }
+
+    if (embedded && initialized) {
+      dispatch(showChat());
+      dispatch(openChat());
+    }
+  }
+
+  componentWillUnmount() {
+    const { socket } = this.props;
+
+    if (socket) {
+      socket.close();
+    }
+    clearTimeout(this.tooltipTimeout);
+    clearInterval(this.intervalId);
+  }
+
   getSessionId() {
     const { storage } = this.props;
     // Get the local session, check if there is an existing session_id
@@ -137,25 +121,6 @@ class Widget extends Component {
     const localId = localSession ? localSession.session_id : null;
     return localId;
   }
-
-  authCallback(event) {
-    if (event.data?.type === 'oauth-code') {
-      const code = event.data.code;
-
-      const getChatToken = async () => {
-        // eslint-disable-next-line camelcase
-        const { id_token } = await exchangeTokenReq(code);
-        const templateMessage = await authInRasa(id_token);
-        console.log('templateMessage', templateMessage);
-        if (templateMessage) {
-          this.setState({ isAuth: true });
-        }
-      };
-
-      getChatToken();
-    }
-  }
-
   sendMessage(payload, text = '', when = 'always', tooltipSelector = false) {
     const { dispatch, initialized, messages } = this.props;
     const emit = () => {
@@ -439,7 +404,7 @@ class Widget extends Component {
 
           storeLocalSession(storage, SESSION_NAME, remoteId);
           dispatch(pullSession());
-          if (sendInitPayload && this.state.isAuth) {
+          if (sendInitPayload) {
             this.trySendInitPayload();
           }
         } else {
@@ -619,14 +584,10 @@ class Widget extends Component {
     event.target.message.value = '';
   }
 
-  logIn = async () => {
-    await getAuthCode();
-  }
-
   render() {
     return (
       <WidgetLayout
-        onAuthButtonClick={!this.state.isAuth ? this.logIn : null}
+        onAuthButtonClick={this.props.onAuthButtonClick}
         toggleChat={() => this.toggleConversation()}
         toggleFullScreen={() => this.toggleFullScreen()}
         onSendMessage={event => this.handleMessageSubmit(event)}
@@ -704,7 +665,8 @@ Widget.propTypes = {
   defaultHighlightAnimation: PropTypes.string,
   defaultHighlightCss: PropTypes.string,
   defaultHighlightClassname: PropTypes.string,
-  messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map)
+  messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map),
+  onAuthButtonClick: PropTypes.func
 };
 
 Widget.defaultProps = {

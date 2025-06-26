@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef, useEffect, useRef, useState } from 'react';
 
 import PropTypes from 'prop-types';
 import { Provider } from 'react-redux';
@@ -7,6 +7,7 @@ import Widget from './components/Widget';
 import { initStore } from '../src/store/store';
 import socket from './socket';
 import ThemeContext from '../src/components/Widget/ThemeContext';
+import { authInRasa, exchangeTokenReq, getAuthCode } from './utils/auth-utils';
 // eslint-disable-next-line import/no-mutable-exports
 
 const ConnectedWidget = forwardRef((props, ref) => {
@@ -83,6 +84,32 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const instanceSocket = useRef({});
   const store = useRef(null);
+  const [isAuth, setIsAuth] = useState(false);
+
+
+  const authCallback = () => {
+    if (event.data?.type === 'oauth-code') {
+      const code = event.data.code;
+
+      const getChatToken = async () => {
+        // eslint-disable-next-line camelcase
+        const { id_token } = await exchangeTokenReq(code);
+        const templateMessage = await authInRasa(id_token);
+        console.log('templateMessage', templateMessage);
+        if (templateMessage) {
+          setIsAuth(true);
+        }
+      };
+
+      getChatToken();
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('message', authCallback);
+
+    return () => window.removeEventListener('message', authCallback);
+  }, []);
 
   if (!instanceSocket.current.url && !(store && store.current && store.current.socketRef)) {
     instanceSocket.current = new Socket(
@@ -113,6 +140,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
     store.current.socketRef = instanceSocket.current.marker;
     store.current.socket = instanceSocket.current;
   }
+
+
+  const logIn = async () => {
+    await getAuthCode();
+  };
+
   return (
     <Provider store={store.current}>
       <ThemeContext.Provider
@@ -125,6 +158,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
       >
         <Widget
           ref={ref}
+          onAuthButtonClick={!isAuth ? logIn : null}
           showAuthButton={props.showAuthButton}
           initPayload={props.initPayload}
           title={props.title}
