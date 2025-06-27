@@ -135,10 +135,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
     return () => window.removeEventListener('message', authCallback);
   }, []);
 
-  // Create socket only after authentication
   useEffect(() => {
-    console.log('token', token);
-    if (isAuth && token) {
+    if (isAuth && token && instanceSocket.current && instanceSocket.current.isDummy) {
       instanceSocket.current = new Socket(
         // props.socketUrl,
         //   todo: which url to use?
@@ -170,19 +168,20 @@ const ConnectedWidget = forwardRef((props, ref) => {
     instanceSocket.current = socketTemplate;
   }
 
-  store.current = initStore(
-    props.connectingText,
-    instanceSocket.current,
-    storage,
-    props.docViewer,
-    props.onWidgetEvent
-  );
-  store.current.socketRef = instanceSocket.current.marker;
-  store.current.socket = instanceSocket.current;
+  if (!store.current) {
+    store.current = initStore(
+      props.connectingText,
+      instanceSocket.current,
+      storage,
+      props.docViewer,
+      props.onWidgetEvent
+    );
+    store.current.socketRef = instanceSocket.current.marker;
+    store.current.socket = instanceSocket.current;
+  }
 
 
   const logIn = async () => {
-    // setIsAuth(true);
     await getAuthCode();
   };
 

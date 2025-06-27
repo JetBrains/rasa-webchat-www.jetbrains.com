@@ -84,8 +84,19 @@ class Widget extends Component {
     }
   }
 
-  componentDidUpdate() {
-    const { dispatch, embedded, initialized } = this.props;
+  componentDidUpdate(prevProps) {
+    const { dispatch, embedded, initialized, isChatOpen } = this.props;
+
+    // Логируем изменения important props
+    if (prevProps.isChatOpen !== isChatOpen) {
+      console.log('💬 isChatOpen changed:', prevProps.isChatOpen, '->', isChatOpen);
+    }
+    if (prevProps.connected !== this.props.connected) {
+      console.log('🔗 connected changed:', prevProps.connected, '->', this.props.connected);
+    }
+    if (prevProps.initialized !== initialized) {
+      console.log('🚀 initialized changed:', prevProps.initialized, '->', initialized);
+    }
     //
     // if (isChatOpen) {
     //   if (!initialized) {
@@ -584,6 +595,12 @@ class Widget extends Component {
   }
 
   render() {
+    console.log('📋 Widget render, props:', {
+      isChatOpen: this.props.isChatOpen,
+      connected: this.props.connected,
+      initialized: this.props.initialized
+    });
+
     return (
       <WidgetLayout
         onAuthButtonClick={this.props.onAuthButtonClick}
