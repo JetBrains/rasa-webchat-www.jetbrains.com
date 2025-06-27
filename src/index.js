@@ -170,19 +170,20 @@ const ConnectedWidget = forwardRef((props, ref) => {
     instanceSocket.current = socketTemplate;
   }
 
-  store.current = initStore(
-    props.connectingText,
-    instanceSocket.current,
-    storage,
-    props.docViewer,
-    props.onWidgetEvent
-  );
-  store.current.socketRef = instanceSocket.current.marker;
-  store.current.socket = instanceSocket.current;
+  if (!store.current) {
+    store.current = initStore(
+      props.connectingText,
+      instanceSocket.current,
+      storage,
+      props.docViewer,
+      props.onWidgetEvent
+    );
+    store.current.socketRef = instanceSocket.current.marker;
+    store.current.socket = instanceSocket.current;
+  }
 
 
   const logIn = async () => {
-    // setIsAuth(true);
     await getAuthCode();
   };
 
