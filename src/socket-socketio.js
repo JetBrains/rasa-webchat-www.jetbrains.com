@@ -7,7 +7,6 @@ export default function (socketUrl, customData, path, protocolOptions = {}) {
     options.extraHeaders = {
       Authorization: `Bearer ${protocolOptions.authToken}`
     };
-    console.log('🔑 Authorization header added:', options.extraHeaders);
   }
 
   const socket = io(socketUrl, options);
