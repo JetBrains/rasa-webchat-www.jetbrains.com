@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef, useEffect, useRef, useState } from 'react';
 
 import PropTypes from 'prop-types';
 import { Provider } from 'react-redux';
@@ -7,7 +7,28 @@ import Widget from './components/Widget';
 import { initStore } from '../src/store/store';
 import socket from './socket';
 import ThemeContext from '../src/components/Widget/ThemeContext';
+import { authInRasa, exchangeTokenReq, getAuthCode } from './utils/auth-utils';
 // eslint-disable-next-line import/no-mutable-exports
+
+
+const socketTemplate = {
+  isInitialized: () => false,
+  on: () => {
+  },
+  emit: () => {
+  },
+  close: () => {
+  },
+  createSocket: () => {
+  },
+  marker: Math.random(),
+  isDummy: true
+};
+
+// const dummyMessage = {
+//   recipient_id: 'test_user',
+//   text: 'Hi there! What question do you have about JetBrains products or services?'
+// };
 
 const ConnectedWidget = forwardRef((props, ref) => {
   class Socket {
@@ -81,28 +102,73 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
   }
 
-  const instanceSocket = useRef({});
+  const instanceSocket = useRef(null);
   const store = useRef(null);
+  const [isAuth, setIsAuth] = useState(false);
+  const [token, setToken] = useState(null);
+  const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
+  const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
-  if (!instanceSocket.current.url && !(store && store.current && store.current.socketRef)) {
-    instanceSocket.current = new Socket(
-      props.socketUrl,
-      props.customData,
-      props.socketPath,
-      props.protocol,
-      props.protocolOptions,
-      props.onSocketEvent
-    );
+  const authCallback = () => {
+    if (event.data?.type === 'oauth-code') {
+      const code = event.data.code;
+
+      const getChatToken = async () => {
+        // eslint-disable-next-line camelcase
+        const { id_token } = await exchangeTokenReq(code);
+        setToken(id_token);
+        // const templateMessage = await authInRasa(id_token);
+        // // todo: pass to the chat
+        // console.log('templateMessage', templateMessage);
+        // if (templateMessage) {
+        setIsAuth(true);
+        // }
+      };
+
+      getChatToken();
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('message', authCallback);
+
+    return () => window.removeEventListener('message', authCallback);
+  }, []);
+
+  useEffect(() => {
+    if (isAuth && token && instanceSocket.current && instanceSocket.current.isDummy) {
+      instanceSocket.current = new Socket(
+        // props.socketUrl,
+        //   todo: which url to use?
+        'https://rasa-dev-jb.labs.jb.gg',
+        { ...props.customData, token },
+        props.socketPath,
+        props.protocol,
+        { ...props.protocolOptions, authToken: token }, // Передаем token в protocolOptions
+        props.onSocketEvent
+      );
+
+      // Recreate store with the new socket
+      store.current = initStore(
+        props.connectingText,
+        instanceSocket.current,
+        storage,
+        props.docViewer,
+        props.onWidgetEvent
+      );
+      store.current.socketRef = instanceSocket.current.marker;
+      store.current.socket = instanceSocket.current;
+
+      setSocketKey(`authenticated-${instanceSocket.current.marker}`);
+    }
+  }, [isAuth, token]);
+
+
+  if (!store.current && !instanceSocket.current) {
+    instanceSocket.current = socketTemplate;
   }
 
-  if (!instanceSocket.current.url && store && store.current && store.current.socketRef) {
-    instanceSocket.current = store.socket;
-  }
-
-  const storage =
-    props.params.storage === 'session' ? sessionStorage : localStorage;
-
-  if (!store || !store.current) {
+  if (!store.current) {
     store.current = initStore(
       props.connectingText,
       instanceSocket.current,
@@ -113,6 +179,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
     store.current.socketRef = instanceSocket.current.marker;
     store.current.socket = instanceSocket.current;
   }
+
+
+  const logIn = async () => {
+    await getAuthCode();
+  };
+
   return (
     <Provider store={store.current}>
       <ThemeContext.Provider
@@ -124,7 +196,9 @@ const ConnectedWidget = forwardRef((props, ref) => {
           assistBackgoundColor: props.assistBackgoundColor }}
       >
         <Widget
+          key={socketKey}
           ref={ref}
+          onAuthButtonClick={!isAuth ? logIn : null}
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}
@@ -217,7 +291,7 @@ ConnectedWidget.defaultProps = {
   inputTextFieldHint: 'Type a message...',
   connectingText: 'Waiting for server...',
   fullScreenMode: false,
-  hideWhenNotConnected: true,
+  hideWhenNotConnected: false,
   autoClearCache: false,
   connectOn: 'mount',
   onSocketEvent: {},
@@ -243,18 +317,27 @@ ConnectedWidget.defaultProps = {
   tooltipPayload: null,
   tooltipDelay: 500,
   onWidgetEvent: {
-    onChatOpen: () => {},
-    onChatClose: () => {},
-    onChatVisible: () => {},
-    onChatHidden: () => {}
+    onChatOpen: () => {
+      console.log('on chat open');
+    },
+    onChatClose: () => {
+      console.log('on chat close');
+    },
+    onChatVisible: () => {
+      console.log('on chat visible');
+    },
+    onChatHidden: () => {
+      console.log('on chat hidden');
+    }
   },
-  disableTooltips: false,
+  disableTooltips: true,
   mainColor: '',
   conversationBackgroundColor: '',
   userTextColor: '',
   userBackgroundColor: '',
   assistTextColor: '',
-  assistBackgoundColor: ''
+  assistBackgoundColor: '',
+  showAuthButton: null
 };
 
 export default ConnectedWidget;

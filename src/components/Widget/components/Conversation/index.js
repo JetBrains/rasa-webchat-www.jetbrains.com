@@ -27,11 +27,13 @@ const Conversation = props =>
       customComponent={props.customComponent}
       showMessageDate={props.showMessageDate}
     />
-    <Sender
-      sendMessage={props.sendMessage}
-      disabledInput={props.disabledInput}
-      inputTextFieldHint={props.inputTextFieldHint}
-    />
+    {props.onAuthButtonClick ?
+      <button onClick={props.onAuthButtonClick}>click to auth</button> :
+      <Sender
+        sendMessage={props.sendMessage}
+        disabledInput={props.disabledInput}
+        inputTextFieldHint={props.inputTextFieldHint}
+      />}
   </div>;
 
 Conversation.propTypes = {
@@ -51,7 +53,8 @@ Conversation.propTypes = {
   connectingText: PropTypes.string,
   closeImage: PropTypes.string,
   customComponent: PropTypes.func,
-  showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func])
+  showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
+  onAuthButtonClick: PropTypes.func
 };
 
 export default Conversation;
