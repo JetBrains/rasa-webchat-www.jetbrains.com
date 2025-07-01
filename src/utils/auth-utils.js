@@ -103,3 +103,23 @@ export const authInRasa = async (idToken) => {
 
   return null;
 };
+
+export const isTokenValid = (token) => {
+  if (!token) return false;
+
+  try {
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) return false;
+
+    const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
+    const { exp } = JSON.parse(payloadJson) || {};
+
+    if (!exp) return false;
+
+    const now = Date.now() / 1000; // текущий момент в секундах
+
+    return exp > now;
+  } catch (e) {
+    return false;
+  }
+};

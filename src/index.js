@@ -7,9 +7,10 @@ import Widget from './components/Widget';
 import { initStore } from '../src/store/store';
 import socket from './socket';
 import ThemeContext from '../src/components/Widget/ThemeContext';
-import { authInRasa, exchangeTokenReq, getAuthCode } from './utils/auth-utils';
+import { exchangeTokenReq, getAuthCode, isTokenValid } from './utils/auth-utils';
 // eslint-disable-next-line import/no-mutable-exports
 
+const tokenKey = 'chat_token';
 
 const socketTemplate = {
   isInitialized: () => false,
@@ -104,7 +105,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const instanceSocket = useRef(null);
   const store = useRef(null);
-  const [isAuth, setIsAuth] = useState(false);
+  const [isAuth, setIsAuth] = useState(() => {
+    const chatToken = localStorage.getItem(tokenKey);
+    return isTokenValid(chatToken);
+  });
   const [token, setToken] = useState(null);
   const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
@@ -116,6 +120,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
       const getChatToken = async () => {
         // eslint-disable-next-line camelcase
         const { id_token } = await exchangeTokenReq(code);
+        localStorage.setItem(tokenKey, id_token);
         setToken(id_token);
         // const templateMessage = await authInRasa(id_token);
         // // todo: pass to the chat
