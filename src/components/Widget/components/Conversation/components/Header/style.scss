@@ -10,7 +10,7 @@
     flex-direction: column;
     justify-content: center;
     text-align: center;
-    height: 55px;
+    height: 44px;
     font-family: $fontfamily;
     position: relative;
     .#{$namespace}avatar {
@@ -42,12 +42,15 @@
   }
 
   .#{$namespace}title {
-    font-size: 20px;
+    font-size: 13px;
+    line-height: 20px;
     margin: 0;
     font-family: $fontfamily;
     position: absolute;
-    left: 20px;
+    left: 50%;
+    transform: translate(-50%);
     font-weight: 700;
+    color: #9351FF;
     &.#{$namespace}with-avatar {
       left: 58px;
     }
@@ -114,7 +117,7 @@
     .#{$namespace}conversation-container{
     margin-bottom: 0px;
 }}
-  
+
 }
 
 @media screen and (max-width: 800px) {

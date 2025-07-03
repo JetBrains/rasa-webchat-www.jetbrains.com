@@ -188,7 +188,6 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const logIn = async () => {
     await getAuthCode();
-    // setIsAuth(true)
   };
 
   return (
@@ -292,7 +291,7 @@ ConnectedWidget.propTypes = {
 };
 
 ConnectedWidget.defaultProps = {
-  title: 'Welcome',
+  title: 'powered by AI Assistant',
   customData: {},
   inputTextFieldHint: 'Type a message...',
   connectingText: 'Waiting for server...',

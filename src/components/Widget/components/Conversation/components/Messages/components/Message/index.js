@@ -31,22 +31,19 @@ class Message extends PureComponent {
       style = { color: userTextColor, backgroundColor: userBackgroundColor };
     }
 
+    const conditionalCn = sender === 'response' && customCss && customCss.style === 'class' ?
+      `rw-response ${customCss.css ? customCss.css : ''}` :
+      `rw-${sender}`;
+
     return (
-      <div
-        className={sender === 'response' && customCss && customCss.style === 'class' ?
-          `rw-response ${customCss.css}` :
-          `rw-${sender}`}
-        style={style}
-      >
-        <div
-          className="rw-message-text"
-        >
+      <div className={conditionalCn} style={style}>
+        <div className="rw-message-text">
           {sender === 'response' ? (
             <ReactMarkdown
               className={'rw-markdown'}
               source={text}
               linkTarget={(url) => {
-                if (!url.startsWith('mailto') && !url.startsWith('javascript')) return '_blank';
+                if (!url.startsWith('mailto') && !url.startsWith('javascript')) { return '_blank'; }
                 return undefined;
               }}
               transformLinkUri={null}
@@ -55,7 +52,14 @@ class Message extends PureComponent {
                   docViewer ? (
                     <DocViewer src={props.href}>{props.children}</DocViewer>
                   ) : (
-                    <a href={props.href} target={linkTarget || '_blank'} rel="noopener noreferrer" onMouseUp={e => e.stopPropagation()}>{props.children}</a>
+                    <a
+                      href={props.href}
+                      target={linkTarget || '_blank'}
+                      rel="noopener noreferrer"
+                      onMouseUp={e => e.stopPropagation()}
+                    >
+                      {props.children}
+                    </a>
                   )
               }}
             />
