@@ -109,7 +109,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
     const chatToken = localStorage.getItem(tokenKey);
     return isTokenValid(chatToken);
   });
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
   const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
@@ -188,6 +188,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const logIn = async () => {
     await getAuthCode();
+    // setIsAuth(true)
   };
 
   return (
