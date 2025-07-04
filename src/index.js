@@ -7,8 +7,7 @@ import Widget from './components/Widget';
 import { initStore } from '../src/store/store';
 import socket from './socket';
 import ThemeContext from '../src/components/Widget/ThemeContext';
-import { exchangeTokenReq, getAuthCode, isTokenValid } from './utils/auth-utils';
-// eslint-disable-next-line import/no-mutable-exports
+import { exchangeTokenReq, getEmailFromToken, isTokenValid } from './utils/auth-utils';
 
 const tokenKey = 'chat_token';
 
@@ -109,7 +108,9 @@ const ConnectedWidget = forwardRef((props, ref) => {
     const chatToken = localStorage.getItem(tokenKey);
     return isTokenValid(chatToken);
   });
-  const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
+  // const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
+  const [token, setToken] = useState('eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzo2OWU3YTRmNi03ZjRmLTQyZWYtYjViZS02OTJkODRlMWZlNmYifQ.eyJhdF9oYXNoIjoiRmZ4WGtlMjU0T1JodXN5d3VYMDU5QSIsImF1ZCI6WyJzdXBwb3J0LWNoYXQtc3RhZ2luZyJdLCJhdXRoX3RpbWUiOjE3NTE0NDU3MTksImVtYWlsIjoiZGFyaWEubW9yZW5vLWdvZ29sZXZhQGpldGJyYWlucy5jb20iLCJleHAiOjE3NTE2NDM3MzIsImZpcnN0X25hbWUiOiJEYXJpYSIsImZ1bGxfbmFtZSI6IkRhcmlhIE1vcmVuby1Hb2dvbGV2YSIsImlhdCI6MTc1MTY0MDEzMiwiaXNzIjoiaHR0cHM6Ly9wdWJsaWMuc3RhZ2luZy5vYXV0aC5pbnRzZXJ2aWNlcy5hd3MuaW50ZWxsaWoubmV0LyIsImpiYV9sb2dpbiI6ImRhcmlhLm1vcmVuby1nb2dvbGV2YUBqZXRicmFpbnMuY29tIiwianRpIjoiZjQ3NzEyY2ItMjkwMC00NDI5LWFkOTEtYmQ0Mjc2N2YyN2Y4IiwibGFzdF9uYW1lIjoiTW9yZW5vLUdvZ29sZXZhIiwibGlua2VkX2VtYWlscyI6W10sInJhdCI6MTc1MTY0MDEzMSwic2lkIjoiZWJjYzczMGQtODU1Yy00OTM1LThhM2MtNjA5ZjhjZWM5OGUwIiwic3ViIjoiMjA5OTE2NjgiLCJ1c2VyX2lkIjpudWxsfQ.dPsvfKD0IebnZwiypJ6fwP1xCCKEYEgLPNKbMr3DXhYrH9wMDv8DJtTx_xamHhjeXmixh2s_oBi10bcDnKm6itm0ggqF672MeumqBnZXudHOE6VEQfHPW2AsHZFhCQTO_qw21ixMuU8fkgbM8675v9pXlcOSid4snCe0mgEAJsmVB-uq9pqpOLZYC8Gtt76t7s5m7OrN6nk3GYKMvc9SidKcHaCzVc2Chrcc5pp8ic58Dn9pEIuPa_Y7mvHxG9VvxMGmYKz921umMX23qej7g2MbTd1Kg7GAQklMTTZPMjgNRgcaBZSve8xXkJ848SUs3NsWSMiJfh77JXHk5rScfj-E35HsUTnaDblJD6Z1QK_CHF-aU6VTfiIxjyEkbuyT6BjIsPBjjcRdIa7OhWF1llzcRsgWXvGzr6PVL50iN8yclJ1C94iT7eYsMlAkdfTsEcV8I6E7IGnrww6y4LfTOkrkd8BLIAcWcRAZr1H5OCp3AIfuAUQS6dxkN5t4x5nsFqSnHQLmQmauZkeQXLwcDWSBGMyjmAVLcCcn5333cfKGiBfDCEu9PPpbe04EIf73X8-NnHKvBBW0BdWxAUm6va59R30RLTo0E4SUntbW_4RAYB3wuK_Gprsf5neHEF8nBFJ_UuofmCpT0-KIB_WnOcWEoPp8lR6Sd0E8v25OZT4');
+
   const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
@@ -146,10 +147,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
         // props.socketUrl,
         //   todo: which url to use?
         'https://rasa-dev-jb.labs.jb.gg',
-        { ...props.customData, token },
+        { ...props.customData, token, email: getEmailFromToken(token) },
         props.socketPath,
         props.protocol,
-        { ...props.protocolOptions, authToken: token }, // Передаем token в protocolOptions
+        props.protocolOptions,
         props.onSocketEvent
       );
 
@@ -187,7 +188,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
 
   const logIn = async () => {
-    await getAuthCode();
+    setIsAuth(true);
+    // await getAuthCode();
   };
 
   return (

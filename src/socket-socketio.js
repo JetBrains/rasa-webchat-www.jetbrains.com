@@ -1,21 +1,18 @@
 import io from 'socket.io-client';
 
-export default function (socketUrl, customData, path, protocolOptions = {}) {
+export default function (socketUrl, customData, path) {
   const options = path ? { path } : {};
 
-  if (protocolOptions.authToken) {
+  if (customData.token) {
     options.extraHeaders = {
-      Authorization: `Bearer ${protocolOptions.authToken}`
+      Authorization: `Bearer ${customData.token}`
     };
   }
 
   const socket = io(socketUrl, options);
   socket.on('connect', () => {
     console.log(`connect:${socket.id}`);
-    socket.customData = { ...customData,
-      metadata: {
-        auth_header: protocolOptions.authToken
-      } };
+    socket.customData = customData;
   });
 
   socket.on('connect_error', (error) => {

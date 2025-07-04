@@ -9,7 +9,10 @@ const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=10
 
 
 export const clientId = 'support-chat-staging';
-export const redirectUri = 'http://localhost:9000/support';
+// our stage
+// for local dev please use http://localhost:9000/support
+// todo: change for prod
+export const redirectUri = 'https://entry.i18n.w3jbcom.aws.intellij.net/support/?switch-to-branch=JS-22926-chat-bot';
 export const scope = 'openid offline_access r_assets';
 
 export function generateCodeVerifier(length = 64) {
@@ -104,22 +107,45 @@ export const authInRasa = async (idToken) => {
   return null;
 };
 
+const getTokenPayload = (token) => {
+  if (!token) return null;
+
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+
+    return atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+  } catch (e) {
+    return null;
+  }
+};
+
 export const isTokenValid = (token) => {
   if (!token) return false;
 
   try {
-    const payloadBase64 = token.split('.')[1];
-    if (!payloadBase64) return false;
-
-    const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
-    const { exp } = JSON.parse(payloadJson) || {};
+    const payload = getTokenPayload(token);
+    const { exp } = JSON.parse(payload) || {};
 
     if (!exp) return false;
 
-    const now = Date.now() / 1000; // текущий момент в секундах
-
+    const now = Date.now() / 1000;
     return exp > now;
   } catch (e) {
     return false;
   }
 };
+
+export const getEmailFromToken = (token) => {
+  if (!token) return null;
+
+  try {
+    const payload = getTokenPayload(token);
+    const { email } = JSON.parse(payload) || {};
+
+    return email || null;
+  } catch (e) {
+    return null;
+  }
+};
+
