@@ -36,10 +36,9 @@ export default function (socketUrl, customData, _path, options) {
 
   socketProxy.on('session_request', () => {
     const authData = options.authData || null;
-
     send({
       type: 'SESSION_REQUEST',
-      content: JSON.stringify({authData, ...customData}),
+      content: JSON.stringify({ authData, ...customData }),
       sender: 'client'
     });
   });

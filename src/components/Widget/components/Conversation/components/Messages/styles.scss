@@ -61,16 +61,24 @@
 
 
 .#{$namespace}messages-container {
-  background-color: $white;
+  overscroll-behavior: contain;
   height: 50vh;
   max-height: 425px;
-  overflow-y: auto;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
   @media screen and (min-width: 800px){
     height: 510px;
     max-height: 50vh;
   }
   padding-top: 10px;
 }
+
+.#{$namespace}messages-container::-webkit-scrollbar {
+  display: none;
+}
+
 
 .#{$namespace}widget-embedded {
   .#{$namespace}messages-container {

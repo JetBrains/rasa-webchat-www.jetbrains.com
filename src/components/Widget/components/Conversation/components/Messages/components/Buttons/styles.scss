@@ -7,16 +7,17 @@
   .#{$namespace}replies {
     @include replies;
   }
-  
+
   .#{$namespace}reply {
     @include reply;
   }
-  
+
   .#{$namespace}response {
-    @include message-bubble($grey-2, #000, 0 15px 15px 15px);
+    @include message-bubble(rgba(141, 72, 255, 0.80), #fff, 0 15px 15px 15px);
     max-width: 85%;
+    overflow-wrap: break-word;
   }
-  
+
   .#{$namespace}avatar {
     width: 17px;
     height: 17px;
