@@ -7,7 +7,7 @@ import Widget from './components/Widget';
 import { initStore } from '../src/store/store';
 import socket from './socket';
 import ThemeContext from '../src/components/Widget/ThemeContext';
-import { exchangeTokenReq, getEmailFromToken, isTokenValid } from './utils/auth-utils';
+import { exchangeTokenReq, getAuthCode, getEmailFromToken, isTokenValid } from './utils/auth-utils';
 
 const tokenKey = 'chat_token';
 
@@ -145,10 +145,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
         // props.socketUrl,
         //   todo: which url to use?
         'https://rasa-dev-jb.labs.jb.gg',
-        { ...props.customData, token, email: getEmailFromToken(token) },
+        { ...props.customData, email: getEmailFromToken(token) },
         props.socketPath,
         props.protocol,
-        props.protocolOptions,
+        { ...props.protocolOptions, token },
         props.onSocketEvent
       );
 
@@ -186,8 +186,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
 
   const logIn = async () => {
-    setIsAuth(true);
-    // await getAuthCode();
+    // setIsAuth(true);
+    await getAuthCode();
   };
 
   return (
@@ -207,7 +207,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}
-          customData={props.customData}
+          customData={{ ...props.customData, email: getEmailFromToken(token) }}
           handleNewUserMessage={props.handleNewUserMessage}
           profileAvatar={props.profileAvatar}
           showCloseButton={props.showCloseButton}

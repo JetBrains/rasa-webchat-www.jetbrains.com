@@ -1,11 +1,11 @@
 import io from 'socket.io-client';
 
-export default function (socketUrl, customData, path) {
+export default function (socketUrl, customData, path, protocolOptions) {
   const options = path ? { path } : {};
 
-  if (customData.token) {
+  if (protocolOptions.token) {
     options.extraHeaders = {
-      Authorization: `Bearer ${customData.token}`
+      Authorization: `Bearer ${protocolOptions.token}`
     };
   }
 

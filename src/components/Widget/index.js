@@ -451,8 +451,9 @@ class Widget extends Component {
       if (!sessionId) return;
 
       // eslint-disable-next-line no-console
-      console.log('sending init payload', sessionId);
-      socket.emit('user_uttered', { message: initPayload, customData, session_id: sessionId });
+      console.log('sending init payload', sessionId, customData);
+      // todo: don't send
+      socket.emit('user_uttered', { message: '/session_start', customData, session_id: sessionId });
       dispatch(initialize());
     }
   }
