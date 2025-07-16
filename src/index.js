@@ -178,7 +178,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
       instanceSocket.current = new Socket(
         // props.socketUrl,
         // 'https://rasa-dev-jb.labs.jb.gg',
-        'https://srasa-dev-jb.labs.jb.gg',
+        'https://rasa-dev-jb.labs.jb.gg',
         { ...props.customData, auth_header: token },
         props.socketPath,
         props.protocol,
