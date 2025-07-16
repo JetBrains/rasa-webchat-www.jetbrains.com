@@ -4,10 +4,16 @@ import PropTypes from 'prop-types';
 import { Provider } from 'react-redux';
 
 import Widget from './components/Widget';
-import { initStore } from '../src/store/store';
+import { initStore } from './store/store';
 import socket from './socket';
 import ThemeContext from '../src/components/Widget/ThemeContext';
-import { exchangeTokenReq, getAuthCode, getEmailFromToken, isTokenValid } from './utils/auth-utils';
+import {
+  exchangeTokenReq,
+  getAuthCode,
+  getEmailFromToken,
+  isTokenValid,
+  state
+} from './utils/auth-utils';
 
 const tokenKey = 'chat_token';
 
@@ -115,18 +121,18 @@ const ConnectedWidget = forwardRef((props, ref) => {
   const authCallback = () => {
     if (event.data?.type === 'oauth-code') {
       const code = event.data.code;
+      const popupState = event.data.popupState;
+
+      if (state !== popupState) {
+        throw Error('states don\'t match');
+      }
 
       const getChatToken = async () => {
         // eslint-disable-next-line camelcase
         const { id_token } = await exchangeTokenReq(code);
         localStorage.setItem(tokenKey, id_token);
         setToken(id_token);
-        // const templateMessage = await authInRasa(id_token);
-        // // todo: pass to the chat
-        // console.log('templateMessage', templateMessage);
-        // if (templateMessage) {
         setIsAuth(true);
-        // }
       };
 
       getChatToken();
@@ -145,7 +151,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
         // props.socketUrl,
         //   todo: which url to use?
         'https://rasa-dev-jb.labs.jb.gg',
-        { ...props.customData, email: getEmailFromToken(token) },
+        { ...props.customData, auth_header: token },
         props.socketPath,
         props.protocol,
         { ...props.protocolOptions, token },

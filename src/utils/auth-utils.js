@@ -11,7 +11,8 @@ const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=10
 export const clientId = 'support-chat-staging';
 // our stage
 // for local dev please use http://localhost:9000/support
-// todo: change for prod
+// export const redirectUri = 'http://localhost:9000/support';
+// // todo: change for prod
 export const redirectUri = 'https://entry.i18n.w3jbcom.aws.intellij.net/support/?switch-to-branch=JS-22926-chat-bot';
 export const scope = 'openid offline_access r_assets';
 
