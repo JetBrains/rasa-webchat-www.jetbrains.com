@@ -1,6 +1,6 @@
 import io from 'socket.io-client';
 
-export default function (socketUrl, customData, path, protocolOptions) {
+export default function (socketUrl, customData, path, protocolOptions, onError) {
   const options = path ? { path } : {};
 
   if (protocolOptions.token) {
@@ -17,6 +17,7 @@ export default function (socketUrl, customData, path, protocolOptions) {
 
   socket.on('connect_error', (error) => {
     console.log(error);
+    onError();
   });
 
   socket.on('disconnect', (reason) => {

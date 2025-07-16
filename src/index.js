@@ -10,7 +10,6 @@ import ThemeContext from '../src/components/Widget/ThemeContext';
 import {
   exchangeTokenReq,
   getAuthCode,
-  getEmailFromToken,
   getIsTokenValid, refreshTokenReq,
   state
 } from './utils/auth-utils';
@@ -40,7 +39,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
       path,
       protocol,
       protocolOptions,
-      onSocketEvent
+      onSocketEvent,
+      onConnectionError
     ) {
       this.url = url;
       this.customData = customData;
@@ -51,6 +51,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
       this.socket = null;
       this.onEvents = [];
       this.marker = Math.random();
+      this.onConnectionError = onConnectionError;
     }
 
     isInitialized() {
@@ -83,7 +84,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
         this.customData,
         this.path,
         this.protocol,
-        this.protocolOptions
+        this.protocolOptions,
+        this.onConnectionError
       );
       // We set a function on session_confirm here so as to avoid any race condition
       // this will be called first and will set those parameters for everyone to use.
@@ -112,7 +114,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
     return getIsTokenValid(chatToken);
   });
 
-  useEffect(() => {
+
+  const checkAndRefreshToken = () => {
     const chatToken = localStorage.getItem(tokenKey);
     const refreshToken = localStorage.getItem(tokenRefreshKey);
     const isTokenValid = getIsTokenValid(chatToken);
@@ -127,7 +130,11 @@ const ConnectedWidget = forwardRef((props, ref) => {
         setIsAuth(true);
       }).catch(err => console.error(err));
     }
-  }, []);
+  };
+
+  useEffect(() => {
+    checkAndRefreshToken();
+  }, [checkAndRefreshToken]);
 
   const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
@@ -161,17 +168,23 @@ const ConnectedWidget = forwardRef((props, ref) => {
     return () => window.removeEventListener('message', authCallback);
   }, []);
 
+
+  const onConnectionError = () => {
+    checkAndRefreshToken();
+  };
+
   useEffect(() => {
     if (isAuth && token && instanceSocket.current && instanceSocket.current.isDummy) {
       instanceSocket.current = new Socket(
         // props.socketUrl,
-        //   todo: which url to use?
-        'https://rasa-dev-jb.labs.jb.gg',
+        // 'https://rasa-dev-jb.labs.jb.gg',
+        'https://srasa-dev-jb.labs.jb.gg',
         { ...props.customData, auth_header: token },
         props.socketPath,
         props.protocol,
         { ...props.protocolOptions, token },
-        props.onSocketEvent
+        props.onSocketEvent,
+        onConnectionError
       );
 
       // Recreate store with the new socket
@@ -313,7 +326,7 @@ ConnectedWidget.propTypes = {
 };
 
 ConnectedWidget.defaultProps = {
-  title: 'powered by AI Assistant',
+  title: 'JetBrains Support Assistant',
   customData: {},
   inputTextFieldHint: 'Type a message...',
   connectingText: 'Waiting for server...',
