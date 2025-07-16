@@ -115,20 +115,27 @@ const ConnectedWidget = forwardRef((props, ref) => {
   });
 
 
-  const checkAndRefreshToken = () => {
+  const checkAndRefreshToken = (resetAuth) => {
     const chatToken = localStorage.getItem(tokenKey);
     const refreshToken = localStorage.getItem(tokenRefreshKey);
     const isTokenValid = getIsTokenValid(chatToken);
 
     if (chatToken && !isTokenValid) {
-      refreshTokenReq(refreshToken).then((data) => {
-        // eslint-disable-next-line camelcase
-        const { id_token, refresh_token } = data;
-        localStorage.setItem(tokenKey, id_token);
-        localStorage.setItem(tokenRefreshKey, refresh_token);
-        setToken(id_token);
-        setIsAuth(true);
-      }).catch(err => console.error(err));
+      refreshTokenReq(refreshToken)
+        .then((data) => {
+          // eslint-disable-next-line camelcase
+          const { id_token, refresh_token } = data;
+          localStorage.setItem(tokenKey, id_token);
+          localStorage.setItem(tokenRefreshKey, refresh_token);
+          setToken(id_token);
+          setIsAuth(true);
+        })
+        .catch((err) => {
+          if (resetAuth) {
+            setIsAuth(false);
+          }
+          console.error(err);
+        });
     }
   };
 
@@ -170,7 +177,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
 
   const onConnectionError = () => {
-    checkAndRefreshToken();
+    checkAndRefreshToken(true);
   };
 
   useEffect(() => {
@@ -178,7 +185,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
       instanceSocket.current = new Socket(
         // props.socketUrl,
         // 'https://rasa-dev-jb.labs.jb.gg',
-        'https://rasa-dev-jb.labs.jb.gg',
+        'https://srasa-dev-jb.labs.jb.gg',
         { ...props.customData, auth_header: token },
         props.socketPath,
         props.protocol,
