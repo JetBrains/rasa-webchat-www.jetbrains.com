@@ -116,6 +116,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
 
   const checkAndRefreshToken = (resetAuth) => {
+    if (isAuth) return;
     const chatToken = localStorage.getItem(tokenKey);
     const refreshToken = localStorage.getItem(tokenRefreshKey);
     const isTokenValid = getIsTokenValid(chatToken);
@@ -125,6 +126,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
         .then((data) => {
           // eslint-disable-next-line camelcase
           const { id_token, refresh_token } = data;
+          // eslint-disable-next-line camelcase
+          if (!id_token) return;
           localStorage.setItem(tokenKey, id_token);
           localStorage.setItem(tokenRefreshKey, refresh_token);
           setToken(id_token);
@@ -149,6 +152,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
   const authCallback = () => {
+    if (isAuth) return;
     if (event.data?.type === 'oauth-code') {
       const code = event.data.code;
       const popupState = event.data.popupState;
@@ -233,7 +237,6 @@ const ConnectedWidget = forwardRef((props, ref) => {
     // setIsAuth(true);
     await getAuthCode();
   };
-
   return (
     <Provider store={store.current}>
       <ThemeContext.Provider
@@ -251,7 +254,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}
-          customData={props.customData}
+          customData={{ ...props.customData, auth_header: token }}
           handleNewUserMessage={props.handleNewUserMessage}
           profileAvatar={props.profileAvatar}
           showCloseButton={props.showCloseButton}
