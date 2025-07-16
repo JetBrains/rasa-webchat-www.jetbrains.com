@@ -11,11 +11,12 @@ import {
   exchangeTokenReq,
   getAuthCode,
   getEmailFromToken,
-  isTokenValid,
+  getIsTokenValid, refreshTokenReq,
   state
 } from './utils/auth-utils';
 
 const tokenKey = 'chat_token';
+const tokenRefreshKey = 'chat_refresh_token';
 
 const socketTemplate = {
   isInitialized: () => false,
@@ -30,11 +31,6 @@ const socketTemplate = {
   marker: Math.random(),
   isDummy: true
 };
-
-// const dummyMessage = {
-//   recipient_id: 'test_user',
-//   text: 'Hi there! What question do you have about JetBrains products or services?'
-// };
 
 const ConnectedWidget = forwardRef((props, ref) => {
   class Socket {
@@ -110,11 +106,29 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const instanceSocket = useRef(null);
   const store = useRef(null);
+  const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
   const [isAuth, setIsAuth] = useState(() => {
     const chatToken = localStorage.getItem(tokenKey);
-    return isTokenValid(chatToken);
+    return getIsTokenValid(chatToken);
   });
-  const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
+
+  useEffect(() => {
+    const chatToken = localStorage.getItem(tokenKey);
+    const refreshToken = localStorage.getItem(tokenRefreshKey);
+    const isTokenValid = getIsTokenValid(chatToken);
+
+    if (chatToken && !isTokenValid) {
+      refreshTokenReq(refreshToken).then((data) => {
+        // eslint-disable-next-line camelcase
+        const { id_token, refresh_token } = data;
+        localStorage.setItem(tokenKey, id_token);
+        localStorage.setItem(tokenRefreshKey, refresh_token);
+        setToken(id_token);
+        setIsAuth(true);
+      }).catch(err => console.error(err));
+    }
+  }, []);
+
   const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
@@ -128,9 +142,11 @@ const ConnectedWidget = forwardRef((props, ref) => {
       }
 
       const getChatToken = async () => {
+        const data = await exchangeTokenReq(code);
         // eslint-disable-next-line camelcase
-        const { id_token } = await exchangeTokenReq(code);
+        const { id_token, refresh_token } = data;
         localStorage.setItem(tokenKey, id_token);
+        localStorage.setItem(tokenRefreshKey, refresh_token);
         setToken(id_token);
         setIsAuth(true);
       };
@@ -328,18 +344,18 @@ ConnectedWidget.defaultProps = {
   tooltipPayload: null,
   tooltipDelay: 500,
   onWidgetEvent: {
-    onChatOpen: () => {
-      console.log('on chat open');
-    },
-    onChatClose: () => {
-      console.log('on chat close');
-    },
-    onChatVisible: () => {
-      console.log('on chat visible');
-    },
-    onChatHidden: () => {
-      console.log('on chat hidden');
-    }
+    // onChatOpen: () => {
+    //   console.log('on chat open');
+    // },
+    // onChatClose: () => {
+    //   console.log('on chat close');
+    // },
+    // onChatVisible: () => {
+    //   console.log('on chat visible');
+    // },
+    // onChatHidden: () => {
+    //   console.log('on chat hidden');
+    // }
   },
   disableTooltips: true,
   mainColor: '',

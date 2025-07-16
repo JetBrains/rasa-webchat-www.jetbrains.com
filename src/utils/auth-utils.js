@@ -108,6 +108,30 @@ export const authInRasa = async (idToken) => {
   return null;
 };
 
+export const refreshTokenReq = async (refreshToken) => {
+  const body = new URLSearchParams([
+    ['refresh_token', refreshToken],
+    ['grant_type', 'refresh_token'],
+    ['client_id', clientId]
+  ]);
+
+  try {
+    const response = await fetch(tokenEndpoint, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      method: 'POST',
+      body: body.toString()
+    });
+
+    return await response.json();
+  } catch (err) {
+    console.error(err);
+  }
+
+  return null;
+};
+
 const getTokenPayload = (token) => {
   if (!token) return null;
 
@@ -121,7 +145,7 @@ const getTokenPayload = (token) => {
   }
 };
 
-export const isTokenValid = (token) => {
+export const getIsTokenValid = (token) => {
   if (!token) return false;
 
   try {
