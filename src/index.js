@@ -229,7 +229,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}
-          customData={{ ...props.customData, email: getEmailFromToken(token) }}
+          customData={props.customData}
           handleNewUserMessage={props.handleNewUserMessage}
           profileAvatar={props.profileAvatar}
           showCloseButton={props.showCloseButton}

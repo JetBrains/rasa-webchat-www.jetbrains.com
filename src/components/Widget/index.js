@@ -428,9 +428,8 @@ class Widget extends Component {
   // behavior on first load
 
   trySendInitPayload() {
-    console.log('trySendInitPayload');
     const {
-      initPayload,
+      // initPayload,
       customData,
       socket,
       initialized,
@@ -449,10 +448,6 @@ class Widget extends Component {
 
       // check that session_id is confirmed
       if (!sessionId) return;
-
-      // eslint-disable-next-line no-console
-      console.log('sending init payload', sessionId, customData);
-      // todo: don't send
       socket.emit('user_uttered', { message: '/session_start', customData, session_id: sessionId });
       dispatch(initialize());
     }
