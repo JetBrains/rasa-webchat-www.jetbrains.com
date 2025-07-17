@@ -24,9 +24,11 @@
   }
 
   .#{$namespace}client {
-    @include message-bubble(rgba(255, 255, 255, 0.70), #19191C);
+    @include message-bubble(rgba(255, 255, 255, 0.70), #19191C, 24px 24px 0 24px);
     max-width: 85%;
     margin-left: auto;
+    font-size: 13px;
+    line-height: 20px;
     overflow-wrap: break-word;
     a {
       color: $turqois-1;
@@ -34,7 +36,7 @@
   }
 
   .#{$namespace}response {
-    @include message-bubble(rgba(141, 72, 255, 0.80), #fff, 0 15px 15px 15px);
+    @include message-bubble(rgba(255, 255, 255, 0.10), #fff, 24px 24px 0 24px);
     overflow-wrap: break-word;
   }
 
@@ -42,12 +44,6 @@
   .#{$namespace}message-text {
     margin: 0;
     .#{$namespace}markdown{
-      p{
-        margin-bottom: 1em;
-        &:last-child{
-          margin-bottom: 0;
-        }
-      }
     }
   }
 

@@ -232,7 +232,6 @@ const ConnectedWidget = forwardRef((props, ref) => {
     store.current.socket = instanceSocket.current;
   }
 
-
   const logIn = async () => {
     // setIsAuth(true);
     await getAuthCode();

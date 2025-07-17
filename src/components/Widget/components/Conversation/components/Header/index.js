@@ -23,7 +23,7 @@ const Header = ({
   const { mainColor } = useContext(ThemeContext);
   return (
     <div className="rw-header-and-loading">
-      <div style={{ backgroundColor: mainColor }}className={`rw-header ${subtitle ? 'rw-with-subtitle' : ''}`}>
+      <div style={{ backgroundColor: mainColor }} className={`rw-header ${subtitle ? 'rw-with-subtitle' : ''}`}>
         {
           profileAvatar && (
             <img src={profileAvatar} className="rw-avatar" alt="chat avatar" />

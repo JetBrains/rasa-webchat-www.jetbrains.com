@@ -5,7 +5,7 @@
 
 &.#{$namespace}conversation-container {
   @include animation(0, 0.5s, slide-in);
-  border-radius: 10px;
+  border-radius: 24px;
   box-shadow:
   0 1px 1.5px -1px rgba(0, 0, 0, 0.048),
   0 2.5px 3.7px -1px rgba(0, 0, 0, 0.069),
@@ -14,7 +14,7 @@
   0 19.7px 23.4px -1px rgba(0, 0, 0, 0.122),
   0 54px 56px -1px rgba(0, 0, 0, 0.17)
 ;
-
+  background: linear-gradient(180deg, #27282E 0%, #382F46 100%);
   overflow: hidden;
   width: 370px;
 }

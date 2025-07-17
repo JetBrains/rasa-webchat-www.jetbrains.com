@@ -5,12 +5,12 @@
 .#{$namespace}conversation-container {
   .#{$namespace}header {
     background-color: $tertiary;
+    background-color: transparent;
     color: $white;
     display: flex;
     flex-direction: column;
     justify-content: center;
     text-align: center;
-    height: 44px;
     font-family: $fontfamily;
     position: relative;
     .#{$namespace}avatar {
@@ -44,13 +44,13 @@
   .#{$namespace}title {
     font-size: 13px;
     line-height: 20px;
-    margin: 0;
     font-family: $fontfamily;
-    position: absolute;
-    left: 50%;
-    transform: translate(-50%);
     font-weight: 700;
-    color: #9351FF;
+    color: $white;
+    text-align: left;
+    padding: 18px 0;
+    margin: 0 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     &.#{$namespace}with-avatar {
       left: 58px;
     }
@@ -73,7 +73,7 @@
   }
 
   .#{$namespace}loading {
-    background-color: $grey-3;
+    background-color: transparent;
     color: $white;
     display: flex;
     flex-direction: column;

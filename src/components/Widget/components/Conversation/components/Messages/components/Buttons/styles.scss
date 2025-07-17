@@ -16,6 +16,15 @@
     @include message-bubble(rgba(141, 72, 255, 0.80), #fff, 0 15px 15px 15px);
     max-width: 85%;
     overflow-wrap: break-word;
+    padding: 12px 8px;
+    font-size: 13px !important;
+    line-height: 20px;
+    border-radius: 24px 24px 24px 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 1px 1px 6px 0 rgba(27, 4, 65, 0.1);
+    color: $white;
+    font-family: $fontfamily;
+    align-self: flex-start;
   }
 
   .#{$namespace}avatar {
