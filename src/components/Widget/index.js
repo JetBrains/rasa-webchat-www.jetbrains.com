@@ -60,7 +60,6 @@ class Widget extends Component {
     styleNode.innerHTML = defaultHighlightAnimation;
     document.body.appendChild(styleNode);
 
-    // this.intervalId = setInterval(() => dispatch(evalUrl(window.location.href)), 500);
     dispatch(evalUrl(window.location.href));
     if (connectOn === 'mount') {
       this.initializeWidget();
@@ -429,7 +428,6 @@ class Widget extends Component {
 
   trySendInitPayload() {
     const {
-      // initPayload,
       customData,
       socket,
       initialized,
@@ -445,7 +443,6 @@ class Widget extends Component {
       // Only send initial payload if the widget is connected to the server but not yet initialized
 
       const sessionId = this.getSessionId();
-      console.log('sending init payload', sessionId, customData);
       // check that session_id is confirmed
       if (!sessionId) return;
       socket.emit('user_uttered', { message: '/session_start', customData, session_id: sessionId });

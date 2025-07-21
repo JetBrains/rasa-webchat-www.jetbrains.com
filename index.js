@@ -74,7 +74,6 @@ class RasaWebchatProWithRules extends React.Component {
     delete propsToApply.rules;
     return (
       <div
-        // style={{ display: propsRetrieved ? undefined : 'none' }}
         className={this.props.embedded || (propsToApply && propsToApply.embedded) ? 'rw-pro-widget-embedded' : ''}
       >
         <RasaWebchatPro

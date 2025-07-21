@@ -4,8 +4,9 @@ import PropTypes from 'prop-types';
 import close from 'assets/clear-button.svg';
 import fullscreen from 'assets/fullscreen_button.svg';
 import fullscreenExit from 'assets/fullscreen_exit_button.svg';
-import './style.scss';
 import ThemeContext from '../../../../ThemeContext';
+
+import './style.scss';
 
 const Header = ({
   title,
@@ -15,8 +16,6 @@ const Header = ({
   toggleChat,
   showCloseButton,
   showFullScreenButton,
-  // connected,
-  // connectingText,
   closeImage,
   profileAvatar
 }) => {
@@ -54,13 +53,6 @@ const Header = ({
         <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
         {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
       </div>
-      {/* todo: add some loader */}
-      {/* { */}
-      {/*   !connected && */}
-      {/*   <span className="rw-loading"> */}
-      {/*     {connectingText} */}
-      {/*   </span> */}
-      {/* } */}
     </div>);
 };
 
@@ -72,8 +64,6 @@ Header.propTypes = {
   toggleChat: PropTypes.func,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
-  connected: PropTypes.bool,
-  connectingText: PropTypes.string,
   closeImage: PropTypes.string,
   profileAvatar: PropTypes.string
 };

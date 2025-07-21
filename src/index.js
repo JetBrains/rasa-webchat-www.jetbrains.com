@@ -367,20 +367,7 @@ ConnectedWidget.defaultProps = {
   },
   tooltipPayload: null,
   tooltipDelay: 500,
-  onWidgetEvent: {
-    // onChatOpen: () => {
-    //   console.log('on chat open');
-    // },
-    // onChatClose: () => {
-    //   console.log('on chat close');
-    // },
-    // onChatVisible: () => {
-    //   console.log('on chat visible');
-    // },
-    // onChatHidden: () => {
-    //   console.log('on chat hidden');
-    // }
-  },
+  onWidgetEvent: {},
   disableTooltips: true,
   mainColor: '',
   conversationBackgroundColor: '',
