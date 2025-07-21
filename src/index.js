@@ -1,13 +1,35 @@
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef, useEffect, useRef, useState } from 'react';
 
 import PropTypes from 'prop-types';
 import { Provider } from 'react-redux';
 
 import Widget from './components/Widget';
-import { initStore } from '../src/store/store';
+import { initStore } from './store/store';
 import socket from './socket';
 import ThemeContext from '../src/components/Widget/ThemeContext';
-// eslint-disable-next-line import/no-mutable-exports
+import {
+  exchangeTokenReq,
+  getAuthCode,
+  getIsTokenValid, refreshTokenReq,
+  state
+} from './utils/auth-utils';
+
+const tokenKey = 'chat_token';
+const tokenRefreshKey = 'chat_refresh_token';
+
+const socketTemplate = {
+  isInitialized: () => false,
+  on: () => {
+  },
+  emit: () => {
+  },
+  close: () => {
+  },
+  createSocket: () => {
+  },
+  marker: Math.random(),
+  isDummy: true
+};
 
 const ConnectedWidget = forwardRef((props, ref) => {
   class Socket {
@@ -17,7 +39,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
       path,
       protocol,
       protocolOptions,
-      onSocketEvent
+      onSocketEvent,
+      onConnectionError
     ) {
       this.url = url;
       this.customData = customData;
@@ -28,6 +51,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
       this.socket = null;
       this.onEvents = [];
       this.marker = Math.random();
+      this.onConnectionError = onConnectionError;
     }
 
     isInitialized() {
@@ -60,7 +84,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
         this.customData,
         this.path,
         this.protocol,
-        this.protocolOptions
+        this.protocolOptions,
+        this.onConnectionError
       );
       // We set a function on session_confirm here so as to avoid any race condition
       // this will be called first and will set those parameters for everyone to use.
@@ -81,28 +106,121 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
   }
 
-  const instanceSocket = useRef({});
+  const instanceSocket = useRef(null);
   const store = useRef(null);
+  const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
+  const [isAuth, setIsAuth] = useState(() => {
+    const chatToken = localStorage.getItem(tokenKey);
+    return getIsTokenValid(chatToken);
+  });
 
-  if (!instanceSocket.current.url && !(store && store.current && store.current.socketRef)) {
-    instanceSocket.current = new Socket(
-      props.socketUrl,
-      props.customData,
-      props.socketPath,
-      props.protocol,
-      props.protocolOptions,
-      props.onSocketEvent
-    );
+
+  const checkAndRefreshToken = (resetAuth) => {
+    if (isAuth) return;
+    const chatToken = localStorage.getItem(tokenKey);
+    const refreshToken = localStorage.getItem(tokenRefreshKey);
+    const isTokenValid = getIsTokenValid(chatToken);
+
+    if (chatToken && !isTokenValid) {
+      refreshTokenReq(refreshToken)
+        .then((data) => {
+          // eslint-disable-next-line camelcase
+          const { id_token, refresh_token } = data;
+          // eslint-disable-next-line camelcase
+          if (!id_token) return;
+          localStorage.setItem(tokenKey, id_token);
+          localStorage.setItem(tokenRefreshKey, refresh_token);
+          setToken(id_token);
+          setIsAuth(true);
+        })
+        .catch((err) => {
+          if (resetAuth) {
+            setIsAuth(false);
+          }
+          console.error(err);
+        });
+    } else if (resetAuth) {
+      setIsAuth(false);
+    }
+  };
+
+  useEffect(() => {
+    checkAndRefreshToken();
+  }, [checkAndRefreshToken]);
+
+  const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
+  const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
+
+  const authCallback = () => {
+    if (isAuth) return;
+    if (event.data?.type === 'oauth-code') {
+      const code = event.data.code;
+      const popupState = event.data.popupState;
+
+      if (state !== popupState) {
+        throw Error('states don\'t match');
+      }
+
+      const getChatToken = async () => {
+        const data = await exchangeTokenReq(code);
+        // eslint-disable-next-line camelcase
+        const { id_token, refresh_token } = data;
+        localStorage.setItem(tokenKey, id_token);
+        localStorage.setItem(tokenRefreshKey, refresh_token);
+        setToken(id_token);
+        setIsAuth(true);
+      };
+
+      getChatToken();
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('message', authCallback);
+
+    return () => window.removeEventListener('message', authCallback);
+  }, []);
+
+
+  const onConnectionError = () => {
+    checkAndRefreshToken(true);
+  };
+
+  useEffect(() => {
+    if (isAuth && token && instanceSocket.current && instanceSocket.current.isDummy) {
+      instanceSocket.current = new Socket(
+        // props.socketUrl,
+        'https://rasa-dev-jb.labs.jb.gg',
+        // 'https://srsasa-dev-jb.labs.jb.gg',
+        { ...props.customData, auth_header: token },
+        props.socketPath,
+        props.protocol,
+        { ...props.protocolOptions, token },
+        props.onSocketEvent,
+        onConnectionError
+      );
+
+      // Recreate store with the new socket
+      store.current = initStore(
+        props.connectingText,
+        instanceSocket.current,
+        storage,
+        props.docViewer,
+        props.onWidgetEvent
+      );
+      store.current.socketRef = instanceSocket.current.marker;
+      store.current.socket = instanceSocket.current;
+
+      setSocketKey(`authenticated-${instanceSocket.current.marker}`);
+    }
+  }, [isAuth, token]);
+
+
+  if (!store.current && !instanceSocket.current) {
+    instanceSocket.current = socketTemplate;
   }
 
-  if (!instanceSocket.current.url && store && store.current && store.current.socketRef) {
-    instanceSocket.current = store.socket;
-  }
-
-  const storage =
-    props.params.storage === 'session' ? sessionStorage : localStorage;
-
-  if (!store || !store.current) {
+  if (!store.current) {
     store.current = initStore(
       props.connectingText,
       instanceSocket.current,
@@ -113,6 +231,11 @@ const ConnectedWidget = forwardRef((props, ref) => {
     store.current.socketRef = instanceSocket.current.marker;
     store.current.socket = instanceSocket.current;
   }
+
+  const logIn = async () => {
+    // setIsAuth(true);
+    await getAuthCode();
+  };
   return (
     <Provider store={store.current}>
       <ThemeContext.Provider
@@ -124,11 +247,13 @@ const ConnectedWidget = forwardRef((props, ref) => {
           assistBackgoundColor: props.assistBackgoundColor }}
       >
         <Widget
+          key={socketKey}
           ref={ref}
+          onAuthButtonClick={!isAuth ? logIn : null}
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}
-          customData={props.customData}
+          customData={{ ...props.customData, auth_header: token }}
           handleNewUserMessage={props.handleNewUserMessage}
           profileAvatar={props.profileAvatar}
           showCloseButton={props.showCloseButton}
@@ -212,12 +337,12 @@ ConnectedWidget.propTypes = {
 };
 
 ConnectedWidget.defaultProps = {
-  title: 'Welcome',
+  title: 'JetBrains Support Assistant',
   customData: {},
   inputTextFieldHint: 'Type a message...',
   connectingText: 'Waiting for server...',
   fullScreenMode: false,
-  hideWhenNotConnected: true,
+  hideWhenNotConnected: false,
   autoClearCache: false,
   connectOn: 'mount',
   onSocketEvent: {},
@@ -242,19 +367,15 @@ ConnectedWidget.defaultProps = {
   },
   tooltipPayload: null,
   tooltipDelay: 500,
-  onWidgetEvent: {
-    onChatOpen: () => {},
-    onChatClose: () => {},
-    onChatVisible: () => {},
-    onChatHidden: () => {}
-  },
-  disableTooltips: false,
+  onWidgetEvent: {},
+  disableTooltips: true,
   mainColor: '',
   conversationBackgroundColor: '',
   userTextColor: '',
   userBackgroundColor: '',
   assistTextColor: '',
-  assistBackgoundColor: ''
+  assistBackgoundColor: '',
+  showAuthButton: null
 };
 
 export default ConnectedWidget;

@@ -39,6 +39,7 @@ import { isVideo, isImage, isButtons, isText, isCarousel } from './msgProcessor'
 import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
 
+
 class Widget extends Component {
   constructor(props) {
     super(props);
@@ -52,16 +53,14 @@ class Widget extends Component {
     this.eventListenerCleaner = () => { };
   }
 
-
   componentDidMount() {
     const { connectOn, autoClearCache, storage, dispatch, defaultHighlightAnimation } = this.props;
-
     // add the default highlight css to the document
     const styleNode = document.createElement('style');
     styleNode.innerHTML = defaultHighlightAnimation;
     document.body.appendChild(styleNode);
 
-    this.intervalId = setInterval(() => dispatch(evalUrl(window.location.href)), 500);
+    dispatch(evalUrl(window.location.href));
     if (connectOn === 'mount') {
       this.initializeWidget();
       return;
@@ -84,22 +83,6 @@ class Widget extends Component {
     }
   }
 
-  componentDidUpdate() {
-    const { isChatOpen, dispatch, embedded, initialized } = this.props;
-
-    if (isChatOpen) {
-      if (!initialized) {
-        this.initializeWidget();
-      }
-      this.trySendInitPayload();
-    }
-
-    if (embedded && initialized) {
-      dispatch(showChat());
-      dispatch(openChat());
-    }
-  }
-
   componentWillUnmount() {
     const { socket } = this.props;
 
@@ -117,7 +100,6 @@ class Widget extends Component {
     const localId = localSession ? localSession.session_id : null;
     return localId;
   }
-
   sendMessage(payload, text = '', when = 'always', tooltipSelector = false) {
     const { dispatch, initialized, messages } = this.props;
     const emit = () => {
@@ -446,7 +428,6 @@ class Widget extends Component {
 
   trySendInitPayload() {
     const {
-      initPayload,
       customData,
       socket,
       initialized,
@@ -462,13 +443,9 @@ class Widget extends Component {
       // Only send initial payload if the widget is connected to the server but not yet initialized
 
       const sessionId = this.getSessionId();
-
       // check that session_id is confirmed
       if (!sessionId) return;
-
-      // eslint-disable-next-line no-console
-      console.log('sending init payload', sessionId);
-      socket.emit('user_uttered', { message: initPayload, customData, session_id: sessionId });
+      socket.emit('user_uttered', { message: '/session_start', customData, session_id: sessionId });
       dispatch(initialize());
     }
   }
@@ -583,6 +560,7 @@ class Widget extends Component {
   render() {
     return (
       <WidgetLayout
+        onAuthButtonClick={this.props.onAuthButtonClick}
         toggleChat={() => this.toggleConversation()}
         toggleFullScreen={() => this.toggleFullScreen()}
         onSendMessage={event => this.handleMessageSubmit(event)}
@@ -660,7 +638,8 @@ Widget.propTypes = {
   defaultHighlightAnimation: PropTypes.string,
   defaultHighlightCss: PropTypes.string,
   defaultHighlightClassname: PropTypes.string,
-  messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map)
+  messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map),
+  onAuthButtonClick: PropTypes.func
 };
 
 Widget.defaultProps = {
@@ -673,7 +652,7 @@ Widget.defaultProps = {
   tooltipPayload: null,
   inputTextFieldHint: 'Type a message...',
   oldUrl: '',
-  disableTooltips: false,
+  disableTooltips: true,
   defaultHighlightClassname: '',
   defaultHighlightCss: 'animation: 0.5s linear infinite alternate default-botfront-blinker-animation; outline-style: solid;',
   // unfortunately it looks like outline-style is not an animatable property on Safari

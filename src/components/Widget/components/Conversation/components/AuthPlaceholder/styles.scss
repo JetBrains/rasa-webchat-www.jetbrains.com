@@ -1,0 +1,50 @@
+@import "variables.scss";
+@import "common.scss";
+
+
+.auth-placeholder {
+  &__container {
+    background-color: transparent;
+    height: 50vh;
+    max-height: 425px;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+
+    @media screen and (min-width: 800px) {
+      height: 500px;
+      max-height: 55.2vh;
+    }
+  }
+
+  &__message {
+    padding: 12px 8px;
+    font-size: 13px !important;
+    line-height: 20px;
+    border-radius: 24px 24px 24px 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 1px 1px 6px 0 rgba(27, 4, 65, 0.1);
+    color: $white;
+    font-family: $fontfamily;
+    align-self: flex-start;
+  }
+
+  &__text {
+    margin: 0;
+  }
+
+  &__button {
+    background-color: rgba(141, 72, 255, 0.8);
+    color: $white;
+    padding: 6px 16px;
+    font-size: 13px;
+    line-height: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: $fontfamily;
+    background-color: transparent;
+  }
+}

@@ -13,51 +13,49 @@ const WidgetLayout = (props) => {
   }
   const showCloseButton =
     props.showCloseButton !== undefined ? props.showCloseButton : !props.embedded;
-  const isVisible = props.isChatVisible && !(props.hideWhenNotConnected && !props.connected);
   const chatShowing = props.isChatOpen || props.embedded;
 
   if (chatShowing && !props.embedded) {
     classes.push('rw-chat-open');
   }
 
-  return isVisible ? (
-    <div className={classes.join(' ')}>
-      {chatShowing && (
-        <Conversation
-          title={props.title}
-          subtitle={props.subtitle}
-          sendMessage={props.onSendMessage}
-          profileAvatar={props.profileAvatar}
-          toggleChat={props.toggleChat}
-          isChatOpen={props.isChatOpen}
-          toggleFullScreen={props.toggleFullScreen}
-          fullScreenMode={props.fullScreenMode}
-          disabledInput={props.disabledInput}
-          params={props.params}
-          showFullScreenButton={props.showFullScreenButton}
-          {...{ showCloseButton }}
-          connected={props.connected}
-          connectingText={props.connectingText}
-          closeImage={props.closeImage}
-          customComponent={props.customComponent}
-          showMessageDate={props.showMessageDate}
-          inputTextFieldHint={props.inputTextFieldHint}
-        />
-      )}
-      {!props.embedded && (
-        <Launcher
-          toggle={props.toggleChat}
-          isChatOpen={props.isChatOpen}
-          badge={props.badge}
-          fullScreenMode={props.fullScreenMode}
-          openLauncherImage={props.openLauncherImage}
-          closeImage={props.closeImage}
-          displayUnreadCount={props.displayUnreadCount}
-          tooltipPayload={props.tooltipPayload}
-        />
-      )}
-    </div>
-  ) : null;
+  return (<div className={classes.join(' ')}>
+    {chatShowing && (
+      <Conversation
+        title={props.title}
+        subtitle={props.subtitle}
+        sendMessage={props.onSendMessage}
+        profileAvatar={props.profileAvatar}
+        toggleChat={props.toggleChat}
+        isChatOpen={props.isChatOpen}
+        toggleFullScreen={props.toggleFullScreen}
+        fullScreenMode={props.fullScreenMode}
+        disabledInput={props.disabledInput}
+        params={props.params}
+        onAuthButtonClick={props.onAuthButtonClick}
+        showFullScreenButton={props.showFullScreenButton}
+        {...{ showCloseButton }}
+        connected={props.connected}
+        connectingText={props.connectingText}
+        closeImage={props.closeImage}
+        customComponent={props.customComponent}
+        showMessageDate={props.showMessageDate}
+        inputTextFieldHint={props.inputTextFieldHint}
+      />
+    )}
+    {!props.embedded && (
+      <Launcher
+        toggle={props.toggleChat}
+        isChatOpen={props.isChatOpen}
+        badge={props.badge}
+        fullScreenMode={props.fullScreenMode}
+        openLauncherImage={props.openLauncherImage}
+        closeImage={props.closeImage}
+        displayUnreadCount={props.displayUnreadCount}
+        tooltipPayload={props.tooltipPayload}
+      />
+    )}
+  </div>);
 };
 
 const mapStateToProps = state => ({
@@ -93,7 +91,8 @@ WidgetLayout.propTypes = {
   customComponent: PropTypes.func,
   displayUnreadCount: PropTypes.bool,
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
-  tooltipPayload: PropTypes.string
+  tooltipPayload: PropTypes.string,
+  onAuthButtonClick: PropTypes.func
 };
 
 export default connect(mapStateToProps)(WidgetLayout);

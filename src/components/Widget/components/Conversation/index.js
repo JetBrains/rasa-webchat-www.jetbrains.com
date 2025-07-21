@@ -4,10 +4,23 @@ import PropTypes from 'prop-types';
 import Header from './components/Header';
 import Messages from './components/Messages';
 import Sender from './components/Sender';
+import { AuthPlaceholder } from './components/AuthPlaceholder';
 import './style.scss';
 
-const Conversation = props =>
-  <div className="rw-conversation-container">
+const Conversation = (props) => {
+  const content = <><Messages
+    profileAvatar={props.profileAvatar}
+    params={props.params}
+    customComponent={props.customComponent}
+    showMessageDate={props.showMessageDate}
+  /><Sender
+    sendMessage={props.sendMessage}
+    disabledInput={props.disabledInput}
+    inputTextFieldHint={props.inputTextFieldHint}
+  /></>;
+
+
+  return (<div className="rw-conversation-container">
     <Header
       title={props.title}
       subtitle={props.subtitle}
@@ -21,19 +34,10 @@ const Conversation = props =>
       closeImage={props.closeImage}
       profileAvatar={props.profileAvatar}
     />
-    <Messages
-      profileAvatar={props.profileAvatar}
-      params={props.params}
-      customComponent={props.customComponent}
-      showMessageDate={props.showMessageDate}
-    />
-    <Sender
-      sendMessage={props.sendMessage}
-      disabledInput={props.disabledInput}
-      inputTextFieldHint={props.inputTextFieldHint}
-    />
-  </div>;
-
+    {props.onAuthButtonClick ?
+      <AuthPlaceholder onClick={props.onAuthButtonClick} /> : content}
+  </div>);
+};
 Conversation.propTypes = {
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
@@ -51,7 +55,8 @@ Conversation.propTypes = {
   connectingText: PropTypes.string,
   closeImage: PropTypes.string,
   customComponent: PropTypes.func,
-  showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func])
+  showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
+  onAuthButtonClick: PropTypes.func
 };
 
 export default Conversation;
