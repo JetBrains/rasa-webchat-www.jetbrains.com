@@ -5,7 +5,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import Send from 'assets/send_button';
 import './style.scss';
 
-const Sender = ({ sendMessage, inputTextFieldHint, disabledInput, userInput }) => {
+const Sender = ({ sendMessage, inputTextFieldHint, userInput }) => {
   const [inputValue, setInputValue] = useState('');
   const formRef = useRef('');
   function handleChange(e) {
