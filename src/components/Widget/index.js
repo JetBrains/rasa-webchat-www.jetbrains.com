@@ -552,7 +552,7 @@ class Widget extends Component {
     const userUttered = event.target.message.value;
 
     if (userUttered) {
-      const result = userUttered.replace(/StartFlows?\([^)]*\)|SetSlots?\([^)]*\)/g, '');
+      const result = userUttered.replace(/(?:start[_]?flows?|set[_]?slots?)\([^)]*\)/gi, '');
       this.props.dispatch(addUserMessage(result));
       this.props.dispatch(emitUserMessage(result));
     }
