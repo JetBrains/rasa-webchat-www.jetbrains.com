@@ -8,15 +8,15 @@
 }
 
 .#{$namespace}widget-container {
-  
+
   .#{$namespace}conversation-container{
       @media screen and (min-width: 800px){
           margin-bottom: 10px;
       }
-  
+
       ul {
           padding-left: 10px;
-          list-style: disc;
+          list-style: none;
       }
   }
 
@@ -24,7 +24,7 @@
 
 .#{$namespace}widget-embedded .#{$namespace}conversation-container ul {
   padding-left: 10px;
-  list-style: disc;
+  list-style: none;
 }
 
 
@@ -45,7 +45,7 @@
   &:focus {
     outline: none;
   }
-  
+
   &.#{$namespace}hide {
     display: none
   }
@@ -53,7 +53,7 @@
   &.#{$namespace}full-screen {
     @include launcher-fs;
   }
-  
+
   img {
     width: 70%;
     max-height: 70%;
@@ -87,7 +87,7 @@
     0 18.2px 20.9px -4px rgba(0, 0, 0, 0.108),
     0 50px 50px -4px rgba(0, 0, 0, 0.15)
   ;
-  
+
     width: 320px;
     font-size: 16px;
     padding: 0px 8px;
@@ -176,7 +176,7 @@
      height: 1px;
      background-color: #e0e0e0
     }
-    
+
     .#{$namespace}reply {
       @include reply;
     }
@@ -214,7 +214,7 @@
   .slick-dots li {
     width: 9px;
   }
-  
+
   .slick-arrow {
     width: 15px;
     &.slick-next {
@@ -232,7 +232,7 @@
       &:before {
         color: #c0c0c0;
       }
-      
+
     }
   }
 

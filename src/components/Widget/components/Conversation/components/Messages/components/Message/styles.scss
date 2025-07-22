@@ -4,6 +4,11 @@
 
 .#{$namespace}conversation-container {
 
+
+  ol, ul {
+    list-style: none;
+  }
+
   .#{$namespace}message {
     margin: 10px;
     font-size: 16px;

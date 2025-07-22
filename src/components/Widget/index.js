@@ -550,9 +550,11 @@ class Widget extends Component {
   handleMessageSubmit(event) {
     event.preventDefault();
     const userUttered = event.target.message.value;
+
     if (userUttered) {
-      this.props.dispatch(addUserMessage(userUttered));
-      this.props.dispatch(emitUserMessage(userUttered));
+      const result = userUttered.replace(/(?:start[_]?flows?|set[_]?slots?)\([^)]*\)/gi, '');
+      this.props.dispatch(addUserMessage(result));
+      this.props.dispatch(emitUserMessage(result));
     }
     event.target.message.value = '';
   }

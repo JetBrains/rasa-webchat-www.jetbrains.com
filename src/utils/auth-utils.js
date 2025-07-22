@@ -1,3 +1,5 @@
+const isProduction = process.env.ENVIRONMENT === 'production';
+
 export const authBaseUrl1 =
   'https://active.jetprofile-stgn.intellij.net/oauth/login';
 export const tokenEndpoint =
@@ -8,12 +10,13 @@ export const rasaEndpoint =
 const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=100, left=100';
 
 
-export const clientId = 'support-chat-staging';
+export const clientId = isProduction ? process.env.CLIENT_ID_PROD : process.env.CLIENT_ID_STAGE;
 // our stage
-// for local dev please use http://localhost:9000/support
+// for local dev please use
 // export const redirectUri = 'http://localhost:9000/support';
-// // todo: change for prod
-export const redirectUri = 'https://entry.i18n.w3jbcom.aws.intellij.net/support/?switch-to-branch=JS-22926-chat-bot';
+export const redirectUri = isProduction ? process.env.REDIRECT_URI_PROD
+  : process.env.REDIRECT_URI_STAGE;
+
 export const scope = 'openid offline_access r_assets';
 
 export function generateCodeVerifier(length = 64) {

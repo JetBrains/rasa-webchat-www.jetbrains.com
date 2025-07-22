@@ -98,6 +98,7 @@
 
   .#{$namespace}title {
     @include title-fs;
+    font-weight: 600;
   }
 
   .#{$namespace}close-button,
