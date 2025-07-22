@@ -1,6 +1,17 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const dotenv = require('dotenv');
 const { version } = require('./package.json');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const webpack = require('webpack');
+
+const env = dotenv.config({ path: path.resolve(process.cwd(), '.env') }).parsed || {};
+
+const envKeys = Object.fromEntries(
+  Object.entries(env).map(([key, val]) => [`process.env.${key}`, JSON.stringify(val)])
+);
+
+const envName = process.env.ENVIRONMENT || 'staging';
 
 module.exports = {
   // entry: ['babel-polyfill', './index.js'],
@@ -66,6 +77,10 @@ module.exports = {
       inject: false,
       template: 'dev/src/index.html',
       showErrors: true
+    }),
+    new webpack.DefinePlugin({
+      ...envKeys,
+      'process.env.ENVIRONMENT': JSON.stringify(envName)
     })
   ]
 };

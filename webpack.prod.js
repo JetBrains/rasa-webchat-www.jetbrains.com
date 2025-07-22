@@ -1,9 +1,17 @@
-
-
 const path = require('path');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const { version } = require('./package.json');
+const webpack = require('webpack');
+const dotenv = require('dotenv');
+
+const env = dotenv.config({ path: path.resolve(process.cwd(), '.env') }).parsed || {};
+
+const envKeys = Object.fromEntries(
+  Object.entries(env).map(([key, val]) => [`process.env.${key}`, JSON.stringify(val)])
+);
+
+const envName = process.env.ENVIRONMENT || 'production';
 
 module.exports = [{
   // entry: ['babel-polyfill', './index.js'],
@@ -59,7 +67,12 @@ module.exports = [{
       }
     ]
   },
-  plugins: [new CleanWebpackPlugin(['lib'])]
+  plugins: [new CleanWebpackPlugin(['lib']),
+    new webpack.DefinePlugin({
+      ...envKeys,
+      'process.env.ENVIRONMENT': JSON.stringify(envName)
+    })
+  ]
 }, {
   entry: './index.js',
   externals: {
@@ -129,6 +142,11 @@ module.exports = [{
       }
     ]
   },
-  plugins: [new CleanWebpackPlugin(['module'])]
+  plugins: [new CleanWebpackPlugin(['module']),
+    new webpack.DefinePlugin({
+      ...envKeys,
+      'process.env.ENVIRONMENT': JSON.stringify(envName)
+    })
+  ]
 }
 ];
