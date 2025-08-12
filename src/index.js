@@ -17,6 +17,8 @@ import {
 const tokenKey = 'chat_token';
 const tokenRefreshKey = 'chat_refresh_token';
 
+const isProduction = process.env.ENVIRONMENT === 'production';
+
 const socketTemplate = {
   isInitialized: () => false,
   on: () => {
@@ -114,7 +116,6 @@ const ConnectedWidget = forwardRef((props, ref) => {
     return getIsTokenValid(chatToken);
   });
 
-
   const checkAndRefreshToken = (resetAuth) => {
     if (isAuth) return;
     const chatToken = localStorage.getItem(tokenKey);
@@ -190,7 +191,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
     if (isAuth && token && instanceSocket.current && instanceSocket.current.isDummy) {
       instanceSocket.current = new Socket(
         // props.socketUrl,
-        'https://rasa-dev-jb.labs.jb.gg',
+        isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-dev-jb.labs.jb.gg',
         // 'https://srsasa-dev-jb.labs.jb.gg',
         { ...props.customData, auth_header: token },
         props.socketPath,

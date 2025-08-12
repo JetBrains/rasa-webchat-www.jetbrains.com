@@ -1,17 +1,15 @@
 const isProduction = process.env.ENVIRONMENT === 'production';
 
-export const authBaseUrl1 =
-  'https://active.jetprofile-stgn.intellij.net/oauth/login';
-export const tokenEndpoint =
-  'https://public.staging.oauth.intservices.aws.intellij.net/oauth2/token';
-export const rasaEndpoint =
-    'https://rasa-dev-jb.labs.jb.gg/webhooks/rest/webhook';
+export const rasaEndpoint = isProduction ? 'https://rasa-prod-jb.labs.jb.gg/webhooks/rest/webhook' : 'https://rasa-dev-jb.labs.jb.gg/webhooks/rest/webhook';
+
+export const authBaseUrl = isProduction ? 'https://account.jetbrains.com/oauth/login' : 'https://active.jetprofile-stgn.intellij.net/oauth/login';
+export const tokenEndpoint = isProduction ? 'https://oauth.account.jetbrains.com/oauth2/token' : 'https://public.staging.oauth.intservices.aws.intellij.net/oauth2/token';
+
 // const rasaEndpoint2 = 'https://rasa-dev.labs.jb.gg/webhooks/rest/webhook';
 const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=100, left=100';
 
-
 export const clientId = isProduction ? process.env.CLIENT_ID_PROD : process.env.CLIENT_ID_STAGE;
-// our stage
+
 // for local dev please use
 // export const redirectUri = 'http://localhost:9000/support';
 export const redirectUri = isProduction ? process.env.REDIRECT_URI_PROD
@@ -62,7 +60,7 @@ export const getAuthCode = async () => {
   };
 
   const queryString = new URLSearchParams(params).toString();
-  window.open(`${authBaseUrl1}?${queryString}`, 'popup', strWindowFeatures);
+  window.open(`${authBaseUrl}?${queryString}`, 'popup', strWindowFeatures);
 };
 
 export const exchangeTokenReq = async (code) => {
