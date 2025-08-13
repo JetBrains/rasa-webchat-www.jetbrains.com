@@ -369,7 +369,7 @@ ConnectedWidget.defaultProps = {
   tooltipPayload: null,
   tooltipDelay: 500,
   onWidgetEvent: {},
-  disableTooltips: true,
+  disableTooltips: false,
   mainColor: '',
   conversationBackgroundColor: '',
   userTextColor: '',
