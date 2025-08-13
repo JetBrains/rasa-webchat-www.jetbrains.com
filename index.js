@@ -196,6 +196,7 @@ export const rasaWebchatProDefaultTypes = {
   },
   tooltipPayload: null,
   tooltipDelay: 500,
+  disableTooltips: false,
   withRules: true,
   rules: null,
   triggerEventListenerUpdateRate: 500
