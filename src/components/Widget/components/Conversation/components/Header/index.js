@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 
 import close from 'assets/clear-button.svg';
+import closeIcon from '/assets/close.svg';
 import fullscreen from 'assets/fullscreen_button.svg';
 import fullscreenExit from 'assets/fullscreen_exit_button.svg';
 import ThemeContext from '../../../../ThemeContext';
@@ -50,8 +51,13 @@ const Header = ({
             </button>
           }
         </div>
-        <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
-        {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
+        <div className="rw-title-wrap">
+          <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
+          {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
+          <button className="rw-close-header-button" type="button" onClick={toggleChat}>
+            <img alt="" src={close} />
+          </button>
+        </div>
       </div>
     </div>);
 };
