@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 
 import close from 'assets/clear-button.svg';
+import refreshIcon from 'assets/refresh.svg';
 import fullscreen from 'assets/fullscreen_button.svg';
 import fullscreenExit from 'assets/fullscreen_exit_button.svg';
 import ThemeContext from '../../../../ThemeContext';
@@ -14,6 +15,7 @@ const Header = ({
   fullScreenMode,
   toggleFullScreen,
   toggleChat,
+  refreshSession,
   showCloseButton,
   showFullScreenButton,
   closeImage,
@@ -50,8 +52,13 @@ const Header = ({
             </button>
           }
         </div>
-        <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
-        {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
+        <div className="rw-title-wrap">
+          <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
+          {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
+          <button className="rw-close-header-button" type="button" onClick={refreshSession}>
+            <img alt="" src={refreshIcon} />
+          </button>
+        </div>
       </div>
     </div>);
 };
@@ -62,6 +69,7 @@ Header.propTypes = {
   fullScreenMode: PropTypes.bool,
   toggleFullScreen: PropTypes.func,
   toggleChat: PropTypes.func,
+  refreshSession: PropTypes.func,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
   closeImage: PropTypes.string,

@@ -25,6 +25,7 @@ const Conversation = (props) => {
       title={props.title}
       subtitle={props.subtitle}
       toggleChat={props.toggleChat}
+      refreshSession={props.refreshSession}
       toggleFullScreen={props.toggleFullScreen}
       fullScreenMode={props.fullScreenMode}
       showCloseButton={props.showCloseButton}
@@ -56,7 +57,8 @@ Conversation.propTypes = {
   closeImage: PropTypes.string,
   customComponent: PropTypes.func,
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
-  onAuthButtonClick: PropTypes.func
+  onAuthButtonClick: PropTypes.func,
+  refreshSession: PropTypes.func
 };
 
 export default Conversation;
