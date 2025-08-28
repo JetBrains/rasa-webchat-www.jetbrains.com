@@ -251,6 +251,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           key={socketKey}
           ref={ref}
           onAuthButtonClick={!isAuth ? logIn : null}
+          refreshSessoin={refreshSession}
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}

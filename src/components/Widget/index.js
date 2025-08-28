@@ -559,11 +559,18 @@ class Widget extends Component {
     event.target.message.value = '';
   }
 
+  refresh = () => {
+    const { socket } = this.props;
+    console.log('restart');
+    socket.emit('restart');
+  }
+
   render() {
     return (
       <WidgetLayout
         onAuthButtonClick={this.props.onAuthButtonClick}
         toggleChat={() => this.toggleConversation()}
+        refreshSession={this.refresh}
         toggleFullScreen={() => this.toggleFullScreen()}
         onSendMessage={event => this.handleMessageSubmit(event)}
         title={this.props.title}
@@ -610,6 +617,7 @@ Widget.propTypes = {
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   initPayload: PropTypes.string,
   profileAvatar: PropTypes.string,
+  refreshSession: PropTypes.func,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
   hideWhenNotConnected: PropTypes.bool,
@@ -652,6 +660,7 @@ Widget.defaultProps = {
   autoClearCache: false,
   displayUnreadCount: false,
   tooltipPayload: null,
+  refreshSessoin: null,
   inputTextFieldHint: 'Type a message...',
   oldUrl: '',
   disableTooltips: true,
