@@ -561,8 +561,9 @@ class Widget extends Component {
 
   refresh = () => {
     const { socket } = this.props;
-    console.log('restart');
-    socket.emit('restart');
+    const sessionId = this.getSessionId();
+    console.log('restart', socket, sessionId);
+    socket.emit('restart', { session_id: sessionId });
   }
 
   render() {
