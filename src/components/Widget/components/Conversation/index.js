@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import Header from './components/Header';
 import Messages from './components/Messages';
 import Sender from './components/Sender';
+import { RefreshPopup } from './components/RefreshPopup';
 import { AuthPlaceholder } from './components/AuthPlaceholder';
 import './style.scss';
 
 const Conversation = (props) => {
+  const [showRefreshPopup, setShowRefreshPopup] = useState(false);
+
   const content = <><Messages
     profileAvatar={props.profileAvatar}
     params={props.params}
@@ -21,11 +24,15 @@ const Conversation = (props) => {
 
 
   return (<div className="rw-conversation-container">
+    {showRefreshPopup ? <RefreshPopup
+      onRefresh={props.refreshSession}
+      onCancel={() => setShowRefreshPopup(false)}
+    /> : null}
     <Header
       title={props.title}
       subtitle={props.subtitle}
       toggleChat={props.toggleChat}
-      refreshSession={props.refreshSession}
+      refreshSession={() => setShowRefreshPopup(true)}
       toggleFullScreen={props.toggleFullScreen}
       fullScreenMode={props.fullScreenMode}
       showCloseButton={props.showCloseButton}
