@@ -20,6 +20,7 @@ import {
   connectServer,
   disconnectServer,
   pullSession,
+  clearMessages,
   newUnreadMessage,
   triggerMessageDelayed,
   triggerTooltipSent,
@@ -562,6 +563,7 @@ class Widget extends Component {
   refresh = () => {
     const { socket, customData } = this.props;
     const sessionId = this.getSessionId();
+    this.props.dispatch(clearMessages());
     console.log('restart', socket, this.props, sessionId, customData);
     socket.emit('user_uttered', { message: '/restart', customData, session_id: sessionId });
     socket.close();

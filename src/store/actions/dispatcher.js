@@ -93,6 +93,10 @@ export function dropMessages() {
   store.dispatch(actions.dropMessages());
 }
 
+export function clearMessages() {
+  store.dispatch(actions.clearMessages());
+}
+
 export function pullSession() {
   store.dispatch(actions.pullSession());
 }

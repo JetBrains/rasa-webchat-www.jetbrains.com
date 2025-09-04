@@ -23,9 +23,14 @@ const Conversation = (props) => {
   /></>;
 
 
+  const handleRefreshClick = () => {
+    props.refreshSession();
+    setShowRefreshPopup(false);
+  };
+
   return (<div className="rw-conversation-container">
     {showRefreshPopup ? <RefreshPopup
-      onRefresh={props.refreshSession}
+      onRefresh={handleRefreshClick}
       onCancel={() => setShowRefreshPopup(false)}
     /> : null}
     <Header
