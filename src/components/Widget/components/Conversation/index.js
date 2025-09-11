@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import Header from './components/Header';
 import Messages from './components/Messages';
 import Sender from './components/Sender';
+import { RefreshPopup } from './components/RefreshPopup';
 import { AuthPlaceholder } from './components/AuthPlaceholder';
 import './style.scss';
 
 const Conversation = (props) => {
+  const [showRefreshPopup, setShowRefreshPopup] = useState(false);
+
   const content = <><Messages
     profileAvatar={props.profileAvatar}
     params={props.params}
@@ -20,11 +23,21 @@ const Conversation = (props) => {
   /></>;
 
 
+  const handleRefreshClick = () => {
+    props.refreshSession();
+    setShowRefreshPopup(false);
+  };
+
   return (<div className="rw-conversation-container">
+    {showRefreshPopup ? <RefreshPopup
+      onRefresh={handleRefreshClick}
+      onCancel={() => setShowRefreshPopup(false)}
+    /> : null}
     <Header
       title={props.title}
       subtitle={props.subtitle}
       toggleChat={props.toggleChat}
+      refreshSession={() => setShowRefreshPopup(true)}
       toggleFullScreen={props.toggleFullScreen}
       fullScreenMode={props.fullScreenMode}
       showCloseButton={props.showCloseButton}
@@ -56,7 +69,8 @@ Conversation.propTypes = {
   closeImage: PropTypes.string,
   customComponent: PropTypes.func,
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
-  onAuthButtonClick: PropTypes.func
+  onAuthButtonClick: PropTypes.func,
+  refreshSession: PropTypes.func
 };
 
 export default Conversation;

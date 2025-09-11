@@ -20,6 +20,7 @@ import {
   connectServer,
   disconnectServer,
   pullSession,
+  clearMessages,
   newUnreadMessage,
   triggerMessageDelayed,
   triggerTooltipSent,
@@ -559,11 +560,21 @@ class Widget extends Component {
     event.target.message.value = '';
   }
 
+  refresh = () => {
+    const { socket, customData } = this.props;
+    const sessionId = this.getSessionId();
+    this.props.dispatch(clearMessages());
+    console.log('restart', socket, this.props, sessionId, customData);
+    socket.emit('user_uttered', { message: '/restart', customData, session_id: sessionId });
+    socket.close();
+  }
+
   render() {
     return (
       <WidgetLayout
         onAuthButtonClick={this.props.onAuthButtonClick}
         toggleChat={() => this.toggleConversation()}
+        refreshSession={this.refresh}
         toggleFullScreen={() => this.toggleFullScreen()}
         onSendMessage={event => this.handleMessageSubmit(event)}
         title={this.props.title}
@@ -610,6 +621,7 @@ Widget.propTypes = {
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   initPayload: PropTypes.string,
   profileAvatar: PropTypes.string,
+  refreshSession: PropTypes.func,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
   hideWhenNotConnected: PropTypes.bool,
@@ -652,6 +664,7 @@ Widget.defaultProps = {
   autoClearCache: false,
   displayUnreadCount: false,
   tooltipPayload: null,
+  refreshSessoin: null,
   inputTextFieldHint: 'Type a message...',
   oldUrl: '',
   disableTooltips: true,
