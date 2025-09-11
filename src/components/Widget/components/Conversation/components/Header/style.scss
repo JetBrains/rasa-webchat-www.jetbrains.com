@@ -32,7 +32,7 @@
   }
 
 
-  .#{$namespace}close-header-button {
+  .#{$namespace}header-button {
     background-color: transparent;
     border: none;
     cursor: pointer;
@@ -41,26 +41,17 @@
       width: 16px;
       height: 16px;
     }
-  }
 
-  .#{$namespace}title-wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 18px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .#{$namespace}close-header-button {
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-
-    img {
-      width: 16px;
-      height: 16px;
+    &_refresh img {
+      width: 24px;
+      height: 24px;
     }
   }
+
+.#{$namespace}header-buttons {
+  display: flex;
+  align-items: center;
+}
 
   .#{$namespace}header.#{$namespace}with-subtitle {
     height: 70px;
@@ -119,7 +110,7 @@
     font-family: $fontfamily;
     font-size: 14px;
   }
-}
+
 
 &.#{$namespace}widget-embedded {
   .#{$namespace}header {

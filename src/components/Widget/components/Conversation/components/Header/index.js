@@ -55,12 +55,14 @@ const Header = ({
         <div className="rw-title-wrap">
           <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
           {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
-          <button className="rw-close-header-button" type="button" onClick={refreshSession}>
-            <img alt="" src={refreshIcon} />
-          </button>
-          <button className="rw-close-header-button" type="button" onClick={toggleChat}>
-            <img alt="" src={close} />
-          </button>
+          <div className="rw-header-buttons">
+            <button className="rw-header-button rw-header-button_refresh" type="button" onClick={refreshSession}>
+              <img alt="" src={refreshIcon} />
+            </button>
+            <button className="rw-header-button" type="button" onClick={toggleChat}>
+              <img alt="" src={close} />
+            </button>
+          </div>
         </div>
       </div>
     </div>);
