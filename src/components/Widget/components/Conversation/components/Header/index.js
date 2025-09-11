@@ -58,6 +58,9 @@ const Header = ({
           <button className="rw-close-header-button" type="button" onClick={refreshSession}>
             <img alt="" src={refreshIcon} />
           </button>
+          <button className="rw-close-header-button" type="button" onClick={toggleChat}>
+            <img alt="" src={close} />
+          </button>
         </div>
       </div>
     </div>);
