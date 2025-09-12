@@ -10,7 +10,9 @@ import ThemeContext from '../src/components/Widget/ThemeContext';
 import {
   exchangeTokenReq,
   getAuthCode,
-  getIsTokenValid, refreshTokenReq,
+  getIsTokenValid,
+  refreshTokenReq,
+  getTokenExpirationTime,
   state
 } from './utils/auth-utils';
 
@@ -110,11 +112,67 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const instanceSocket = useRef(null);
   const store = useRef(null);
+  const refreshTimerRef = useRef(null);
   const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
   const [isAuth, setIsAuth] = useState(() => {
     const chatToken = localStorage.getItem(tokenKey);
     return getIsTokenValid(chatToken);
   });
+
+  const scheduleTokenRefresh = (token) => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+
+    if (!token) return;
+
+    const expirationTime = getTokenExpirationTime(token);
+    if (!expirationTime) return;
+
+    const currentTime = Date.now();
+    const timeUntilExpiration = expirationTime - currentTime;
+
+    // update up to 3 mins before expiration
+    // eslint-disable-next-line no-mixed-operators
+    const refreshTime = timeUntilExpiration - 3 * 60 * 1000;
+
+    // update immediately if it's less than a minute
+    const timeToRefresh = Math.max(refreshTime, 60 * 1000);
+
+
+    refreshTimerRef.current = setTimeout(() => {
+      const currentToken = localStorage.getItem(tokenKey);
+      if (!currentToken || !getIsTokenValid(currentToken)) {
+        return;
+      }
+
+      console.log('refreshing token');
+      const refreshToken = localStorage.getItem(tokenRefreshKey);
+      if (refreshToken) {
+        refreshTokenReq(refreshToken)
+          .then((data) => {
+            // eslint-disable-next-line camelcase
+            const { id_token, refresh_token } = data;
+            // eslint-disable-next-line camelcase
+            if (id_token) {
+              localStorage.setItem(tokenKey, id_token);
+              // eslint-disable-next-line camelcase
+              if (refresh_token) {
+                localStorage.setItem(tokenRefreshKey, refresh_token);
+              }
+              setToken(id_token);
+              console.log('token refreshed');
+              scheduleTokenRefresh(id_token);
+            }
+          })
+          .catch((err) => {
+            console.error(err)
+            setIsAuth(false);
+          });
+      }
+    }, timeToRefresh);
+  };
 
   const checkAndRefreshToken = (resetAuth) => {
     if (isAuth) return;
@@ -133,6 +191,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           localStorage.setItem(tokenRefreshKey, refresh_token);
           setToken(id_token);
           setIsAuth(true);
+          scheduleTokenRefresh(id_token);
         })
         .catch((err) => {
           if (resetAuth) {
@@ -147,7 +206,18 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   useEffect(() => {
     checkAndRefreshToken();
-  }, [checkAndRefreshToken]);
+
+    const chatToken = localStorage.getItem(tokenKey);
+    if (chatToken && getIsTokenValid(chatToken)) {
+      scheduleTokenRefresh(chatToken);
+    }
+  }, []);
+
+  useEffect(() => () => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+  }, []);
 
   const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
@@ -170,6 +240,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
         localStorage.setItem(tokenRefreshKey, refresh_token);
         setToken(id_token);
         setIsAuth(true);
+        scheduleTokenRefresh(id_token);
       };
 
       getChatToken();
