@@ -20,7 +20,7 @@ const tokenKey = 'chat_token';
 const tokenRefreshKey = 'chat_refresh_token';
 
 const isProduction = process.env.ENVIRONMENT === 'production';
-const envSocketUrl = isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-dev-jb.labs.jb.gg';
+const envSocketUrl = isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-stage-jb.labs.jb.gg';
 
 const socketTemplate = {
   isInitialized: () => false,
