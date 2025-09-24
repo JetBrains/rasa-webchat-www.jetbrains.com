@@ -59,6 +59,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
       this.onConnectionError = onConnectionError;
     }
 
+    updateProtocolOptions(newProtocolOptions) {
+      this.protocolOptions = newProtocolOptions;
+    }
+
     isInitialized() {
       return this.socket !== null && this.socket.connected;
     }
@@ -296,43 +300,25 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
         setSocketKey(`authenticated-${instanceSocket.current.marker}`);
       } else {
-        // Token refresh - need to recreate socket for Authorization header, but preserve session_id
-        console.log('Recreating socket with refreshed token, preserving session_id');
+        // Token refresh - update customData only to avoid chat blinking
+        console.log('Updating socket customData with refreshed token (no reconnection)');
 
-        // Save current session_id before closing socket
-        const currentSessionId = instanceSocket.current.sessionId;
-        console.log('Preserving session_id:', currentSessionId);
+        // Update customData in all places
+        instanceSocket.current.customData = newCustomData;
+        if (instanceSocket.current.socket) {
+          instanceSocket.current.socket.customData = newCustomData;
+        }
 
-        // Close existing socket
-        instanceSocket.current.close();
+        // Update store socket reference to use new customData
+        if (store.current && store.current.socket) {
+          store.current.socket.customData = newCustomData;
+        }
 
+        // Update protocolOptions for next reconnection (Authorization header)
         const newProtocolOptions = { ...props.protocolOptions, token };
+        instanceSocket.current.updateProtocolOptions(newProtocolOptions);
 
-        instanceSocket.current = new Socket(
-          envSocketUrl,
-          newCustomData,
-          props.socketPath,
-          props.protocol,
-          newProtocolOptions,
-          props.onSocketEvent,
-          onConnectionError
-        );
-
-        // Store the preserved session_id to be used in session_request
-        instanceSocket.current.preservedSessionId = currentSessionId;
-
-        // Recreate store with the new socket
-        store.current = initStore(
-          props.connectingText,
-          instanceSocket.current,
-          storage,
-          props.docViewer,
-          props.onWidgetEvent
-        );
-        store.current.socketRef = instanceSocket.current.marker;
-        store.current.socket = instanceSocket.current;
-
-        setSocketKey(`token-refresh-${instanceSocket.current.marker}`);
+        console.log('Token updated in customData, Authorization header will update on next reconnection');
       }
     }
   }, [isAuth, token]);
