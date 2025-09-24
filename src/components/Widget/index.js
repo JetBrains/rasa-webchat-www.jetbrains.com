@@ -50,6 +50,7 @@ class Widget extends Component {
     this.onGoingMessageDelay = false;
     this.sendMessage = this.sendMessage.bind(this);
     this.getSessionId = this.getSessionId.bind(this);
+    this.getSessionIdWithFallback = this.getSessionIdWithFallback.bind(this);
     this.intervalId = null;
     this.eventListenerCleaner = () => { };
   }
@@ -99,6 +100,25 @@ class Widget extends Component {
     // Get the local session, check if there is an existing session_id
     const localSession = getLocalSession(storage, SESSION_NAME);
     const localId = localSession ? localSession.session_id : null;
+    return localId;
+  }
+
+  getSessionIdWithFallback() {
+    const { storage, socket } = this.props;
+    // Get the local session, check if there is an existing session_id
+    const localSession = getLocalSession(storage, SESSION_NAME);
+    let localId = localSession ? localSession.session_id : null;
+
+    // If no sessionId in localStorage, try to get it from socket (same logic as in store.js)
+    if (!localId && socket && socket.sessionId) {
+      localId = socket.sessionId;
+    }
+
+    // If still no sessionId, check for preserved session_id (during token refresh)
+    if (!localId && socket && socket.preservedSessionId) {
+      localId = socket.preservedSessionId;
+    }
+
     return localId;
   }
   sendMessage(payload, text = '', when = 'always', tooltipSelector = false) {
@@ -358,7 +378,15 @@ class Widget extends Component {
 
       // Request a session from server
       socket.on('connect', () => {
-        const localId = this.getSessionId();
+        // Try to get existing session_id, including preserved one during token refresh
+        let localId = this.getSessionId();
+
+        // If no session in localStorage but socket has preservedSessionId, use it
+        if (!localId && socket.preservedSessionId) {
+          localId = socket.preservedSessionId;
+          console.log('Using preserved session_id for token refresh:', localId);
+        }
+
         socket.emit('session_request', { session_id: localId });
       });
 
@@ -377,17 +405,23 @@ class Widget extends Component {
         If the localId is null or different from the remote_id,
         start a new session.
         */
-        const localId = this.getSessionId();
-        if (localId !== remoteId) {
-          // storage.clear();
-          // Store the received session_id to storage
+        let localId = this.getSessionId();
 
+        // If we were trying to preserve a session_id during token refresh
+        if (!localId && socket.preservedSessionId) {
+          localId = socket.preservedSessionId;
+          console.log(`Token refresh: requested preserved session_id ${localId}, server returned ${remoteId}`);
+        }
+
+        if (localId !== remoteId) {
+          // Store the received session_id to storage
           storeLocalSession(storage, SESSION_NAME, remoteId);
           dispatch(pullSession());
           if (sendInitPayload) {
             this.trySendInitPayload();
           }
         } else {
+          console.log('Session_id preserved successfully during token refresh');
           // If this is an existing session, it's possible we changed pages and want to send a
           // user message when we land.
           const nextMessage = window.localStorage.getItem(NEXT_MESSAGE);
@@ -401,7 +435,14 @@ class Widget extends Component {
               dispatch(emitUserMessage(message));
             }
           }
-        } if (connectOn === 'mount' && tooltipPayload) {
+        }
+
+        // Clear preserved session_id after use
+        if (socket.preservedSessionId) {
+          delete socket.preservedSessionId;
+        }
+
+        if (connectOn === 'mount' && tooltipPayload) {
           this.tooltipTimeout = setTimeout(() => {
             this.trySendTooltipPayload();
           }, parseInt(tooltipDelay, 10));
@@ -562,7 +603,8 @@ class Widget extends Component {
 
   refresh = () => {
     const { socket, customData } = this.props;
-    const sessionId = this.getSessionId();
+    const sessionId = this.getSessionIdWithFallback();
+    console.log('sessionId', sessionId);
     this.props.dispatch(clearMessages());
     socket.emit('user_uttered', { message: '/restart', customData, session_id: sessionId });
   }

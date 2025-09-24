@@ -91,6 +91,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
         this.protocolOptions,
         this.onConnectionError
       );
+
+
+      this.socket.customData = this.customData;
+
       // We set a function on session_confirm here so as to avoid any race condition
       // this will be called first and will set those parameters for everyone to use.
       this.socket.on('session_confirm', (sessionObject) => {
@@ -135,7 +139,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
     // update up to 3 mins before expiration
     // eslint-disable-next-line no-mixed-operators
-    const refreshTime = timeUntilExpiration - 3 * 60 * 1000;
+    const refreshTime = timeUntilExpiration - 57 * 60 * 1000;
 
     // update immediately if it's less than a minute
     const timeToRefresh = Math.max(refreshTime, 60 * 1000);
@@ -259,31 +263,77 @@ const ConnectedWidget = forwardRef((props, ref) => {
   };
 
   useEffect(() => {
-    if (isAuth && token && instanceSocket.current && instanceSocket.current.isDummy) {
-      instanceSocket.current = new Socket(
-        // props.socketUrl,
-        isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-dev-jb.labs.jb.gg',
-        // 'https://srsasa-dev-jb.labs.jb.gg',
-        { ...props.customData, auth_header: token },
-        props.socketPath,
-        props.protocol,
-        { ...props.protocolOptions, token },
-        props.onSocketEvent,
-        onConnectionError
-      );
+    if (isAuth && token && instanceSocket.current) {
+      const newCustomData = { ...props.customData, auth_header: token };
 
-      // Recreate store with the new socket
-      store.current = initStore(
-        props.connectingText,
-        instanceSocket.current,
-        storage,
-        props.docViewer,
-        props.onWidgetEvent
-      );
-      store.current.socketRef = instanceSocket.current.marker;
-      store.current.socket = instanceSocket.current;
+      if (instanceSocket.current.isDummy) {
+        // First time creating socket after login
+        console.log('Creating initial socket with token');
 
-      setSocketKey(`authenticated-${instanceSocket.current.marker}`);
+        const newProtocolOptions = { ...props.protocolOptions, token };
+
+        instanceSocket.current = new Socket(
+          // props.socketUrl,
+          isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-dev-jb.labs.jb.gg',
+          newCustomData,
+          props.socketPath,
+          props.protocol,
+          newProtocolOptions,
+          props.onSocketEvent,
+          onConnectionError
+        );
+
+        // Recreate store with the new socket
+        store.current = initStore(
+          props.connectingText,
+          instanceSocket.current,
+          storage,
+          props.docViewer,
+          props.onWidgetEvent
+        );
+        store.current.socketRef = instanceSocket.current.marker;
+        store.current.socket = instanceSocket.current;
+
+        setSocketKey(`authenticated-${instanceSocket.current.marker}`);
+      } else {
+        // Token refresh - need to recreate socket for Authorization header, but preserve session_id
+        console.log('Recreating socket with refreshed token, preserving session_id');
+
+        // Save current session_id before closing socket
+        const currentSessionId = instanceSocket.current.sessionId;
+        console.log('Preserving session_id:', currentSessionId);
+
+        // Close existing socket
+        instanceSocket.current.close();
+
+        const newProtocolOptions = { ...props.protocolOptions, token };
+
+        instanceSocket.current = new Socket(
+          isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-dev-jb.labs.jb.gg',
+          newCustomData,
+          props.socketPath,
+          props.protocol,
+          newProtocolOptions,
+          props.onSocketEvent,
+          onConnectionError
+        );
+
+        // Store the preserved session_id to be used in session_request
+        instanceSocket.current.preservedSessionId = currentSessionId;
+
+        // Recreate store with the new socket
+        store.current = initStore(
+          props.connectingText,
+          instanceSocket.current,
+          storage,
+          props.docViewer,
+          props.onWidgetEvent
+        );
+        store.current.socketRef = instanceSocket.current.marker;
+        store.current.socket = instanceSocket.current;
+
+        setSocketKey(`token-refresh-${instanceSocket.current.marker}`);
+      }
     }
   }, [isAuth, token]);
 
