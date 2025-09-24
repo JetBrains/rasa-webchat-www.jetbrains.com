@@ -124,23 +124,22 @@ const ConnectedWidget = forwardRef((props, ref) => {
     return getIsTokenValid(chatToken);
   });
 
-  const scheduleTokenRefresh = (token) => {
+  const scheduleTokenRefresh = (rToken) => {
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = null;
     }
 
-    if (!token) return;
+    if (!rToken) return;
 
-    const expirationTime = getTokenExpirationTime(token);
+    const expirationTime = getTokenExpirationTime(rToken);
     if (!expirationTime) return;
 
     const currentTime = Date.now();
     const timeUntilExpiration = expirationTime - currentTime;
 
-    // update up to 3 mins before expiration
-    // eslint-disable-next-line no-mixed-operators
-    const refreshTime = timeUntilExpiration - 57 * 60 * 1000;
+    // update 5 mins before expiration
+    const refreshTime = timeUntilExpiration - (5 * 60 * 1000);
 
     // update immediately if it's less than a minute
     const timeToRefresh = Math.max(refreshTime, 60 * 1000);
@@ -172,7 +171,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
             }
           })
           .catch((err) => {
-            console.error(err)
+            console.error(err);
             setIsAuth(false);
           });
       }
