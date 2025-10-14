@@ -10,7 +10,9 @@ import ThemeContext from '../src/components/Widget/ThemeContext';
 import {
   exchangeTokenReq,
   getAuthCode,
-  getIsTokenValid, refreshTokenReq,
+  getIsTokenValid,
+  refreshTokenReq,
+  getTokenExpirationTime,
   state
 } from './utils/auth-utils';
 
@@ -18,6 +20,7 @@ const tokenKey = 'chat_token';
 const tokenRefreshKey = 'chat_refresh_token';
 
 const isProduction = process.env.ENVIRONMENT === 'production';
+const envSocketUrl = isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-stage-jb.labs.jb.gg';
 
 const socketTemplate = {
   isInitialized: () => false,
@@ -56,6 +59,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
       this.onConnectionError = onConnectionError;
     }
 
+    updateProtocolOptions(newProtocolOptions) {
+      this.protocolOptions = newProtocolOptions;
+    }
+
     isInitialized() {
       return this.socket !== null && this.socket.connected;
     }
@@ -89,6 +96,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
         this.protocolOptions,
         this.onConnectionError
       );
+
+
+      this.socket.customData = this.customData;
+
       // We set a function on session_confirm here so as to avoid any race condition
       // this will be called first and will set those parameters for everyone to use.
       this.socket.on('session_confirm', (sessionObject) => {
@@ -110,11 +121,66 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const instanceSocket = useRef(null);
   const store = useRef(null);
+  const refreshTimerRef = useRef(null);
   const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
   const [isAuth, setIsAuth] = useState(() => {
     const chatToken = localStorage.getItem(tokenKey);
     return getIsTokenValid(chatToken);
   });
+
+  const scheduleTokenRefresh = (rToken) => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+
+    if (!rToken) return;
+
+    const expirationTime = getTokenExpirationTime(rToken);
+    if (!expirationTime) return;
+
+    const currentTime = Date.now();
+    const timeUntilExpiration = expirationTime - currentTime;
+
+    // update 5 mins before expiration
+    const refreshTime = timeUntilExpiration - (5 * 60 * 1000);
+
+    // update immediately if it's less than a minute
+    const timeToRefresh = Math.max(refreshTime, 60 * 1000);
+
+
+    refreshTimerRef.current = setTimeout(() => {
+      const currentToken = localStorage.getItem(tokenKey);
+      if (!currentToken || !getIsTokenValid(currentToken)) {
+        return;
+      }
+
+      console.log('refreshing token');
+      const refreshToken = localStorage.getItem(tokenRefreshKey);
+      if (refreshToken) {
+        refreshTokenReq(refreshToken)
+          .then((data) => {
+            // eslint-disable-next-line camelcase
+            const { id_token, refresh_token } = data;
+            // eslint-disable-next-line camelcase
+            if (id_token) {
+              localStorage.setItem(tokenKey, id_token);
+              // eslint-disable-next-line camelcase
+              if (refresh_token) {
+                localStorage.setItem(tokenRefreshKey, refresh_token);
+              }
+              setToken(id_token);
+              console.log('token refreshed');
+              scheduleTokenRefresh(id_token);
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            setIsAuth(false);
+          });
+      }
+    }, timeToRefresh);
+  };
 
   const checkAndRefreshToken = (resetAuth) => {
     if (isAuth) return;
@@ -133,6 +199,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           localStorage.setItem(tokenRefreshKey, refresh_token);
           setToken(id_token);
           setIsAuth(true);
+          scheduleTokenRefresh(id_token);
         })
         .catch((err) => {
           if (resetAuth) {
@@ -147,7 +214,18 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   useEffect(() => {
     checkAndRefreshToken();
-  }, [checkAndRefreshToken]);
+
+    const chatToken = localStorage.getItem(tokenKey);
+    if (chatToken && getIsTokenValid(chatToken)) {
+      scheduleTokenRefresh(chatToken);
+    }
+  }, []);
+
+  useEffect(() => () => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+  }, []);
 
   const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
@@ -170,6 +248,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
         localStorage.setItem(tokenRefreshKey, refresh_token);
         setToken(id_token);
         setIsAuth(true);
+        scheduleTokenRefresh(id_token);
       };
 
       getChatToken();
@@ -188,31 +267,59 @@ const ConnectedWidget = forwardRef((props, ref) => {
   };
 
   useEffect(() => {
-    if (isAuth && token && instanceSocket.current && instanceSocket.current.isDummy) {
-      instanceSocket.current = new Socket(
-        // props.socketUrl,
-        isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-dev-jb.labs.jb.gg',
-        // 'https://srsasa-dev-jb.labs.jb.gg',
-        { ...props.customData, auth_header: token },
-        props.socketPath,
-        props.protocol,
-        { ...props.protocolOptions, token },
-        props.onSocketEvent,
-        onConnectionError
-      );
+    if (isAuth && token && instanceSocket.current) {
+      const newCustomData = { ...props.customData, auth_header: token };
 
-      // Recreate store with the new socket
-      store.current = initStore(
-        props.connectingText,
-        instanceSocket.current,
-        storage,
-        props.docViewer,
-        props.onWidgetEvent
-      );
-      store.current.socketRef = instanceSocket.current.marker;
-      store.current.socket = instanceSocket.current;
+      if (instanceSocket.current.isDummy) {
+        // First time creating socket after login
+        console.log('Creating initial socket with token');
 
-      setSocketKey(`authenticated-${instanceSocket.current.marker}`);
+        const newProtocolOptions = { ...props.protocolOptions, token };
+
+        instanceSocket.current = new Socket(
+          // props.socketUrl,
+          envSocketUrl,
+          newCustomData,
+          props.socketPath,
+          props.protocol,
+          newProtocolOptions,
+          props.onSocketEvent,
+          onConnectionError
+        );
+
+        // Recreate store with the new socket
+        store.current = initStore(
+          props.connectingText,
+          instanceSocket.current,
+          storage,
+          props.docViewer,
+          props.onWidgetEvent
+        );
+        store.current.socketRef = instanceSocket.current.marker;
+        store.current.socket = instanceSocket.current;
+
+        setSocketKey(`authenticated-${instanceSocket.current.marker}`);
+      } else {
+        // Token refresh - update customData only to avoid chat blinking
+        console.log('Updating socket customData with refreshed token (no reconnection)');
+
+        // Update customData in all places
+        instanceSocket.current.customData = newCustomData;
+        if (instanceSocket.current.socket) {
+          instanceSocket.current.socket.customData = newCustomData;
+        }
+
+        // Update store socket reference to use new customData
+        if (store.current && store.current.socket) {
+          store.current.socket.customData = newCustomData;
+        }
+
+        // Update protocolOptions for next reconnection (Authorization header)
+        const newProtocolOptions = { ...props.protocolOptions, token };
+        instanceSocket.current.updateProtocolOptions(newProtocolOptions);
+
+        console.log('Token updated in customData, Authorization header will update on next reconnection');
+      }
     }
   }, [isAuth, token]);
 

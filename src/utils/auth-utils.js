@@ -175,3 +175,16 @@ export const getEmailFromToken = (token) => {
   }
 };
 
+export const getTokenExpirationTime = (token) => {
+  if (!token) return null;
+
+  try {
+    const payload = getTokenPayload(token);
+    const { exp } = JSON.parse(payload) || {};
+
+    return exp ? exp * 1000 : null;
+  } catch (e) {
+    return null;
+  }
+};
+
