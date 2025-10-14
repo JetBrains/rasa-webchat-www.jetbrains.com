@@ -14,6 +14,36 @@ yarn build
 After a build you can find a file in `/lib/index.js`
 
 
+## deploy
+
+- run `build-stage` for the build with stage env variables
+or
+- run `build-prod` for the build with prod env variables
+- in /lib folder you'll find `index.js` file with the widget code
+- put the file on CDN and use in your project:
+
+```
+const script = document.createElement('script');
+script.src = `CDN_CHAT_SRC`;
+script.async = true;
+
+    script.onload = () => {
+      if (window.WebChat) {
+        window.WebChat.default(
+          {
+            customData: { language: 'en' },
+            socketUrl: YOUR_SOCKET_URL
+          },
+          null
+        );
+      } else {
+        console.error('WebChat is not available on window.');
+      }
+    };
+
+    document.head.appendChild(script);
+```
+
 
 <p align="center">
 
