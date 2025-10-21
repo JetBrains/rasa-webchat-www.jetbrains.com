@@ -1,23 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <title>Botfront - Web Chat</title>
+  <title>Botfront - Web Chat</title>
   <script>
-      const load = () => {
-        if (!WebChat) setTimeout(load, 100);
-        if (WebChat) WebChat.default({
-          customData:{language:"en"},
-          // our real websocket url
-          socketUrl:"https://rasa-dev.labs.jb.gg",
-          withRules: true,
+    // Token validation helper (simplified version from auth-utils)
+    const isTokenValid = (token) => {
+      if (!token) return false;
+      try {
+        const payload = token.split('.')[1];
+        if (!payload) return false;
+        const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        const now = Date.now() / 1000;
+        return decoded.exp && decoded.exp > now;
+      } catch (e) {
+        return false;
+      }
+    };
+
+    const load = () => {
+      if (!WebChat) setTimeout(load, 100);
+      if (WebChat) {
+        const token = localStorage.getItem('chat_token');
+        const hasValidToken = isTokenValid(token);
+
+        console.log('🔍 Token check:', hasValidToken ? 'Valid token found' : 'No valid token');
+
+        WebChat.default({
+          customData: {
+            language: "en",
+            ...(hasValidToken && { auth_header: token })
+          },
+          socketUrl: "https://rasa-stage-jb.labs.jb.gg",
+          // Підключаємося відразу якщо є токен, інакше чекаємо відкриття
+          connectOn: hasValidToken ? 'mount' : 'open',
+          // Показуємо віджет тільки якщо є токен або при відкритті
+          hideWhenNotConnected: !hasValidToken,
+          // Rules працюють тільки з connectOn: 'mount'
+          withRules: hasValidToken,
         });
       }
-      setTimeout(load, 200);
+    }
+    setTimeout(load, 200);
   </script>
 </head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <body style="background: black;">
-<!-- <body style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/4/42/Main_menu_of_Wikipedia.png);"> -->
+  <!-- <body style="background-image: url(https://upload.wikimedia.org/wikipedia/commons/4/42/Main_menu_of_Wikipedia.png);"> -->
   <a href="#" onclick="WebChat.send('/chitchat.greet')">Send chitchat.greet without text</a>
   <br />
   <a href="#" onclick="WebChat.send('/chitchat.greet', 'salut')">Send chitchat.greet with text</a>
@@ -25,8 +55,8 @@
   <span style="height: 400px; display: block;">test</span>
   <span style="height: 400px; display: block;">test</span>
   <h1 class="test"> test</h1>
-<button class="my-button" style="margin-left: 450px"> MY BUTTON</button>
-  <script src="index.js"  type="text/javascript"></script>
+  <button class="my-button" style="margin-left: 450px"> MY BUTTON</button>
+  <script src="index.js" type="text/javascript"></script>
   <div style="width: 400px; height: 2000px; border: 3px solid lightsalmon;" id="webchat" />
 </body>
 

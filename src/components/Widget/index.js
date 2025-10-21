@@ -361,7 +361,8 @@ class Widget extends Component {
       initialized,
       connectOn,
       tooltipPayload,
-      tooltipDelay
+      tooltipDelay,
+      customData
     } = this.props;
     if (!socket.isInitialized()) {
       socket.createSocket();
@@ -387,7 +388,13 @@ class Widget extends Component {
           console.log('Using preserved session_id for token refresh:', localId);
         }
 
-        socket.emit('session_request', { session_id: localId });
+        console.log('📤 Sending session_request with:', {
+          session_id: localId,
+          hasAuth: !!customData?.auth_header,
+          socketId: socket.socket?.id
+        });
+        
+        socket.emit('session_request', { session_id: localId, customData });
       });
 
       // When session_confirm is received from the server:
@@ -601,12 +608,37 @@ class Widget extends Component {
     event.target.message.value = '';
   }
 
+
   refresh = () => {
-    const { socket, customData } = this.props;
+    const { socket, customData, storage } = this.props;
     const sessionId = this.getSessionIdWithFallback();
-    console.log('sessionId', sessionId);
+
+    console.log('=== SESSION RESTART ===');
+    console.log('Session ID (must not change):', sessionId);
+    console.log('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
+    console.log('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
+
+    // Remove session_id from customData if it exists to avoid duplication
+    const cleanCustomData = { ...customData };
+    delete cleanCustomData.session_id;
+
+    console.log('Cleaned customData:', cleanCustomData);
+
+    // CRITICAL: Preserve session_id for reconnect after restart
+    if (sessionId && socket) {
+      socket.preservedSessionId = sessionId;
+      console.log('Preserved session_id for potential reconnect:', sessionId);
+    }
+
     this.props.dispatch(clearMessages());
-    socket.emit('user_uttered', { message: '/restart', customData, session_id: sessionId });
+    socket.emit('user_uttered', {
+      message: '/restart',
+      customData: cleanCustomData,
+      session_id: sessionId
+    });
+
+    console.log('Restart payload sent with session_id:', sessionId);
+    console.log('=== END SESSION RESTART ===');
   }
 
   render() {
