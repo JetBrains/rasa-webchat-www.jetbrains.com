@@ -31,7 +31,8 @@ import {
   changeOldUrl,
   setDomHighlight,
   evalUrl,
-  setCustomCss
+  setCustomCss,
+  setFirstChatStarted
 } from 'actions';
 import { safeQuerySelectorAll } from 'utils/dom';
 import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
@@ -114,6 +115,8 @@ class Widget extends Component {
           dispatch(closeChat());
           showTooltip(true);
         }
+        // Mark that first chat has started
+        dispatch(setFirstChatStarted());
       };
       if (when === 'always') {
         send();
@@ -555,6 +558,8 @@ class Widget extends Component {
       const result = userUttered.replace(/(?:start[_]?flows?|set[_]?slots?)\([^)]*\)/gi, '');
       this.props.dispatch(addUserMessage(result));
       this.props.dispatch(emitUserMessage(result));
+      // Mark that first chat has started
+      this.props.dispatch(setFirstChatStarted());
     }
     event.target.message.value = '';
   }
@@ -586,6 +591,7 @@ class Widget extends Component {
         displayUnreadCount={this.props.displayUnreadCount}
         showMessageDate={this.props.showMessageDate}
         tooltipPayload={this.props.tooltipPayload}
+        firstChatStarted={this.props.firstChatStarted}
       />
     );
   }
@@ -601,7 +607,8 @@ const mapStateToProps = state => ({
   oldUrl: state.behavior.get('oldUrl'),
   pageChangeCallbacks: state.behavior.get('pageChangeCallbacks'),
   domHighlight: state.metadata.get('domHighlight'),
-  messages: state.messages
+  messages: state.messages,
+  firstChatStarted: state.behavior.get('firstChatStarted')
 });
 
 Widget.propTypes = {
@@ -641,7 +648,8 @@ Widget.propTypes = {
   defaultHighlightCss: PropTypes.string,
   defaultHighlightClassname: PropTypes.string,
   messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map),
-  onAuthButtonClick: PropTypes.func
+  onAuthButtonClick: PropTypes.func,
+  firstChatStarted: PropTypes.bool
 };
 
 Widget.defaultProps = {

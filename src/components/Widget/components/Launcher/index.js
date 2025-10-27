@@ -17,6 +17,7 @@ import openLauncher from 'assets/launcher_button.svg';
 import closeIcon from 'assets/clear-button-grey.svg';
 import close from 'assets/clear-button.svg';
 import Badge from './components/Badge';
+import DiscoveryTooltip from './components/DiscoveryTooltip';
 import { safeQuerySelectorAll } from 'utils/dom';
 import './style.scss';
 import ThemeContext from '../../ThemeContext';
@@ -35,9 +36,11 @@ const Launcher = ({
   closeTooltip,
   lastUserMessage,
   domHighlight,
-  sendPayload
+  sendPayload,
+  firstChatStarted
 }) => {
   const { mainColor, assistBackgoundColor } = useContext(ThemeContext);
+  const [isHovered, setIsHovered] = useState(false);
 
   const [referenceElement, setReferenceElement] = useState(null);
 
@@ -207,18 +210,30 @@ const Launcher = ({
   );
 
   return (
-    <button type="button" style={{ backgroundColor: mainColor }} className={className.join(' ')} onClick={toggle}>
-      <Badge badge={badge} />
-      {isChatOpen ? (
-        <img
-          src={closeImage || close}
-          className={`rw-close-launcher ${closeImage ? '' : 'rw-default'}`}
-          alt=""
-        />
-      ) : (
-        renderOpenLauncherImage()
+    <div className="rw-launcher-wrapper">
+      <button 
+        type="button" 
+        style={{ backgroundColor: mainColor }} 
+        className={className.join(' ')} 
+        onClick={toggle}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <Badge badge={badge} />
+        {isChatOpen ? (
+          <img
+            src={closeImage || close}
+            className={`rw-close-launcher ${closeImage ? '' : 'rw-default'}`}
+            alt=""
+          />
+        ) : (
+          renderOpenLauncherImage()
+        )}
+      </button>
+      {!isChatOpen && (
+        <DiscoveryTooltip isHovered={isHovered} firstChatStarted={firstChatStarted} />
       )}
-    </button>
+    </div>
   );
 };
 
@@ -234,7 +249,8 @@ Launcher.propTypes = {
   showTooltip: PropTypes.bool,
   lastUserMessage: PropTypes.oneOfType([ImmutablePropTypes.map, PropTypes.bool]),
   domHighlight: PropTypes.shape({}),
-  lastMessages: PropTypes.arrayOf(ImmutablePropTypes.map)
+  lastMessages: PropTypes.arrayOf(ImmutablePropTypes.map),
+  firstChatStarted: PropTypes.bool
 };
 
 const mapStateToProps = state => ({

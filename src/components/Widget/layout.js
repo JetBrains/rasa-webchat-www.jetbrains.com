@@ -53,6 +53,7 @@ const WidgetLayout = (props) => {
         closeImage={props.closeImage}
         displayUnreadCount={props.displayUnreadCount}
         tooltipPayload={props.tooltipPayload}
+        firstChatStarted={props.firstChatStarted}
       />
     )}
   </div>);
@@ -92,7 +93,8 @@ WidgetLayout.propTypes = {
   displayUnreadCount: PropTypes.bool,
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
   tooltipPayload: PropTypes.string,
-  onAuthButtonClick: PropTypes.func
+  onAuthButtonClick: PropTypes.func,
+  firstChatStarted: PropTypes.bool
 };
 
 export default connect(mapStateToProps)(WidgetLayout);
