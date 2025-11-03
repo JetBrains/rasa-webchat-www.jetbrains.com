@@ -3,7 +3,6 @@ import logger from './utils/logger';
 
 export default function (socketUrl, customData, path, protocolOptions, onError) {
   const options = path ? { path } : {};
-  options.transports = ['websocket'];
 
   // Pass customData in Socket.IO connection options so it's sent during handshake
   // Rasa expects token in customData.auth_header (via metadata_key: customData config)
