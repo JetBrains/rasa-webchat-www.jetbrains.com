@@ -1,7 +1,9 @@
 import io from 'socket.io-client';
+import logger from './utils/logger';
 
 export default function (socketUrl, customData, path, protocolOptions, onError) {
   const options = path ? { path } : {};
+  options.transports = ['websocket'];
 
   // Pass customData in Socket.IO connection options so it's sent during handshake
   // Rasa expects token in customData.auth_header (via metadata_key: customData config)
@@ -29,21 +31,21 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
     }
   }
 
-  console.log('Socket.IO: Creating connection to', socketUrl);
-  console.log('Socket.IO: Token will be sent via auth options and extraHeaders');
-  console.log('Socket.IO: customData:', customData);
-  console.log('Socket.IO: options:', options);
+  logger.debug('Socket.IO: Creating connection to', socketUrl);
+  logger.debug('Socket.IO: Token will be sent via auth options and extraHeaders');
+  logger.debug('Socket.IO: customData:', customData);
+  logger.debug('Socket.IO: options:', options);
 
   // CRITICAL: Close any existing managers for this URL to prevent duplicates
   if (typeof window !== 'undefined' && window.io && window.io.managers) {
     const managerKey = socketUrl;
     if (window.io.managers[managerKey]) {
-      console.log('🧹 Closing existing manager for:', managerKey);
+      logger.debug('🧹 Closing existing manager for:', managerKey);
       try {
         window.io.managers[managerKey].close();
         delete window.io.managers[managerKey];
       } catch (e) {
-        console.error('Error closing manager:', e);
+        logger.error('Error closing manager:', e);
       }
     }
   }
@@ -53,8 +55,8 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   // Add method to update auth headers for token refresh (Socket.IO v4 compatible)
   socket.updateAuthHeaders = function(newToken) {
     if (newToken && this.io) {
-      console.log('🔧 Socket.IO v4: Updating auth headers with new token');
-      console.log('🔧 NEW Authorization header:', `Bearer ${newToken.substring(0, 30)}...`);
+      logger.debug('🔧 Socket.IO v4: Updating auth headers with new token');
+      logger.debug('🔧 NEW Authorization header:', `Bearer ${newToken.substring(0, 30)}...`);
       
       // Socket.IO v4: Update auth in manager
       if (this.auth) {
@@ -82,57 +84,57 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
         this.io.opts.auth.auth_header = newToken;
       }
       
-      console.log('✅ Socket.IO v4: Auth headers updated successfully');
+      logger.info('✅ Socket.IO v4: Auth headers updated successfully');
     }
   };
 
   // Log transport changes
   socket.io.on('reconnect_attempt', () => {
-    console.log('Socket.IO: Reconnect attempt');
+    logger.debug('Socket.IO: Reconnect attempt');
   });
 
   socket.io.on('reconnect', () => {
-    console.log('Socket.IO: Reconnected successfully');
+    logger.info('Socket.IO: Reconnected successfully');
     
     // Check if we have updated customData and apply it
     if (socket.customData && socket.customData.auth_header) {
-      console.log('Socket.IO: Applying updated customData after reconnection');
+      logger.debug('Socket.IO: Applying updated customData after reconnection');
       socket.updateAuthHeaders(socket.customData.auth_header);
     }
   });
 
   socket.on('connect', () => {
-    console.log(`Socket.IO: Connected with socket.id: ${socket.id}`);
-    console.log(`Socket.IO: Transport: ${socket.io.engine.transport.name}`);
+    logger.info(`Socket.IO: Connected with socket.id: ${socket.id}`);
+    logger.debug(`Socket.IO: Transport: ${socket.io.engine.transport.name}`);
     socket.customData = customData;
-    console.log('Socket.IO: customData set on socket');
+    logger.debug('Socket.IO: customData set on socket');
   });
 
   // Log when transport upgrades
   socket.io.engine.on('upgrade', (transport) => {
-    console.log(`Socket.IO: Transport upgraded to: ${transport.name}`);
+    logger.info(`Socket.IO: Transport upgraded to: ${transport.name}`);
   });
 
   socket.on('connect_error', (error) => {
-    console.error('Socket.IO: Connection error:', error);
-    console.error('Socket.IO: Error message:', error.message);
+    logger.error('Socket.IO: Connection error:', error);
+    logger.error('Socket.IO: Error message:', error.message);
     if (error.type) {
-      console.error('Socket.IO: Error type:', error.type);
+      logger.error('Socket.IO: Error type:', error.type);
     }
     onError();
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('Socket.IO: Disconnected, reason:', reason);
+    logger.info('Socket.IO: Disconnected, reason:', reason);
   });
 
   // Log polling errors for debugging
   socket.io.engine.on('upgradeError', (error) => {
-    console.error('Socket.IO: WebSocket upgrade failed:', error);
+    logger.error('Socket.IO: WebSocket upgrade failed:', error);
   });
 
   socket.io.engine.on('error', (error) => {
-    console.error('Socket.IO: Engine error:', error);
+    logger.error('Socket.IO: Engine error:', error);
   });
 
   return socket;

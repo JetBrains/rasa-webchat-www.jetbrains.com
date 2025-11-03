@@ -7,6 +7,7 @@ import Widget from './components/Widget';
 import { initStore } from './store/store';
 import socket from './socket';
 import ThemeContext from '../src/components/Widget/ThemeContext';
+import logger from './utils/logger';
 import {
   exchangeTokenReq,
   getAuthCode,
@@ -78,16 +79,16 @@ const ConnectedWidget = forwardRef((props, ref) => {
     emit(message, data) {
       if (this.socket) {
         // CRITICAL: Always use the most current socket
-        console.log('🔍 EMIT: Using socket ID:', this.socket.id, 'connected:', this.socket.connected);
+        logger.debug('🔍 EMIT: Using socket ID:', this.socket.id, 'connected:', this.socket.connected);
 
         if (!this.socket.connected) {
-          console.error('❌ EMIT: Socket not connected, cannot send message');
+          logger.error('❌ EMIT: Socket not connected, cannot send message');
           return;
         }
 
         this.socket.emit(message, data);
       } else {
-        console.error('❌ EMIT: No socket available');
+        logger.error('❌ EMIT: No socket available');
       }
     }
 
@@ -100,23 +101,23 @@ const ConnectedWidget = forwardRef((props, ref) => {
     createSocket() {
       // Check if socket exists and is connected
       if (this.socket && this.socket.connected) {
-        console.log('⚠️ Socket already connected, skipping creation. ID:', this.socket.id);
+        logger.debug('⚠️ Socket already connected, skipping creation. ID:', this.socket.id);
         return;
       }
       
       // If socket exists but disconnected, clean it up
       if (this.socket) {
-        console.log('🧹 Cleaning up disconnected socket...');
+        logger.debug('🧹 Cleaning up disconnected socket...');
         try {
           this.socket.removeAllListeners();
           this.socket.close();
         } catch (e) {
-          console.error('Error cleaning socket:', e);
+          logger.error('Error cleaning socket:', e);
         }
         this.socket = null;
       }
 
-      console.log('🔄 Creating new socket...');
+      logger.info('🔄 Creating new socket...');
       this.socket = socket(
         this.url,
         this.customData,
@@ -139,7 +140,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
         // Check if we have a preserved session ID from reconnection
         if (this.socket.preservedSessionId) {
-          console.log('🔄 Using preserved session ID:', this.socket.preservedSessionId);
+          logger.debug('🔄 Using preserved session ID:', this.socket.preservedSessionId);
           this.sessionId = this.socket.preservedSessionId;
           // Store in localStorage for persistence
           localStorage.setItem('chat_session_id', this.socket.preservedSessionId);
@@ -147,10 +148,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
           // Check if we have a stored session ID
           const storedSessionId = localStorage.getItem('chat_session_id');
           if (storedSessionId) {
-            console.log('🔄 Using stored session ID:', storedSessionId);
+            logger.debug('🔄 Using stored session ID:', storedSessionId);
             this.sessionId = storedSessionId;
           } else {
-            console.log('🆕 New session ID:', newSessionId);
+            logger.debug('🆕 New session ID:', newSessionId);
             this.sessionId = newSessionId;
             localStorage.setItem('chat_session_id', newSessionId);
           }
@@ -177,29 +178,29 @@ const ConnectedWidget = forwardRef((props, ref) => {
   });
 
   const scheduleTokenRefresh = (rToken) => {
-    console.log('🕐 Scheduling token refresh...');
+    logger.debug('🕐 Scheduling token refresh...');
 
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = null;
-      console.log('🕐 Cleared existing refresh timer');
+      logger.debug('🕐 Cleared existing refresh timer');
     }
 
     if (!rToken) {
-      console.log('🕐 No token provided, skipping refresh schedule');
+      logger.debug('🕐 No token provided, skipping refresh schedule');
       return;
     }
 
     const expirationTime = getTokenExpirationTime(rToken);
     if (!expirationTime) {
-      console.log('🕐 Could not get token expiration time');
+      logger.debug('🕐 Could not get token expiration time');
       return;
     }
 
     const currentTime = Date.now();
     const timeUntilExpiration = expirationTime - currentTime;
 
-    console.log('🕐 Token expires in:', Math.round(timeUntilExpiration / 1000), 'seconds');
+    logger.debug('🕐 Token expires in:', Math.round(timeUntilExpiration / 1000), 'seconds');
 
     // TEST MODE: Refresh after n seconds for testing
     // const refreshTime = 15 * 1000; // n seconds
@@ -209,19 +210,19 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
     const timeToRefresh = Math.max(refreshTime, 5 * 1000);
 
-    console.log('🕐 Will refresh token in:', Math.round(timeToRefresh / 1000), 'seconds');
+    logger.debug('🕐 Will refresh token in:', Math.round(timeToRefresh / 1000), 'seconds');
 
 
     refreshTimerRef.current = setTimeout(() => {
-      console.log('🔄 Token refresh timer triggered!');
+      logger.debug('🔄 Token refresh timer triggered!');
 
       const currentToken = localStorage.getItem(tokenKey);
       if (!currentToken || !getIsTokenValid(currentToken)) {
-        console.log('🔄 Current token is invalid, skipping refresh');
+        logger.debug('🔄 Current token is invalid, skipping refresh');
         return;
       }
 
-      console.log('🔄 Starting token refresh process...');
+      logger.debug('🔄 Starting token refresh process...');
       
       const refreshToken = localStorage.getItem(tokenRefreshKey);
       if (refreshToken) {
@@ -237,7 +238,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
                 localStorage.setItem(tokenRefreshKey, refresh_token);
               }
 
-              console.log('🔄 Token refreshed automatically, updating socket in-place...');
+              logger.info('🔄 Token refreshed automatically, updating socket in-place...');
 
               // Update socket immediately with new token (NO destruction)
               if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
@@ -253,16 +254,16 @@ const ConnectedWidget = forwardRef((props, ref) => {
                   instanceSocket.current.socket.customData = newCustomData;
                 }
                 
-                console.log('✅ Socket updated in-place, ID:', instanceSocket.current.socket.id);
+                logger.info('✅ Socket updated in-place, ID:', instanceSocket.current.socket.id);
               }
 
               setToken(id_token);
-              console.log('✅ Token refreshed and socket updated');
+              logger.info('✅ Token refreshed and socket updated');
               scheduleTokenRefresh(id_token);
             }
           })
           .catch((err) => {
-            console.error(err);
+            logger.error(err);
             setIsAuth(false);
           });
       }
@@ -292,7 +293,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           if (resetAuth) {
             setIsAuth(false);
           }
-          console.error(err);
+          logger.error(err);
         });
     } else if (resetAuth) {
       setIsAuth(false);
@@ -315,7 +316,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
     // Cleanup all socket managers on unmount
     if (window.io && window.io.managers) {
-      console.log('🧹 Cleaning up Socket.IO managers on unmount...');
+      logger.debug('🧹 Cleaning up Socket.IO managers on unmount...');
       Object.keys(window.io.managers).forEach(key => {
         const manager = window.io.managers[key];
         if (manager && manager.close) {
@@ -331,7 +332,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const authCallback = useCallback((event) => {
     if (isAuth) {
-      console.log('Already authenticated, ignoring message');
+      logger.debug('Already authenticated, ignoring message');
       return;
     }
 
@@ -339,33 +340,33 @@ const ConnectedWidget = forwardRef((props, ref) => {
       const code = event.data.code;
       const popupState = event.data.popupState;
 
-      console.log('📨 Received OAuth callback:', { code: code?.substring(0, 10) + '...', popupState });
+      logger.debug('📨 Received OAuth callback:', { code: code?.substring(0, 10) + '...', popupState });
 
       if (state !== popupState) {
-        console.error('❌ State mismatch:', { received: popupState, expected: state });
+        logger.error('❌ State mismatch:', { received: popupState, expected: state });
         return;
       }
 
       const getChatToken = async () => {
         try {
-          console.log('🔄 Exchanging code for token...');
+          logger.debug('🔄 Exchanging code for token...');
           const data = await exchangeTokenReq(code);
           const { id_token, refresh_token } = data;
 
           if (!id_token) {
-            console.error('❌ No id_token in response:', data);
+            logger.error('❌ No id_token in response:', data);
             return;
           }
 
-          console.log('✅ Token received, storing...');
+          logger.info('✅ Token received, storing...');
           localStorage.setItem(tokenKey, id_token);
           localStorage.setItem(tokenRefreshKey, refresh_token);
           setToken(id_token);
           setIsAuth(true);
           scheduleTokenRefresh(id_token);
-          console.log('✅ Auth completed successfully');
+          logger.info('✅ Auth completed successfully');
         } catch (error) {
-          console.error('❌ Token exchange error:', error);
+          logger.error('❌ Token exchange error:', error);
         }
       };
 
@@ -375,32 +376,32 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   useEffect(() => {
     window.addEventListener('message', authCallback);
-    console.log('👂 Message listener added');
+    logger.debug('👂 Message listener added');
 
     return () => {
       window.removeEventListener('message', authCallback);
-      console.log('👋 Message listener removed');
+      logger.debug('👋 Message listener removed');
     };
   }, [authCallback]);
 
 
   const onConnectionError = () => {
-    console.log('🔌 Connection error detected, checking token...');
+    logger.info('🔌 Connection error detected, checking token...');
     checkAndRefreshToken(true);
   };
 
   const handleSocketDisconnect = (reason) => {
-    console.log('🔌 Socket disconnected, reason:', reason);
+    logger.info('🔌 Socket disconnected, reason:', reason);
 
     // Prevent multiple disconnect handlers
     if (instanceSocket.current?.isDisconnecting) {
-      console.log('🔌 Already handling disconnect, ignoring...');
+      logger.debug('🔌 Already handling disconnect, ignoring...');
       return;
     }
 
     // If disconnected due to token expiration, refresh token before reconnecting
     if (reason === 'transport error' || reason === 'io server disconnect') {
-      console.log('🔄 Disconnect likely due to token expiration, refreshing token...');
+      logger.info('🔄 Disconnect likely due to token expiration, refreshing token...');
 
       if (instanceSocket.current) {
         instanceSocket.current.isDisconnecting = true;
@@ -412,7 +413,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           .then((data) => {
             const { id_token, refresh_token } = data;
             if (id_token) {
-              console.log('✅ Token refreshed on disconnect, updating socket...');
+              logger.info('✅ Token refreshed on disconnect, updating socket...');
               localStorage.setItem(tokenKey, id_token);
               if (refresh_token) {
                 localStorage.setItem(tokenRefreshKey, refresh_token);
@@ -423,12 +424,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
               // CRITICAL: Update store socket reference after token refresh
               if (store.current && store.current.updateSocket) {
                 store.current.updateSocket(instanceSocket.current);
-                console.log('🔄 Store socket updated after disconnect token refresh');
+                logger.debug('🔄 Store socket updated after disconnect token refresh');
               }
             }
           })
           .catch((err) => {
-            console.error('❌ Failed to refresh token on disconnect:', err);
+            logger.error('❌ Failed to refresh token on disconnect:', err);
             setIsAuth(false);
           })
           .finally(() => {
@@ -446,8 +447,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
       if (instanceSocket.current.isDummy) {
         // First time creating socket after login
-        console.log('Creating initial socket with token');
-        console.log('Initial customData:', newCustomData);
+        logger.info('Creating initial socket with token');
+        logger.debug('Initial customData:', newCustomData);
 
         const newProtocolOptions = { ...props.protocolOptions, token };
 
@@ -473,11 +474,11 @@ const ConnectedWidget = forwardRef((props, ref) => {
         store.current.socketRef = instanceSocket.current.marker;
         store.current.socket = instanceSocket.current;
 
-        console.log('✅ Socket and store created, updating key');
+        logger.info('✅ Socket and store created, updating key');
         setSocketKey(`authenticated-${instanceSocket.current.marker}`);
       } else {
         // Token changed - just update customData, DON'T destroy socket
-        console.log('🔄 Token updated, refreshing socket customData...');
+        logger.debug('🔄 Token updated, refreshing socket customData...');
         
         instanceSocket.current.customData = newCustomData;
         
@@ -488,7 +489,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
             instanceSocket.current.socket.updateAuthHeaders(token);
           }
           
-          console.log('✅ Socket customData updated, ID:', instanceSocket.current.socket.id);
+          logger.info('✅ Socket customData updated, ID:', instanceSocket.current.socket.id);
         }
         
         const updatedProtocolOptions = { ...props.protocolOptions, token };

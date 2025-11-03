@@ -24,7 +24,16 @@
         const token = localStorage.getItem('chat_token');
         const hasValidToken = isTokenValid(token);
 
-        console.log('🔍 Token check:', hasValidToken ? 'Valid token found' : 'No valid token');
+        // Gated dev log (enable via localStorage 'webchat:debug'=1 or ?webchat_debug=1)
+        const __dbg = (() => {
+          try {
+            const ls = localStorage.getItem('webchat:debug');
+            if (ls === '1' || ls === 'true') return true;
+            return /([?&])webchat_debug=(1|true)\b/i.test(location.search);
+          } catch(_) { return false; }
+        })();
+        const devLog = (...args) => { if (__dbg) console.log('[WebChat]', ...args); };
+        devLog('🔍 Token check:', hasValidToken ? 'Valid token found' : 'No valid token');
 
         WebChat.default({
           customData: {
