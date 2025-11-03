@@ -67,8 +67,8 @@ function makeLogger() {
       };
 
   // Optional prefix to make filtering easier
-  // Put version first as requested, then the widget tag
-  const prefixParts = [`v${version}`, '[WebChat]'];
+  // For regular logs show only the widget tag (no version)
+  const prefixParts = ['[WebChat]'];
   const wrap = (fn) => (...args) => fn(...prefixParts, ...args);
 
   // One-time startup banner — always visible in browser and SSR/Node
