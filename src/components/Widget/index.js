@@ -609,6 +609,31 @@ class Widget extends Component {
   }
 
 
+  // Compose behavior: first try to refresh token (new feature), then perform legacy restart (old behavior)
+  refreshTokenAndRestart = () => {
+    const { onRefreshToken } = this.props;
+    try {
+      const maybePromise = onRefreshToken ? onRefreshToken() : null;
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        return maybePromise
+          .catch((err) => {
+            // eslint-disable-next-line no-console
+            console.error('Manual token refresh failed before restart:', err);
+          })
+          .finally(() => {
+            this.refresh();
+          });
+      }
+      // If refresh function not provided or doesn't return a promise, proceed with legacy restart immediately
+      this.refresh();
+      return Promise.resolve();
+    } catch (e) {
+      // Ensure legacy behavior even if something goes wrong
+      this.refresh();
+      return Promise.resolve();
+    }
+  }
+
   refresh = () => {
     const { socket, customData, storage } = this.props;
     const sessionId = this.getSessionIdWithFallback();
@@ -646,7 +671,7 @@ class Widget extends Component {
       <WidgetLayout
         onAuthButtonClick={this.props.onAuthButtonClick}
         toggleChat={() => this.toggleConversation()}
-        refreshSession={this.refresh}
+        refreshSession={this.refreshTokenAndRestart}
         toggleFullScreen={() => this.toggleFullScreen()}
         onSendMessage={event => this.handleMessageSubmit(event)}
         title={this.props.title}
@@ -725,7 +750,8 @@ Widget.propTypes = {
   defaultHighlightCss: PropTypes.string,
   defaultHighlightClassname: PropTypes.string,
   messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map),
-  onAuthButtonClick: PropTypes.func
+  onAuthButtonClick: PropTypes.func,
+  onRefreshToken: PropTypes.func
 };
 
 Widget.defaultProps = {

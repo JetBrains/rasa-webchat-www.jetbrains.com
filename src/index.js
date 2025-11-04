@@ -270,6 +270,66 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }, timeToRefresh);
   };
 
+  // Manual token refresh, can be triggered from UI (header refresh button)
+  // Returns a Promise to allow callers to await completion before further actions
+  const refreshTokenNow = useCallback(() => {
+    logger.info('🔄 Manual token refresh triggered...');
+
+    // Clear any pending timer to avoid double refreshes
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+      logger.debug('🕐 Cleared existing refresh timer before manual refresh');
+    }
+
+    const refreshToken = localStorage.getItem(tokenRefreshKey);
+    if (!refreshToken) {
+      logger.warn('❌ No refresh token available; cannot refresh manually');
+      return Promise.resolve(false);
+    }
+
+    return refreshTokenReq(refreshToken)
+      .then((data) => {
+        const { id_token, refresh_token } = data || {};
+        if (!id_token) {
+          logger.error('❌ Manual refresh did not return id_token');
+          return false;
+        }
+
+        localStorage.setItem(tokenKey, id_token);
+        if (refresh_token) {
+          localStorage.setItem(tokenRefreshKey, refresh_token);
+        }
+
+        // Update socket immediately with new token (NO destruction)
+        if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+          const newCustomData = { ...props.customData, auth_header: id_token };
+          instanceSocket.current.customData = newCustomData;
+
+          if (instanceSocket.current.socket.updateAuthHeaders) {
+            instanceSocket.current.socket.updateAuthHeaders(id_token);
+          }
+
+          if (instanceSocket.current.socket.customData) {
+            instanceSocket.current.socket.customData = newCustomData;
+          }
+
+          logger.info('✅ Manual refresh: socket updated in-place, ID:', instanceSocket.current.socket.id);
+        }
+
+        setToken(id_token);
+        setIsAuth(true);
+        scheduleTokenRefresh(id_token);
+        logger.info('✅ Manual token refresh complete');
+        return true;
+      })
+      .catch((err) => {
+        logger.error('❌ Manual token refresh failed:', err);
+        setIsAuth(false);
+        return false;
+      });
+  }, [props.customData, scheduleTokenRefresh]);
+
   const checkAndRefreshToken = (resetAuth) => {
     if (isAuth) return;
     const chatToken = localStorage.getItem(tokenKey);
@@ -539,6 +599,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           key={socketKey}
           ref={ref}
           onAuthButtonClick={!isAuth ? logIn : null}
+          onRefreshToken={refreshTokenNow}
           initPayload={props.initPayload}
           title={props.title}
           subtitle={props.subtitle}
