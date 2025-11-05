@@ -8,6 +8,7 @@ import metadata from './reducers/metadataReducer';
 
 import { getLocalSession } from './reducers/helper';
 import * as actionTypes from './actions/actionTypes';
+import logger from '../utils/logger';
 
 const cleanURL = (url) => {
   const regexProtocolHostPort = /https?:\/\/(([A-Za-z0-9-])+(\.?))+[a-z]+(:[0-9]+)?/;
@@ -53,14 +54,14 @@ function initStore(
         const realSocket = activeSocket.socket || activeSocket;
         const currentCustomData = activeSocket.customData || {};
         
-        console.log('📤 MIDDLEWARE: Using socket reference:', activeSocket.marker || 'unknown');
-        console.log('📤 Sending message with token:', currentCustomData?.auth_header ? currentCustomData.auth_header.substring(0, 30) + '...' : 'none');
-        console.log('📤 Session ID:', sessionId);
-        console.log('📤 Real Socket ID:', realSocket?.id || 'N/A');
-        console.log('📤 Socket connected:', realSocket?.connected || false);
+        logger.debug('📤 MIDDLEWARE: Using socket reference:', activeSocket.marker || 'unknown');
+        logger.debug('📤 Sending message with token:', currentCustomData?.auth_header ? currentCustomData.auth_header.substring(0, 30) + '...' : 'none');
+        logger.debug('📤 Session ID:', sessionId);
+        logger.debug('📤 Real Socket ID:', realSocket?.id || 'N/A');
+        logger.debug('📤 Socket connected:', realSocket?.connected || false);
         
         if (!realSocket || !realSocket.connected) {
-          console.error('❌ Socket not connected, cannot send message');
+          logger.error('❌ Socket not connected, cannot send message');
           return;
         }
         
@@ -161,9 +162,9 @@ function initStore(
   
   // Add method to update socket reference in middleware
   store.updateSocket = (newSocket) => {
-    console.log('🔄 CRITICAL: Updating socket reference from', currentSocketRef.marker || 'unknown', 'to', newSocket.marker || 'unknown');
+    logger.warn('🔄 CRITICAL: Updating socket reference from', currentSocketRef.marker || 'unknown', 'to', newSocket.marker || 'unknown');
     currentSocketRef = newSocket;
-    console.log('✅ Store socket reference updated successfully');
+    logger.info('✅ Store socket reference updated successfully');
   };
   
   return store;

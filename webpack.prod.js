@@ -17,7 +17,7 @@ const envName = process.env.ENVIRONMENT || 'production';
 try {
   // eslint-disable-next-line no-console
   const envSuffix = envName === 'production' ? '' : ` (ENVIRONMENT=${envName})`;
-  console.log(`\n[WebChat] v${version}${envSuffix} — production build`);
+  console.log(`\n[WebChat] v${version}${envSuffix}`);
 } catch (_) {}
 
 module.exports = [{

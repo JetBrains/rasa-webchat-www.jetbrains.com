@@ -41,12 +41,12 @@
             ...(hasValidToken && { auth_header: token })
           },
           socketUrl: "https://rasa-stage-jb.labs.jb.gg",
-          // Підключаємося відразу якщо є токен, інакше чекаємо відкриття
+          // Connect immediately if a token exists; otherwise, wait until the widget is opened
           connectOn: hasValidToken ? 'mount' : 'open',
-          // Показуємо віджет тільки якщо є токен або при відкритті
-          hideWhenNotConnected: !hasValidToken,
-          // Rules працюють тільки з connectOn: 'mount'
-          withRules: hasValidToken,
+            // Show the widget only if a token is present or when explicitly opened
+            hideWhenNotConnected: !hasValidToken,
+            // Rules work only with connectOn: 'mount'
+            withRules: hasValidToken,
         });
       }
     }

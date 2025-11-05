@@ -1,3 +1,4 @@
+import logger from './logger';
 const isProduction = process.env.ENVIRONMENT === 'production';
 
 export const rasaEndpoint = isProduction ? 'https://rasa-prod-jb.labs.jb.gg/webhooks/rest/webhook' : 'https://rasa-stage-jb.labs.jb.gg/webhooks/rest/webhook';
@@ -103,7 +104,7 @@ export const authInRasa = async (idToken) => {
 
     return await response.json();
   } catch (err) {
-    console.error(err);
+    logger.error('authInRasa request failed:', err);
   }
 
   return null;
@@ -127,7 +128,7 @@ export const refreshTokenReq = async (refreshToken) => {
 
     return await response.json();
   } catch (err) {
-    console.error(err);
+    logger.error('refreshTokenReq request failed:', err);
   }
 
   return null;

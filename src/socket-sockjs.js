@@ -1,6 +1,7 @@
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
 import { EventEmitter } from 'events';
+import logger from './utils/logger';
 
 /*
   This implementation mimics the SocketIO implementation.
@@ -56,8 +57,7 @@ export default function (socketUrl, customData, _path, options) {
   };
 
   socketProxy.onerror = (error) => {
-    // eslint-disable-next-line no-console
-    console.log(error);
+    logger.error('SockJS error:', error);
   };
 
   const emitBotUtteredMessage = (message) => {
@@ -93,10 +93,8 @@ export default function (socketUrl, customData, _path, options) {
   stomp.connect({}, socketProxy.onconnect, socketProxy.onerror);
 
   stomp.onWebSocketClose = () => {
-    // eslint-disable-next-line no-console
     socketProxy.connected = false;
-    // eslint-disable-next-line no-console
-    console.log('Closed sockjs connection');
+    logger.info('Closed SockJS connection');
     socketProxy.emit('disconnect');
   };
 

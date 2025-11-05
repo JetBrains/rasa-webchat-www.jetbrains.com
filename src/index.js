@@ -387,7 +387,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
   }, []);
 
-  const [socketKey, setSocketKey] = useState('initial'); // Для принудительного ререндера
+  const [socketKey, setSocketKey] = useState('initial'); // For a forced re-render
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
   const authCallback = useCallback((event) => {

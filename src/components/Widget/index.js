@@ -39,6 +39,7 @@ import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
 import { isVideo, isImage, isButtons, isText, isCarousel } from './msgProcessor';
 import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
+import logger from '../../utils/logger';
 
 
 class Widget extends Component {
@@ -385,14 +386,17 @@ class Widget extends Component {
         // If no session in localStorage but socket has preservedSessionId, use it
         if (!localId && socket.preservedSessionId) {
           localId = socket.preservedSessionId;
-          console.log('Using preserved session_id for token refresh:', localId);
+          // use centralized logger
+          logger.debug('Using preserved session_id for token refresh:', localId);
         }
 
-        console.log('📤 Sending session_request with:', {
-          session_id: localId,
-          hasAuth: !!customData?.auth_header,
-          socketId: socket.socket?.id
-        });
+        {
+          logger.info('📤 Sending session_request', {
+            session_id: localId,
+            hasAuth: !!customData?.auth_header,
+            socketId: socket.socket?.id
+          });
+        }
         
         socket.emit('session_request', { session_id: localId, customData });
       });
@@ -403,8 +407,9 @@ class Widget extends Component {
           ? sessionObject.session_id
           : sessionObject;
 
-        // eslint-disable-next-line no-console
-        console.log(`session_confirm:${socket.socket.id} session_id:${remoteId}`);
+        {
+          logger.info(`session_confirm:${socket.socket.id} session_id:${remoteId}`);
+        }
         // Store the initial state to both the redux store and the storage, set connected to true
         dispatch(connectServer());
         /*
@@ -417,7 +422,7 @@ class Widget extends Component {
         // If we were trying to preserve a session_id during token refresh
         if (!localId && socket.preservedSessionId) {
           localId = socket.preservedSessionId;
-          console.log(`Token refresh: requested preserved session_id ${localId}, server returned ${remoteId}`);
+          logger.info(`Token refresh: requested preserved session_id ${localId}, server returned ${remoteId}`);
         }
 
         if (localId !== remoteId) {
@@ -428,7 +433,9 @@ class Widget extends Component {
             this.trySendInitPayload();
           }
         } else {
-          console.log('Session_id preserved successfully during token refresh');
+          {
+            logger.info('Session_id preserved successfully during token refresh');
+          }
           // If this is an existing session, it's possible we changed pages and want to send a
           // user message when we land.
           const nextMessage = window.localStorage.getItem(NEXT_MESSAGE);
@@ -457,8 +464,9 @@ class Widget extends Component {
       });
 
       socket.on('disconnect', (reason) => {
-        // eslint-disable-next-line no-console
-        console.log(reason);
+        {
+          logger.info('Disconnected:', reason);
+        }
         if (reason !== 'io client disconnect') {
           dispatch(disconnectServer());
         }
@@ -617,8 +625,7 @@ class Widget extends Component {
       if (maybePromise && typeof maybePromise.then === 'function') {
         return maybePromise
           .catch((err) => {
-            // eslint-disable-next-line no-console
-            console.error('Manual token refresh failed before restart:', err);
+            logger.error('Manual token refresh failed before restart:', err);
           })
           .finally(() => {
             this.refresh();
@@ -638,21 +645,27 @@ class Widget extends Component {
     const { socket, customData, storage } = this.props;
     const sessionId = this.getSessionIdWithFallback();
 
-    console.log('=== SESSION RESTART ===');
-    console.log('Session ID (must not change):', sessionId);
-    console.log('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
-    console.log('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
+    {
+      logger.info('=== SESSION RESTART ===');
+      logger.debug('Session ID (must not change):', sessionId);
+      logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
+      logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
+    }
 
     // Remove session_id from customData if it exists to avoid duplication
     const cleanCustomData = { ...customData };
     delete cleanCustomData.session_id;
 
-    console.log('Cleaned customData:', cleanCustomData);
+    {
+      logger.debug('Cleaned customData:', cleanCustomData);
+    }
 
     // CRITICAL: Preserve session_id for reconnect after restart
     if (sessionId && socket) {
       socket.preservedSessionId = sessionId;
-      console.log('Preserved session_id for potential reconnect:', sessionId);
+      {
+        logger.debug('Preserved session_id for potential reconnect:', sessionId);
+      }
     }
 
     this.props.dispatch(clearMessages());
@@ -662,8 +675,10 @@ class Widget extends Component {
       session_id: sessionId
     });
 
-    console.log('Restart payload sent with session_id:', sessionId);
-    console.log('=== END SESSION RESTART ===');
+    {
+      logger.info('Restart payload sent with session_id:', sessionId);
+      logger.info('=== END SESSION RESTART ===');
+    }
   }
 
   render() {
