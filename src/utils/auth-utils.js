@@ -1,6 +1,6 @@
 const isProduction = process.env.ENVIRONMENT === 'production';
 
-export const rasaEndpoint = isProduction ? 'https://rasa-prod-jb.labs.jb.gg/webhooks/rest/webhook' : 'https://rasa-dev-jb.labs.jb.gg/webhooks/rest/webhook';
+export const rasaEndpoint = isProduction ? 'https://rasa-prod-jb.labs.jb.gg/webhooks/rest/webhook' : 'https://rasa-stage-jb.labs.jb.gg/webhooks/rest/webhook';
 
 export const authBaseUrl = isProduction ? 'https://account.jetbrains.com/oauth/login' : 'https://active.jetprofile-stgn.intellij.net/oauth/login';
 export const tokenEndpoint = isProduction ? 'https://oauth.account.jetbrains.com/oauth2/token' : 'https://public.staging.oauth.intservices.aws.intellij.net/oauth2/token';

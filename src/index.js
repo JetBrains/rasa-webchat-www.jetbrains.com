@@ -191,7 +191,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
     if (isAuth && token && instanceSocket.current && instanceSocket.current.isDummy) {
       instanceSocket.current = new Socket(
         // props.socketUrl,
-        isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-dev-jb.labs.jb.gg',
+        isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-stage-jb.labs.jb.gg',
         // 'https://srsasa-dev-jb.labs.jb.gg',
         { ...props.customData, auth_header: token },
         props.socketPath,
