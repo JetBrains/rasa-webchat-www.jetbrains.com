@@ -155,6 +155,12 @@ export function dropMessages() {
   };
 }
 
+export function clearMessages() {
+  return {
+    type: actions.CLEAR_MESSAGES
+  };
+}
+
 export function pullSession() {
   return {
     type: actions.PULL_SESSION

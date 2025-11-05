@@ -13,6 +13,12 @@ const envKeys = Object.fromEntries(
 
 const envName = process.env.ENVIRONMENT || 'staging';
 
+// Terminal banner with version + environment on dev server start
+try {
+  // eslint-disable-next-line no-console
+  console.log(`\n[WebChat] v${version} (ENVIRONMENT=${envName}) — dev server`);
+} catch (_) {}
+
 module.exports = {
   // entry: ['babel-polyfill', './index.js'],
   entry: './umd.js',
@@ -80,7 +86,8 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       ...envKeys,
-      'process.env.ENVIRONMENT': JSON.stringify(envName)
+      'process.env.ENVIRONMENT': JSON.stringify(envName),
+      'process.env.WEBCHAT_PKG_VERSION': JSON.stringify(version)
     })
   ]
 };

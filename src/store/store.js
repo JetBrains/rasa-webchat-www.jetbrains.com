@@ -8,6 +8,7 @@ import metadata from './reducers/metadataReducer';
 
 import { getLocalSession } from './reducers/helper';
 import * as actionTypes from './actions/actionTypes';
+import logger from '../utils/logger';
 
 const cleanURL = (url) => {
   const regexProtocolHostPort = /https?:\/\/(([A-Za-z0-9-])+(\.?))+[a-z]+(:[0-9]+)?/;
@@ -27,23 +28,52 @@ function initStore(
   docViewer = false,
   onWidgetEvent,
 ) {
+  // Store reference to current socket that can be updated
+  let currentSocketRef = socket;
+  
   const customMiddleWare = store => next => (action) => {
-    const localSession = getLocalSession(storage, SESSION_NAME);
-    let sessionId = localSession
-      ? localSession.session_id
-      : null;
-    if (!sessionId && socket.sessionId) {
-      sessionId = socket.sessionId;
-    }
     const emitMessage = (payload) => {
       const emit = () => {
-        socket.emit(
+        // CRITICAL: Always use the most current socket reference
+        const activeSocket = currentSocketRef;
+        
+        // Get fresh session ID each time
+        const localSession = getLocalSession(storage, SESSION_NAME);
+        let sessionId = localSession?.session_id;
+        
+        // Try multiple sources for session ID
+        if (!sessionId && activeSocket.sessionId) {
+          sessionId = activeSocket.sessionId;
+        }
+        
+        if (!sessionId) {
+          sessionId = localStorage.getItem('chat_session_id');
+        }
+        
+        // Get fresh customData and socket reference
+        const realSocket = activeSocket.socket || activeSocket;
+        const currentCustomData = activeSocket.customData || {};
+        
+        logger.debug('📤 MIDDLEWARE: Using socket reference:', activeSocket.marker || 'unknown');
+        logger.debug('📤 Sending message with token:', currentCustomData?.auth_header ? currentCustomData.auth_header.substring(0, 30) + '...' : 'none');
+        logger.debug('📤 Session ID:', sessionId);
+        logger.debug('📤 Real Socket ID:', realSocket?.id || 'N/A');
+        logger.debug('📤 Socket connected:', realSocket?.connected || false);
+        
+        if (!realSocket || !realSocket.connected) {
+          logger.error('❌ Socket not connected, cannot send message');
+          return;
+        }
+        
+        // Use activeSocket.emit, not socket.emit
+        activeSocket.emit(
           'user_uttered', {
             message: payload,
-            customData: socket.customData,
+            customData: currentCustomData,
             session_id: sessionId
           }
         );
+        
         store.dispatch({
           type: actionTypes.ADD_NEW_USER_MESSAGE,
           text: 'text',
@@ -51,10 +81,11 @@ function initStore(
           hidden: true
         });
       };
-      if (socket.sessionConfirmed) {
+      
+      if (currentSocketRef.sessionConfirmed) {
         emit();
       } else {
-        socket.on('session_confirm', () => {
+        currentSocketRef.on('session_confirm', () => {
           emit();
         });
       }
@@ -124,10 +155,19 @@ function initStore(
   // eslint-disable-next-line no-underscore-dangle
   const composeEnhancer = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
-  return createStore(
+  const store = createStore(
     reducer,
     composeEnhancer(applyMiddleware(customMiddleWare)),
   );
+  
+  // Add method to update socket reference in middleware
+  store.updateSocket = (newSocket) => {
+    logger.warn('🔄 CRITICAL: Updating socket reference from', currentSocketRef.marker || 'unknown', 'to', newSocket.marker || 'unknown');
+    currentSocketRef = newSocket;
+    logger.info('✅ Store socket reference updated successfully');
+  };
+  
+  return store;
 }
 
 

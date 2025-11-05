@@ -4,7 +4,6 @@
 
 .#{$namespace}conversation-container {
   .#{$namespace}header {
-    background-color: $tertiary;
     background-color: transparent;
     color: $white;
     display: flex;
@@ -22,7 +21,7 @@
       left: 14px;
     }
   }
-
+}
 
   .#{$namespace}title-wrap {
     display: flex;
@@ -33,7 +32,7 @@
   }
 
 
-  .#{$namespace}close-header-button {
+  .#{$namespace}header-button {
     background-color: transparent;
     border: none;
     cursor: pointer;
@@ -42,7 +41,17 @@
       width: 16px;
       height: 16px;
     }
+
+    &_refresh img {
+      width: 22px;
+      height: 22px;
+    }
   }
+
+.#{$namespace}header-buttons {
+  display: flex;
+  align-items: center;
+}
 
   .#{$namespace}header.#{$namespace}with-subtitle {
     height: 70px;
@@ -101,7 +110,7 @@
     font-family: $fontfamily;
     font-size: 14px;
   }
-}
+
 
 &.#{$namespace}widget-embedded {
   .#{$namespace}header {

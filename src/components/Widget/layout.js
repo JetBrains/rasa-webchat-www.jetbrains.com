@@ -24,6 +24,7 @@ const WidgetLayout = (props) => {
       <Conversation
         title={props.title}
         subtitle={props.subtitle}
+        refreshSession={props.refreshSession}
         sendMessage={props.onSendMessage}
         profileAvatar={props.profileAvatar}
         toggleChat={props.toggleChat}
@@ -71,6 +72,7 @@ WidgetLayout.propTypes = {
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   onSendMessage: PropTypes.func,
   toggleChat: PropTypes.func,
+  refreshSession: PropTypes.func,
   toggleFullScreen: PropTypes.func,
   isChatOpen: PropTypes.bool,
   isChatVisible: PropTypes.bool,

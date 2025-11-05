@@ -2,6 +2,7 @@
 /* eslint-disable prefer-rest-params */
 /* eslint-disable class-methods-use-this */
 import hash from 'object-hash';
+import logger from '../utils/logger';
 
 import QuestionMark from './question-solid.svg';
 import { onRemove } from './utils';
@@ -148,16 +149,14 @@ export default class RulesHandler {
 
     trigger.eventListeners.forEach((listener) => {
       if (!listener.selector || !listener.event) {
-        // eslint-disable-next-line no-console
-        console.log("you're missing a selector or an event on an event listener");
+        logger.warn("You're missing a selector or an event on an event listener");
         return;
       }
       let elemList = null;
       try {
         elemList = document.querySelectorAll(listener.selector);
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.log(`${listener.selector} is not a valid selector string`);
+        logger.warn(`${listener.selector} is not a valid selector string`);
       }
       if (elemList.length > 0) {
         elemList.forEach((elem) => {
@@ -227,8 +226,7 @@ export default class RulesHandler {
       try {
         document.body.removeChild(visualisationObject);
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.log(e);
+        logger.error(e);
       }
     };
     if (listener.visualization === 'pulsating') {
@@ -526,8 +524,7 @@ export default class RulesHandler {
         this.sendMethod(sentPayload, undefined, whenToSend, tooltipSelector);
       }
     } else {
-      // eslint-disable-next-line no-console
-      console.log('You forgot to give a payload to your ruleset.');
+      logger.warn('You forgot to give a payload to your ruleset.');
     }
   }
 

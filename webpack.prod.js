@@ -13,6 +13,13 @@ const envKeys = Object.fromEntries(
 
 const envName = process.env.ENVIRONMENT || 'production';
 
+// Terminal banner with version on production builds
+try {
+  // eslint-disable-next-line no-console
+  const envSuffix = envName === 'production' ? '' : ` (ENVIRONMENT=${envName})`;
+  console.log(`\n[WebChat] v${version}${envSuffix}`);
+} catch (_) {}
+
 module.exports = [{
   // entry: ['babel-polyfill', './index.js'],
   entry: './umd.js',
@@ -70,7 +77,8 @@ module.exports = [{
   plugins: [new CleanWebpackPlugin(['lib']),
     new webpack.DefinePlugin({
       ...envKeys,
-      'process.env.ENVIRONMENT': JSON.stringify(envName)
+      'process.env.ENVIRONMENT': JSON.stringify(envName),
+      'process.env.WEBCHAT_PKG_VERSION': JSON.stringify(version)
     })
   ]
 }, {
@@ -145,7 +153,8 @@ module.exports = [{
   plugins: [new CleanWebpackPlugin(['module']),
     new webpack.DefinePlugin({
       ...envKeys,
-      'process.env.ENVIRONMENT': JSON.stringify(envName)
+      'process.env.ENVIRONMENT': JSON.stringify(envName),
+      'process.env.WEBCHAT_PKG_VERSION': JSON.stringify(version)
     })
   ]
 }

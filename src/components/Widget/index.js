@@ -20,6 +20,7 @@ import {
   connectServer,
   disconnectServer,
   pullSession,
+  clearMessages,
   newUnreadMessage,
   triggerMessageDelayed,
   triggerTooltipSent,
@@ -38,6 +39,7 @@ import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
 import { isVideo, isImage, isButtons, isText, isCarousel } from './msgProcessor';
 import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
+import logger from '../../utils/logger';
 
 
 class Widget extends Component {
@@ -49,6 +51,7 @@ class Widget extends Component {
     this.onGoingMessageDelay = false;
     this.sendMessage = this.sendMessage.bind(this);
     this.getSessionId = this.getSessionId.bind(this);
+    this.getSessionIdWithFallback = this.getSessionIdWithFallback.bind(this);
     this.intervalId = null;
     this.eventListenerCleaner = () => { };
   }
@@ -98,6 +101,25 @@ class Widget extends Component {
     // Get the local session, check if there is an existing session_id
     const localSession = getLocalSession(storage, SESSION_NAME);
     const localId = localSession ? localSession.session_id : null;
+    return localId;
+  }
+
+  getSessionIdWithFallback() {
+    const { storage, socket } = this.props;
+    // Get the local session, check if there is an existing session_id
+    const localSession = getLocalSession(storage, SESSION_NAME);
+    let localId = localSession ? localSession.session_id : null;
+
+    // If no sessionId in localStorage, try to get it from socket (same logic as in store.js)
+    if (!localId && socket && socket.sessionId) {
+      localId = socket.sessionId;
+    }
+
+    // If still no sessionId, check for preserved session_id (during token refresh)
+    if (!localId && socket && socket.preservedSessionId) {
+      localId = socket.preservedSessionId;
+    }
+
     return localId;
   }
   sendMessage(payload, text = '', when = 'always', tooltipSelector = false) {
@@ -340,7 +362,8 @@ class Widget extends Component {
       initialized,
       connectOn,
       tooltipPayload,
-      tooltipDelay
+      tooltipDelay,
+      customData
     } = this.props;
     if (!socket.isInitialized()) {
       socket.createSocket();
@@ -357,8 +380,25 @@ class Widget extends Component {
 
       // Request a session from server
       socket.on('connect', () => {
-        const localId = this.getSessionId();
-        socket.emit('session_request', { session_id: localId });
+        // Try to get existing session_id, including preserved one during token refresh
+        let localId = this.getSessionId();
+
+        // If no session in localStorage but socket has preservedSessionId, use it
+        if (!localId && socket.preservedSessionId) {
+          localId = socket.preservedSessionId;
+          // use centralized logger
+          logger.debug('Using preserved session_id for token refresh:', localId);
+        }
+
+        {
+          logger.info('📤 Sending session_request', {
+            session_id: localId,
+            hasAuth: !!customData?.auth_header,
+            socketId: socket.socket?.id
+          });
+        }
+        
+        socket.emit('session_request', { session_id: localId, customData });
       });
 
       // When session_confirm is received from the server:
@@ -367,8 +407,9 @@ class Widget extends Component {
           ? sessionObject.session_id
           : sessionObject;
 
-        // eslint-disable-next-line no-console
-        console.log(`session_confirm:${socket.socket.id} session_id:${remoteId}`);
+        {
+          logger.info(`session_confirm:${socket.socket.id} session_id:${remoteId}`);
+        }
         // Store the initial state to both the redux store and the storage, set connected to true
         dispatch(connectServer());
         /*
@@ -376,17 +417,25 @@ class Widget extends Component {
         If the localId is null or different from the remote_id,
         start a new session.
         */
-        const localId = this.getSessionId();
-        if (localId !== remoteId) {
-          // storage.clear();
-          // Store the received session_id to storage
+        let localId = this.getSessionId();
 
+        // If we were trying to preserve a session_id during token refresh
+        if (!localId && socket.preservedSessionId) {
+          localId = socket.preservedSessionId;
+          logger.info(`Token refresh: requested preserved session_id ${localId}, server returned ${remoteId}`);
+        }
+
+        if (localId !== remoteId) {
+          // Store the received session_id to storage
           storeLocalSession(storage, SESSION_NAME, remoteId);
           dispatch(pullSession());
           if (sendInitPayload) {
             this.trySendInitPayload();
           }
         } else {
+          {
+            logger.info('Session_id preserved successfully during token refresh');
+          }
           // If this is an existing session, it's possible we changed pages and want to send a
           // user message when we land.
           const nextMessage = window.localStorage.getItem(NEXT_MESSAGE);
@@ -400,7 +449,14 @@ class Widget extends Component {
               dispatch(emitUserMessage(message));
             }
           }
-        } if (connectOn === 'mount' && tooltipPayload) {
+        }
+
+        // Clear preserved session_id after use
+        if (socket.preservedSessionId) {
+          delete socket.preservedSessionId;
+        }
+
+        if (connectOn === 'mount' && tooltipPayload) {
           this.tooltipTimeout = setTimeout(() => {
             this.trySendTooltipPayload();
           }, parseInt(tooltipDelay, 10));
@@ -408,8 +464,9 @@ class Widget extends Component {
       });
 
       socket.on('disconnect', (reason) => {
-        // eslint-disable-next-line no-console
-        console.log(reason);
+        {
+          logger.info('Disconnected:', reason);
+        }
         if (reason !== 'io client disconnect') {
           dispatch(disconnectServer());
         }
@@ -559,11 +616,77 @@ class Widget extends Component {
     event.target.message.value = '';
   }
 
+
+  // Compose behavior: first try to refresh token (new feature), then perform legacy restart (old behavior)
+  refreshTokenAndRestart = () => {
+    const { onRefreshToken } = this.props;
+    try {
+      const maybePromise = onRefreshToken ? onRefreshToken() : null;
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        return maybePromise
+          .catch((err) => {
+            logger.error('Manual token refresh failed before restart:', err);
+          })
+          .finally(() => {
+            this.refresh();
+          });
+      }
+      // If refresh function not provided or doesn't return a promise, proceed with legacy restart immediately
+      this.refresh();
+      return Promise.resolve();
+    } catch (e) {
+      // Ensure legacy behavior even if something goes wrong
+      this.refresh();
+      return Promise.resolve();
+    }
+  }
+
+  refresh = () => {
+    const { socket, customData, storage } = this.props;
+    const sessionId = this.getSessionIdWithFallback();
+
+    {
+      logger.info('=== SESSION RESTART ===');
+      logger.debug('Session ID (must not change):', sessionId);
+      logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
+      logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
+    }
+
+    // Remove session_id from customData if it exists to avoid duplication
+    const cleanCustomData = { ...customData };
+    delete cleanCustomData.session_id;
+
+    {
+      logger.debug('Cleaned customData:', cleanCustomData);
+    }
+
+    // CRITICAL: Preserve session_id for reconnect after restart
+    if (sessionId && socket) {
+      socket.preservedSessionId = sessionId;
+      {
+        logger.debug('Preserved session_id for potential reconnect:', sessionId);
+      }
+    }
+
+    this.props.dispatch(clearMessages());
+    socket.emit('user_uttered', {
+      message: '/restart',
+      customData: cleanCustomData,
+      session_id: sessionId
+    });
+
+    {
+      logger.info('Restart payload sent with session_id:', sessionId);
+      logger.info('=== END SESSION RESTART ===');
+    }
+  }
+
   render() {
     return (
       <WidgetLayout
         onAuthButtonClick={this.props.onAuthButtonClick}
         toggleChat={() => this.toggleConversation()}
+        refreshSession={this.refreshTokenAndRestart}
         toggleFullScreen={() => this.toggleFullScreen()}
         onSendMessage={event => this.handleMessageSubmit(event)}
         title={this.props.title}
@@ -610,6 +733,7 @@ Widget.propTypes = {
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   initPayload: PropTypes.string,
   profileAvatar: PropTypes.string,
+  refreshSession: PropTypes.func,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
   hideWhenNotConnected: PropTypes.bool,
@@ -641,7 +765,8 @@ Widget.propTypes = {
   defaultHighlightCss: PropTypes.string,
   defaultHighlightClassname: PropTypes.string,
   messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map),
-  onAuthButtonClick: PropTypes.func
+  onAuthButtonClick: PropTypes.func,
+  onRefreshToken: PropTypes.func
 };
 
 Widget.defaultProps = {
@@ -652,6 +777,7 @@ Widget.defaultProps = {
   autoClearCache: false,
   displayUnreadCount: false,
   tooltipPayload: null,
+  refreshSessoin: null,
   inputTextFieldHint: 'Type a message...',
   oldUrl: '',
   disableTooltips: true,

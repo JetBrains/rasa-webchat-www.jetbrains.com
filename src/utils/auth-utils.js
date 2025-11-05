@@ -1,6 +1,7 @@
+import logger from './logger';
 const isProduction = process.env.ENVIRONMENT === 'production';
 
-export const rasaEndpoint = isProduction ? 'https://rasa-prod-jb.labs.jb.gg/webhooks/rest/webhook' : 'https://rasa-dev-jb.labs.jb.gg/webhooks/rest/webhook';
+export const rasaEndpoint = isProduction ? 'https://rasa-prod-jb.labs.jb.gg/webhooks/rest/webhook' : 'https://rasa-stage-jb.labs.jb.gg/webhooks/rest/webhook';
 
 export const authBaseUrl = isProduction ? 'https://account.jetbrains.com/oauth/login' : 'https://active.jetprofile-stgn.intellij.net/oauth/login';
 export const tokenEndpoint = isProduction ? 'https://oauth.account.jetbrains.com/oauth2/token' : 'https://public.staging.oauth.intservices.aws.intellij.net/oauth2/token';
@@ -103,7 +104,7 @@ export const authInRasa = async (idToken) => {
 
     return await response.json();
   } catch (err) {
-    console.error(err);
+    logger.error('authInRasa request failed:', err);
   }
 
   return null;
@@ -127,7 +128,7 @@ export const refreshTokenReq = async (refreshToken) => {
 
     return await response.json();
   } catch (err) {
-    console.error(err);
+    logger.error('refreshTokenReq request failed:', err);
   }
 
   return null;
@@ -170,6 +171,19 @@ export const getEmailFromToken = (token) => {
     const { email } = JSON.parse(payload) || {};
 
     return email || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const getTokenExpirationTime = (token) => {
+  if (!token) return null;
+
+  try {
+    const payload = getTokenPayload(token);
+    const { exp } = JSON.parse(payload) || {};
+
+    return exp ? exp * 1000 : null;
   } catch (e) {
     return null;
   }

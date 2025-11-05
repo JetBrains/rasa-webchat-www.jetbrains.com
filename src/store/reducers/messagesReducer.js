@@ -63,6 +63,11 @@ export default function (storage) {
       case actionTypes.DROP_MESSAGES: {
         return storeMessage(initialState);
       }
+      case actionTypes.CLEAR_MESSAGES: {
+        // Clear the entire session from storage, not just messages
+        storage.removeItem(SESSION_NAME);
+        return initialState;
+      }
       case actionTypes.SET_CUSTOM_CSS: {
         return storeMessage(state.update(state.size - 1, message => message.set('customCss', fromJS(action.customCss))));
       }
