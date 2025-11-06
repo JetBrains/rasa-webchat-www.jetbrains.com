@@ -259,3 +259,9 @@ export function setCustomCss(customCss) {
   };
 }
 
+export function setFirstChatStarted() {
+  return {
+    type: actions.SET_FIRST_CHAT_STARTED
+  };
+}
+

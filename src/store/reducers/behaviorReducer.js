@@ -20,7 +20,8 @@ export default function (
     unreadCount: 0,
     messageDelayed: false,
     oldUrl: '',
-    pageChangeCallbacks: Map()
+    pageChangeCallbacks: Map(),
+    firstChatStarted: false
   });
 
   return function reducer(state = initialState, action) {
@@ -94,6 +95,9 @@ export default function (
           return storeParams(state.set('oldUrl', newUrl).set('pageChangeCallbacks', Map()));
         }
         return state;
+      }
+      case actionTypes.SET_FIRST_CHAT_STARTED: {
+        return storeParams(state.set('firstChatStarted', true));
       }
 
       // Pull params from storage to redux store

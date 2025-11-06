@@ -1,22 +1,60 @@
 import logger from './logger';
-const isProduction = process.env.ENVIRONMENT === 'production';
 
-export const rasaEndpoint = isProduction ? 'https://rasa-prod-jb.labs.jb.gg/webhooks/rest/webhook' : 'https://rasa-stage-jb.labs.jb.gg/webhooks/rest/webhook';
+const environment = process.env.ENVIRONMENT || 'staging';
 
-export const authBaseUrl = isProduction ? 'https://account.jetbrains.com/oauth/login' : 'https://active.jetprofile-stgn.intellij.net/oauth/login';
-export const tokenEndpoint = isProduction ? 'https://oauth.account.jetbrains.com/oauth2/token' : 'https://public.staging.oauth.intservices.aws.intellij.net/oauth2/token';
+// Function to get URL based on environment
+const getEnvUrl = (localUrl, devUrl, stageUrl, prodUrl) => {
+  if (environment === 'production') return prodUrl;
+  if (environment === 'staging') return stageUrl;
+  if (environment === 'development') return devUrl;
+  if (environment === 'local') return localUrl;
+  return stageUrl; // default to staging
+};
 
-// const rasaEndpoint2 = 'https://rasa-dev.labs.jb.gg/webhooks/rest/webhook';
+// Rasa endpoint with automatic /webhooks/rest/webhook suffix
+const rasaBaseUrl = getEnvUrl(
+  process.env.RASA_URL_LOCAL,
+  process.env.RASA_URL_DEV,
+  process.env.RASA_URL_STAGE,
+  process.env.RASA_URL_PROD
+);
+export const rasaEndpoint = `${rasaBaseUrl}/webhooks/rest/webhook`;
+
+// Auth URLs
+export const authBaseUrl = getEnvUrl(
+  process.env.AUTH_BASE_URL_LOCAL,
+  process.env.AUTH_BASE_URL_DEV,
+  process.env.AUTH_BASE_URL_STAGE,
+  process.env.AUTH_BASE_URL_PROD
+);
+
+export const tokenEndpoint = getEnvUrl(
+  process.env.TOKEN_ENDPOINT_LOCAL,
+  process.env.TOKEN_ENDPOINT_DEV,
+  process.env.TOKEN_ENDPOINT_STAGE,
+  process.env.TOKEN_ENDPOINT_PROD
+);
+
 const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=100, left=100';
 
-export const clientId = isProduction ? process.env.CLIENT_ID_PROD : process.env.CLIENT_ID_STAGE;
+// Client ID
+export const clientId = getEnvUrl(
+  process.env.CLIENT_ID_LOCAL,
+  process.env.CLIENT_ID_DEV,
+  process.env.CLIENT_ID_STAGE,
+  process.env.CLIENT_ID_PROD
+);
 
-// for local dev please use
-// export const redirectUri = 'http://localhost:9000/support';
-export const redirectUri = isProduction ? process.env.REDIRECT_URI_PROD
-  : process.env.REDIRECT_URI_STAGE;
+// Redirect URI
+export const redirectUri = getEnvUrl(
+  process.env.REDIRECT_URI_LOCAL,
+  process.env.REDIRECT_URI_DEV,
+  process.env.REDIRECT_URI_STAGE,
+  process.env.REDIRECT_URI_PROD
+);
 
-export const scope = 'openid offline_access r_assets';
+// Scope
+export const scope = process.env.SCOPE || 'openid offline_access r_assets';
 
 export function generateCodeVerifier(length = 64) {
   const array = new Uint8Array(length);

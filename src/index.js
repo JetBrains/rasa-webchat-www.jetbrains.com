@@ -20,8 +20,24 @@ import {
 const tokenKey = 'chat_token';
 const tokenRefreshKey = 'chat_refresh_token';
 
-const isProduction = process.env.ENVIRONMENT === 'production';
-const envSocketUrl = isProduction ? 'https://rasa-prod-jb.labs.jb.gg' : 'https://rasa-stage-jb.labs.jb.gg';
+const environment = process.env.ENVIRONMENT || 'staging';
+
+// Function to get URL based on environment
+const getEnvUrl = (localUrl, devUrl, stageUrl, prodUrl) => {
+  if (environment === 'production') return prodUrl;
+  if (environment === 'staging') return stageUrl;
+  if (environment === 'development') return devUrl;
+  if (environment === 'local') return localUrl;
+  return stageUrl; // default to staging
+};
+
+// Rasa socket URL
+const rasaSocketUrl = getEnvUrl(
+  process.env.RASA_URL_LOCAL,
+  process.env.RASA_URL_DEV,
+  process.env.RASA_URL_STAGE,
+  process.env.RASA_URL_PROD
+);
 
 const socketTemplate = {
   isInitialized: () => false,
@@ -513,8 +529,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
         const newProtocolOptions = { ...props.protocolOptions, token };
 
         instanceSocket.current = new Socket(
-          // props.socketUrl,
-          envSocketUrl,
+          rasaSocketUrl,
           newCustomData,
           props.socketPath,
           props.protocol,
@@ -641,7 +656,7 @@ ConnectedWidget.propTypes = {
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   protocol: PropTypes.string,
-  socketUrl: PropTypes.string.isRequired,
+  socketUrl: PropTypes.string,
   socketPath: PropTypes.string,
   protocolOptions: PropTypes.shape({}),
   customData: PropTypes.shape({}),
@@ -697,7 +712,6 @@ ConnectedWidget.defaultProps = {
   connectOn: 'mount',
   onSocketEvent: {},
   protocol: 'socketio',
-  socketUrl: 'http://localhost',
   protocolOptions: {},
   badge: 0,
   embedded: false,
