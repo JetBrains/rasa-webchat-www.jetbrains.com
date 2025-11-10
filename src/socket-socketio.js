@@ -5,20 +5,26 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   // const options = path ? { path } : {};
   const options = {
     path: '/custom-socket.io',
-    transports: ["websocket", "polling"],
+    // transports: ["websocket", "polling"],
   };
 
   // Pass customData in Socket.IO connection options so it's sent during handshake
   // Rasa expects token in customData.auth_header (via metadata_key: customData config)
+  logger.debug('Socket.IO: customData:', customData);
   if (customData) {
     options.auth = customData;
-    
+    logger.info('🔍 Socket.IO: customData.auth_header:', customData.auth_header ? `${customData.auth_header.substring(0, 30)}...` : 'NULL');
     // Also pass token via extraHeaders for HTTP polling transport
     if (customData.auth_header) {
       options.extraHeaders = {
         Authorization: `Bearer ${customData.auth_header}`
       };
+      logger.info('🔍 Socket.IO: extraHeaders.Authorization SET:', `Bearer ${customData.auth_header.substring(0, 30)}...`);
+    } else {
+      logger.warn('⚠️ Socket.IO: customData.auth_header is MISSING!');
     }
+  } else {
+    logger.warn('⚠️ Socket.IO: customData is NULL!');
   }
 
   // Add protocol options if provided (for token updates)
