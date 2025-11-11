@@ -5,7 +5,7 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   // const options = path ? { path } : {};
   const options = {
     path: '/custom-socket.io',
-    // transports: ["websocket", "polling"],
+    transports: ["websocket"],  // Use WebSocket only for stable connection with token auth
   };
 
   // Pass customData in Socket.IO connection options so it's sent during handshake
