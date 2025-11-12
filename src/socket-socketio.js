@@ -5,8 +5,9 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   // const options = path ? { path } : {};
   const options = {
     path: '/custom-socket.io',
-    transports: ["websocket", "polling"],  // Try WebSocket first, fallback to polling if blocked
-    upgrade: true,  // Allow upgrade from polling to websocket after successful auth
+    transports: ["polling"],
+    // transports: ["websocket", "polling"],  // Try WebSocket first, fallback to polling if blocked
+    // upgrade: true,  // Allow upgrade from polling to websocket after successful auth
   };
 
   // Pass customData in Socket.IO connection options so it's sent during handshake
