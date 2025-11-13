@@ -261,23 +261,30 @@ const ConnectedWidget = forwardRef((props, ref) => {
                 localStorage.setItem(tokenRefreshKey, refresh_token);
               }
 
-              logger.info('🔄 Token refreshed automatically, updating socket in-place...');
+              logger.info('🔄 Token refreshed automatically, reconnecting socket with new token...');
 
-              // Update socket immediately with new token (NO destruction)
+              // Reconnect socket to ensure fresh token in all requests
               if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+                const oldSocketId = instanceSocket.current.socket.id;
+                const sessionId = instanceSocket.current.sessionId;
+
+                // Preserve session_id for reconnection
+                instanceSocket.current.socket.preservedSessionId = sessionId;
+                logger.debug('🔒 Preserved session_id:', sessionId, 'from socket:', oldSocketId);
+
+                // Close old socket
+                logger.debug('🔌 Closing old socket...');
+                instanceSocket.current.socket.close();
+
+                // Update customData with new token
                 const newCustomData = { ...props.customData, auth_header: id_token };
                 instanceSocket.current.customData = newCustomData;
 
-                if (instanceSocket.current.socket.updateAuthHeaders) {
-                  instanceSocket.current.socket.updateAuthHeaders(id_token);
-                }
+                // Create new socket with new token (preservedSessionId will be used)
+                logger.debug('🔌 Creating new socket with refreshed token...');
+                instanceSocket.current.createSocket();
 
-                // Update socket customData for future use
-                if (instanceSocket.current.socket.customData) {
-                  instanceSocket.current.socket.customData = newCustomData;
-                }
-                
-                logger.info('✅ Socket updated in-place, ID:', instanceSocket.current.socket.id);
+                logger.info('✅ Socket reconnected with new token, old ID:', oldSocketId, 'new ID:', instanceSocket.current.socket?.id);
               }
 
               setToken(id_token);
