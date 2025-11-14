@@ -41,16 +41,6 @@ const Header = ({
               />
             </button>
           }
-          {
-            showCloseButton &&
-            <button className="rw-close-button" onClick={toggleChat}>
-              <img
-                className={`rw-close ${closeImage ? '' : 'rw-default'}`}
-                src={closeImage || close}
-                alt="close"
-              />
-            </button>
-          }
         </div>
         <div className="rw-title-wrap">
           <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
@@ -59,9 +49,16 @@ const Header = ({
             <button className="rw-header-button rw-header-button_refresh" type="button" onClick={refreshSession}>
               <img alt="" src={refreshIcon} />
             </button>
-            <button className="rw-header-button" type="button" onClick={toggleChat}>
-              <img alt="" src={close} />
-            </button>
+            {
+              showCloseButton &&
+              <button className="rw-header-button" type="button" onClick={toggleChat}>
+                <img
+                  className={closeImage ? '' : 'rw-default'}
+                  alt="close"
+                  src={closeImage || close}
+                />
+              </button>
+            }
           </div>
         </div>
       </div>
