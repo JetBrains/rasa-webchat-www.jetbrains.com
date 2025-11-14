@@ -15,6 +15,13 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
         Authorization: `Bearer ${customData.auth_header}`
       };
     }
+  // Add X-Client-Page-URL header with current page URL
+  if (typeof window !== 'undefined' && window.location && window.location.href) {
+    if (!options.extraHeaders) {
+      options.extraHeaders = {};
+    }
+    options.extraHeaders['X-Client-Page-URL'] = window.location.href;
+    logger.info('🔍 Socket.IO: X-Client-Page-URL SET:', window.location.href);
   }
 
   // Add protocol options if provided (for token updates)
