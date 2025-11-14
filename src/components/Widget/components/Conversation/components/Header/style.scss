@@ -84,14 +84,6 @@
     }
   }
 
-  .#{$namespace}header-buttons {
-    @include header-buttons-fs;
-  }
-
-  .#{$namespace}close-button {
-    display: none;
-  }
-
   .#{$namespace}toggle-fullscreen-button {
     @include header-button-fs;
   }
@@ -129,12 +121,10 @@
     font-weight: 600;
   }
 
-  .#{$namespace}close-button,
   .#{$namespace}toggle-fullscreen-button {
     @include header-button-fs;
   }
 
-  .#{$namespace}close,
   .#{$namespace}toggle-fullscreen {
     @include header-icon-fs;
   }
@@ -159,15 +149,7 @@
       @include title-fs;
     }
 
-    .#{$namespace}close-button {
-      @include header-button-fs;
-    }
-
-    .#{$namespace}close {
-      @include header-icon-fs;
-    }
-
-    .#{$namespace}toggle-fullscreen-button, .#{$namespace}w-.toggle-fullscreen {
+    .#{$namespace}toggle-fullscreen-button, .#{$namespace}toggle-fullscreen {
       display: none;
     }
 
