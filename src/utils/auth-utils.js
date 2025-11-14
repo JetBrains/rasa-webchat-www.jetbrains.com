@@ -2,6 +2,12 @@ import logger from './logger';
 
 const environment = process.env.ENVIRONMENT || 'staging';
 
+// 🔍 DIAGNOSTIC LOGGING
+logger.info('🔍 AUTH-UTILS: Current environment:', environment);
+logger.info('🔍 AUTH-UTILS: process.env.ENVIRONMENT:', process.env.ENVIRONMENT);
+logger.log('🔍 Current environment:', environment);
+logger.log('🔍 RASA_URL_STAGE:', process.env.RASA_URL_STAGE);
+
 // Function to get URL based on environment
 const getEnvUrl = (localUrl, devUrl, stageUrl, prodUrl) => {
   if (environment === 'production') return prodUrl;
@@ -123,6 +129,7 @@ export const exchangeTokenReq = async (code) => {
   return res.json();
 };
 
+// TODO: wtf?
 export const authInRasa = async (idToken) => {
   try {
     const response = await fetch(rasaEndpoint, {

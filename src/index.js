@@ -187,10 +187,17 @@ const ConnectedWidget = forwardRef((props, ref) => {
   const instanceSocket = useRef(null);
   const store = useRef(null);
   const refreshTimerRef = useRef(null);
-  const [token, setToken] = useState(() => localStorage.getItem(tokenKey));
+  const [token, setToken] = useState(() => {
+    const initialToken = localStorage.getItem(tokenKey);
+    logger.info('🔍 INIT: Token from localStorage:', initialToken ? `${initialToken.substring(0, 30)}...` : 'NULL');
+    logger.info('🔍 INIT: tokenKey used:', tokenKey);
+    return initialToken;
+  });
   const [isAuth, setIsAuth] = useState(() => {
     const chatToken = localStorage.getItem(tokenKey);
-    return getIsTokenValid(chatToken);
+    const isValid = getIsTokenValid(chatToken);
+    logger.info('🔍 INIT: isAuth:', isValid, 'token valid:', isValid);
+    return isValid;
   });
 
   const scheduleTokenRefresh = (rToken) => {
@@ -254,23 +261,30 @@ const ConnectedWidget = forwardRef((props, ref) => {
                 localStorage.setItem(tokenRefreshKey, refresh_token);
               }
 
-              logger.info('🔄 Token refreshed automatically, updating socket in-place...');
+              logger.info('🔄 Token refreshed automatically, reconnecting socket with new token...');
 
-              // Update socket immediately with new token (NO destruction)
+              // Reconnect socket to ensure fresh token in all requests
               if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+                const oldSocketId = instanceSocket.current.socket.id;
+                const sessionId = instanceSocket.current.sessionId;
+
+                // Preserve session_id for reconnection
+                instanceSocket.current.socket.preservedSessionId = sessionId;
+                logger.debug('🔒 Preserved session_id:', sessionId, 'from socket:', oldSocketId);
+
+                // Close old socket
+                logger.debug('🔌 Closing old socket...');
+                instanceSocket.current.socket.close();
+
+                // Update customData with new token
                 const newCustomData = { ...props.customData, auth_header: id_token };
                 instanceSocket.current.customData = newCustomData;
 
-                if (instanceSocket.current.socket.updateAuthHeaders) {
-                  instanceSocket.current.socket.updateAuthHeaders(id_token);
-                }
+                // Create new socket with new token (preservedSessionId will be used)
+                logger.debug('🔌 Creating new socket with refreshed token...');
+                instanceSocket.current.createSocket();
 
-                // Update socket customData for future use
-                if (instanceSocket.current.socket.customData) {
-                  instanceSocket.current.socket.customData = newCustomData;
-                }
-                
-                logger.info('✅ Socket updated in-place, ID:', instanceSocket.current.socket.id);
+                logger.info('✅ Socket reconnected with new token, old ID:', oldSocketId, 'new ID:', instanceSocket.current.socket?.id);
               }
 
               setToken(id_token);
@@ -407,6 +421,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
 
   const authCallback = useCallback((event) => {
+    logger.info('🔍 authCallback: Received message event, type:', event.data?.type);
+    
     if (isAuth) {
       logger.debug('Already authenticated, ignoring message');
       return;
@@ -434,9 +450,13 @@ const ConnectedWidget = forwardRef((props, ref) => {
             return;
           }
 
-          logger.info('✅ Token received, storing...');
+          logger.info('✅ Token received, storing with key:', tokenKey);
+          logger.info('🔍 Token value (first 30 chars):', id_token.substring(0, 30) + '...');
           localStorage.setItem(tokenKey, id_token);
           localStorage.setItem(tokenRefreshKey, refresh_token);
+          logger.info('🔍 Token stored, verifying...');
+          const storedToken = localStorage.getItem(tokenKey);
+          logger.info('🔍 Verification - token in localStorage:', storedToken ? 'EXISTS' : 'NULL');
           setToken(id_token);
           setIsAuth(true);
           scheduleTokenRefresh(id_token);
@@ -518,8 +538,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
   };
 
   useEffect(() => {
+    logger.info('🔍 useEffect [isAuth, token]: isAuth=', isAuth, 'token=', token ? `${token.substring(0, 30)}...` : 'null');
+    logger.info('🔍 localStorage token:', localStorage.getItem(tokenKey) ? 'EXISTS' : 'NULL');
+    
     if (isAuth && token && instanceSocket.current) {
       const newCustomData = { ...props.customData, auth_header: token };
+      logger.info('🔍 Creating customData with auth_header:', newCustomData.auth_header ? 'TOKEN_SET' : 'NO_TOKEN');
 
       if (instanceSocket.current.isDummy) {
         // First time creating socket after login

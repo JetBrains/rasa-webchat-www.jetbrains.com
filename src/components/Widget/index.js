@@ -33,7 +33,8 @@ import {
   setDomHighlight,
   evalUrl,
   setCustomCss,
-  setFirstChatStarted
+  setFirstChatStarted,
+  setBotProcessing
 } from 'actions';
 import { safeQuerySelectorAll } from 'utils/dom';
 import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
@@ -139,6 +140,8 @@ class Widget extends Component {
         }
         // Mark that first chat has started
         dispatch(setFirstChatStarted());
+        // Set bot processing state when user sends a message
+        dispatch(setBotProcessing(true));
       };
       if (when === 'always') {
         send();
@@ -241,6 +244,11 @@ class Widget extends Component {
     this.clearCustomStyle();
     this.eventListenerCleaner();
     dispatch(clearMetadata());
+    
+    // Handle is_final parameter for bot processing state
+    const isFinal = botUtterance.metadata?.is_final ?? botUtterance.is_final ?? true;
+    dispatch(setBotProcessing(!isFinal));
+    
     if (botUtterance.metadata) this.propagateMetadata(botUtterance.metadata);
     const newMessage = { ...botUtterance, text: String(botUtterance.text) };
     if (botUtterance.metadata && botUtterance.metadata.customCss) {

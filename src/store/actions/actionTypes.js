@@ -38,4 +38,5 @@ export const SET_OLD_URL = 'SET_OLD_URL';
 export const EVAL_URL = 'EVAL_URL';
 export const SET_CUSTOM_CSS = 'SET_CUSTOM_CSS';
 export const SET_FIRST_CHAT_STARTED = 'SET_FIRST_CHAT_STARTED';
+export const SET_BOT_PROCESSING = 'SET_BOT_PROCESSING';
 

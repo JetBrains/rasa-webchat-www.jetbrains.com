@@ -177,5 +177,5 @@ Message.defaultTypes = {
 
 export default connect(store => ({
   messages: store.messages,
-  displayTypingIndication: store.behavior.get('messageDelayed')
+  displayTypingIndication: store.behavior.get('isBotProcessing')
 }))(Messages);
