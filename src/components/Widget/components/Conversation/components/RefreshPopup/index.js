@@ -12,10 +12,10 @@ export const RefreshPopup = ({ onRefresh, onCancel }) => (<div>
     </p>
     <div className="rw-popup-buttons">
       <button type="button" className="rw-popup-button" onClick={onRefresh}>
-                    refresh
+                    Refresh
       </button>
       <button type="button" className="rw-popup-button" onClick={onCancel}>
-                    cancel
+                    Cancel
       </button>
     </div>
   </div>
