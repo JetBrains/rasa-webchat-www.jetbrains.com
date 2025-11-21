@@ -5,6 +5,7 @@ import close from 'assets/clear-button.svg';
 import refreshIcon from 'assets/refresh.svg';
 import fullscreen from 'assets/fullscreen_button.svg';
 import fullscreenExit from 'assets/fullscreen_exit_button.svg';
+import jetbrainsLogo from 'assets/jetbrains-logo.svg';
 import ThemeContext from '../../../../ThemeContext';
 
 import './style.scss';
@@ -43,7 +44,10 @@ const Header = ({
           }
         </div>
         <div className="rw-title-wrap">
-          <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
+          <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>
+            <img src={jetbrainsLogo} alt="JetBrains" className="rw-title-icon" />
+            {title}
+          </h4>
           {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
           <div className="rw-header-buttons">
             <button className="rw-header-button rw-header-button_refresh" type="button" onClick={refreshSession}>

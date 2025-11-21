@@ -726,7 +726,7 @@ ConnectedWidget.propTypes = {
 };
 
 ConnectedWidget.defaultProps = {
-  title: 'JetBrains Support Assistant',
+  title: 'Support Assistant',
   customData: {},
   inputTextFieldHint: 'Type a message...',
   connectingText: 'Waiting for server...',
