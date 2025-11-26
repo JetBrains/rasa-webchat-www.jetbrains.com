@@ -13,6 +13,16 @@ const envKeys = Object.fromEntries(
 
 const envName = process.env.ENVIRONMENT || 'production';
 
+// Generate filename based on environment
+const getFilename = (env) => {
+  const envMap = {
+    development: 'chat-dev.js',
+    staging: 'chat-stage.js',
+    production: 'chat.js'
+  };
+  return envMap[env] || 'chat.js';
+};
+
 // Terminal banner with version on production builds
 try {
   // eslint-disable-next-line no-console
@@ -25,7 +35,7 @@ module.exports = [{
   entry: './umd.js',
   output: {
     path: path.join(__dirname, '/lib'),
-    filename: 'index.js',
+    filename: getFilename(envName),
     library: 'WebChat',
     libraryTarget: 'umd'
   },
@@ -101,7 +111,7 @@ module.exports = [{
   },
   output: {
     path: path.join(__dirname, '/module'),
-    filename: 'index.js',
+    filename: getFilename(envName),
     library: 'WebChat',
     libraryTarget: 'umd'
   },

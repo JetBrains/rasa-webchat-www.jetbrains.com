@@ -16,3 +16,4 @@ module
 coverage
 .env
 
+docs

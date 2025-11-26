@@ -120,7 +120,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
         logger.debug('⚠️ Socket already connected, skipping creation. ID:', this.socket.id);
         return;
       }
-      
+
+      // Store pending events before cleanup
+      const pendingEvents = [...this.onEvents];
+
       // If socket exists but disconnected, clean it up
       if (this.socket) {
         logger.debug('🧹 Cleaning up disconnected socket...');
@@ -173,14 +176,20 @@ const ConnectedWidget = forwardRef((props, ref) => {
           }
         }
       });
-      this.onEvents.forEach((event) => {
+
+      // Apply pending events (these were registered via socket.on() before socket was created)
+      pendingEvents.forEach((event) => {
         this.socket.on(event.event, event.callback);
       });
 
-      this.onEvents = [];
+      // Apply previously registered events from onSocketEvent (includes connect, disconnect, etc.)
       Object.keys(this.onSocketEvent).forEach((event) => {
         this.socket.on(event, this.onSocketEvent[event]);
       });
+
+      this.onEvents = [];
+
+      logger.debug('✅ Socket created with all event handlers attached');
     }
   }
 
@@ -272,19 +281,82 @@ const ConnectedWidget = forwardRef((props, ref) => {
                 instanceSocket.current.socket.preservedSessionId = sessionId;
                 logger.debug('🔒 Preserved session_id:', sessionId, 'from socket:', oldSocketId);
 
-                // Close old socket
-                logger.debug('🔌 Closing old socket...');
-                instanceSocket.current.socket.close();
+                // CRITICAL: Completely destroy old Socket.IO Manager and connection
+                logger.debug('🧹 Destroying old Socket.IO connection and Manager...');
+
+                // 1. Get the Manager URL before closing
+                const oldManagerUrl = instanceSocket.current.socket.io ? instanceSocket.current.socket.io.uri : null;
+
+                // 2. Close the socket first
+                try {
+                  instanceSocket.current.socket.close();
+                } catch (e) {
+                  logger.error('Error closing socket:', e);
+                }
+
+                // 3. Close and delete Manager from global cache
+                if (instanceSocket.current.socket.io) {
+                  try {
+                    instanceSocket.current.socket.io.close();
+                  } catch (e) {
+                    logger.error('Error closing manager:', e);
+                  }
+                }
+
+                // 4. Manually delete Manager from window.io.managers cache
+                if (typeof window !== 'undefined' && window.io && window.io.managers && oldManagerUrl) {
+                  logger.debug('🧹 Removing Manager from cache:', oldManagerUrl);
+                  Object.keys(window.io.managers).forEach(key => {
+                    if (key === oldManagerUrl || key.startsWith(oldManagerUrl.split('?')[0])) {
+                      logger.debug('🗑️ Deleting Manager:', key);
+                      try {
+                        window.io.managers[key].close();
+                      } catch (e) {
+                        // Already closed
+                      }
+                      delete window.io.managers[key];
+                    }
+                  });
+                }
+
+                instanceSocket.current.socket = null;
 
                 // Update customData with new token
                 const newCustomData = { ...props.customData, auth_header: id_token };
                 instanceSocket.current.customData = newCustomData;
 
-                // Create new socket with new token (preservedSessionId will be used)
-                logger.debug('🔌 Creating new socket with refreshed token...');
-                instanceSocket.current.createSocket();
+                // Add timestamp to force new Manager creation with fresh token
+                const originalUrl = instanceSocket.current.url;
+                const timestamp = Date.now();
+                instanceSocket.current.url = `${originalUrl}${originalUrl.includes('?') ? '&' : '?'}_t=${timestamp}`;
+                logger.debug('🔌 Using timestamped URL to force new Manager:', instanceSocket.current.url);
 
-                logger.info('✅ Socket reconnected with new token, old ID:', oldSocketId, 'new ID:', instanceSocket.current.socket?.id);
+                // Small delay to ensure old connection is fully closed before creating new one
+                logger.debug('⏱️ Waiting 100ms for old connection cleanup...');
+                setTimeout(() => {
+                  // Create new socket with new token (preservedSessionId will be used)
+                  logger.debug('🔌 Creating new socket with refreshed token...');
+
+                  // CRITICAL: Mark socket as needing reinitialization BEFORE creating it
+                  // This will trigger componentDidUpdate in Widget to call initializeWidget
+                  instanceSocket.current.needsReinitialization = true;
+
+                  instanceSocket.current.createSocket();
+
+                  // CRITICAL: Update store's socket reference after creating new socket
+                  if (store.current && store.current.updateSocket) {
+                    store.current.updateSocket(instanceSocket.current);
+                    logger.debug('✅ Store socket reference updated');
+                  }
+
+                  // Restore original URL for next refresh
+                  instanceSocket.current.url = originalUrl;
+
+                  logger.info('✅ Socket reconnected with new token, old ID:', oldSocketId, 'new ID:', instanceSocket.current.socket?.id);
+
+                  // Trigger a re-render to call componentDidUpdate
+                  setSocketKey(`token-refresh-${Date.now()}`);
+                }, 100);
               }
 
               setToken(id_token);
@@ -331,7 +403,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           localStorage.setItem(tokenRefreshKey, refresh_token);
         }
 
-        // Update socket immediately with new token (NO destruction)
+        // Update socket with new token (NO destruction - manual refresh uses /restart)
         if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
           const newCustomData = { ...props.customData, auth_header: id_token };
           instanceSocket.current.customData = newCustomData;

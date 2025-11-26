@@ -33,7 +33,7 @@ const Sender = ({ sendMessage, inputTextFieldHint, userInput, isBotProcessing })
     }
   }
   
-  const isDisabled = !(inputValue && inputValue.length > 0) || isBotProcessing;
+  const isDisabled = !(inputValue && inputValue.trim().length > 0) || isBotProcessing;
   
   return (
     userInput === 'hide' ? <div /> : (

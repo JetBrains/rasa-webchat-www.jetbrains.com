@@ -56,18 +56,23 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   logger.debug('Socket.IO: customData:', customData);
   logger.debug('Socket.IO: options:', options);
 
-  // CRITICAL: Close any existing managers for this URL to prevent duplicates
+  // CRITICAL: Close any existing managers for this URL to prevent duplicates and stale tokens
   if (typeof window !== 'undefined' && window.io && window.io.managers) {
-    const managerKey = socketUrl;
-    if (window.io.managers[managerKey]) {
-      logger.debug('🧹 Closing existing manager for:', managerKey);
-      try {
-        window.io.managers[managerKey].close();
-        delete window.io.managers[managerKey];
-      } catch (e) {
-        logger.error('Error closing manager:', e);
+    // Extract base URL without query params for manager key matching
+    const baseUrl = socketUrl.split('?')[0];
+
+    // Close all managers that match the base URL (including those with timestamps)
+    Object.keys(window.io.managers).forEach(managerKey => {
+      if (managerKey.startsWith(baseUrl)) {
+        logger.debug('🧹 Closing existing manager for:', managerKey);
+        try {
+          window.io.managers[managerKey].close();
+          delete window.io.managers[managerKey];
+        } catch (e) {
+          logger.error('Error closing manager:', e);
+        }
       }
-    }
+    });
   }
 
   const socket = io(socketUrl, options);
