@@ -218,8 +218,14 @@ class Widget extends Component {
       // 1. No more messages in queue
       // 2. Last bot_uttered had is_final:true
       // Add small delay to allow React to render buttons/replies before hiding WIP
+      logger.debug('newMessageTimeout check:', {
+        messagesLength: this.messages.length,
+        lastIsFinal: this.lastIsFinal,
+        willHideWIP: this.messages.length === 0 && this.lastIsFinal
+      });
       if (this.messages.length === 0 && this.lastIsFinal) {
         setTimeout(() => {
+          logger.debug('Hiding WIP after message displayed');
           dispatch(setBotProcessing(false));
         }, 100);
       }
@@ -272,6 +278,12 @@ class Widget extends Component {
     // If is_final is explicitly set to false, keep WIP active
     // If is_final is explicitly set to true or missing, hide WIP after message is shown
     const isFinal = botUtterance.metadata?.is_final ?? botUtterance.is_final ?? true;
+
+    logger.debug('handleBotUtterance:', {
+      text: botUtterance.text?.substring(0, 50),
+      isFinal,
+      isChatOpen
+    });
 
     // Store last is_final value to check in newMessageTimeout
     this.lastIsFinal = isFinal;
