@@ -51,6 +51,7 @@ class Widget extends Component {
     this.delayedMessage = null;
     this.messageDelayTimeout = null;
     this.onGoingMessageDelay = false;
+    this.lastIsFinal = true; // Track last is_final value from bot_uttered
     this.sendMessage = this.sendMessage.bind(this);
     this.getSessionId = this.getSessionId.bind(this);
     this.getSessionIdWithFallback = this.getSessionIdWithFallback.bind(this);
@@ -213,6 +214,15 @@ class Widget extends Component {
       dispatch(triggerMessageDelayed(false));
       this.onGoingMessageDelay = false;
       this.popLastMessage();
+      // Hide WIP bubble only if:
+      // 1. No more messages in queue
+      // 2. Last bot_uttered had is_final:true
+      // Add small delay to allow React to render buttons/replies before hiding WIP
+      if (this.messages.length === 0 && this.lastIsFinal) {
+        setTimeout(() => {
+          dispatch(setBotProcessing(false));
+        }, 100);
+      }
     }, customMessageDelay(message.text || ''));
   }
 
@@ -253,15 +263,30 @@ class Widget extends Component {
   }
 
   handleBotUtterance(botUtterance) {
-    const { dispatch } = this.props;
+    const { dispatch, isChatOpen } = this.props;
     this.clearCustomStyle();
     this.eventListenerCleaner();
     dispatch(clearMetadata());
-    
+
     // Handle is_final parameter for bot processing state
+    // If is_final is explicitly set to false, keep WIP active
+    // If is_final is explicitly set to true or missing, hide WIP after message is shown
     const isFinal = botUtterance.metadata?.is_final ?? botUtterance.is_final ?? true;
-    dispatch(setBotProcessing(!isFinal));
-    
+
+    // Store last is_final value to check in newMessageTimeout
+    this.lastIsFinal = isFinal;
+
+    // If chat is not open, message is displayed immediately without delay
+    // So we can set isBotProcessing based on is_final immediately
+    // If chat is open, message will have delay, so keep WIP active until message is shown
+    if (!isChatOpen) {
+      dispatch(setBotProcessing(!isFinal));
+    } else if (!isFinal) {
+      // If not final and chat is open, keep showing WIP
+      dispatch(setBotProcessing(true));
+    }
+    // If isFinal and chat is open, WIP will be hidden after message delay in newMessageTimeout
+
     if (botUtterance.metadata) this.propagateMetadata(botUtterance.metadata);
     const newMessage = { ...botUtterance, text: String(botUtterance.text) };
     if (botUtterance.metadata && botUtterance.metadata.customCss) {
@@ -469,6 +494,7 @@ class Widget extends Component {
           if (expiry === 0 || expiry > Date.now()) {
             dispatch(addUserMessage(message));
             dispatch(emitUserMessage(message));
+            dispatch(setBotProcessing(true));
           }
         }
       }
@@ -546,6 +572,8 @@ class Widget extends Component {
       if (!sessionId) return;
       socket.emit('user_uttered', { message: '/session_start', customData, session_id: sessionId });
       dispatch(initialize());
+      // Show WIP bubble while waiting for bot's response to /session_start
+      dispatch(setBotProcessing(true));
     }
   }
 
@@ -656,6 +684,8 @@ class Widget extends Component {
       this.props.dispatch(emitUserMessage(result));
       // Mark that first chat has started
       this.props.dispatch(setFirstChatStarted());
+      // Set bot processing state when user sends a message
+      this.props.dispatch(setBotProcessing(true));
     }
     event.target.message.value = '';
   }
