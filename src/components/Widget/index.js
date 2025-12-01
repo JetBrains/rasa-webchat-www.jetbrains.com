@@ -57,6 +57,7 @@ class Widget extends Component {
     this.getSessionIdWithFallback = this.getSessionIdWithFallback.bind(this);
     this.intervalId = null;
     this.eventListenerCleaner = () => { };
+    this.socketHandlersRegistered = false; // Track if socket handlers are already registered
   }
 
   componentDidMount() {
@@ -425,6 +426,12 @@ class Widget extends Component {
       customData
     } = this.props;
 
+    // Skip if handlers already registered to prevent duplicates
+    if (this.socketHandlersRegistered) {
+      logger.info('⏭️ Socket handlers already registered, skipping...');
+      return;
+    }
+
     logger.info('📝 Registering socket event handlers...');
 
     // Register bot_uttered handler
@@ -530,6 +537,9 @@ class Widget extends Component {
         dispatch(disconnectServer());
       }
     });
+
+    // Mark handlers as registered
+    this.socketHandlersRegistered = true;
 
     logger.info('✅ Socket event handlers registered');
   }
@@ -737,6 +747,9 @@ class Widget extends Component {
       logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
       logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
     }
+
+    // Reset socket handlers registration flag to allow re-registration
+    this.socketHandlersRegistered = false;
 
     // Remove session_id from customData if it exists to avoid duplication
     const cleanCustomData = { ...customData };
