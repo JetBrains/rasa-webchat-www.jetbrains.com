@@ -277,8 +277,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
                 const oldSocketId = instanceSocket.current.socket.id;
                 const sessionId = instanceSocket.current.sessionId;
 
-                // Preserve session_id for reconnection
-                instanceSocket.current.socket.preservedSessionId = sessionId;
+                // Preserve session_id for reconnection - save to instanceSocket, not socket (which will be destroyed)
+                instanceSocket.current.preservedSessionId = sessionId;
                 logger.debug('🔒 Preserved session_id:', sessionId, 'from socket:', oldSocketId);
 
                 // CRITICAL: Completely destroy old Socket.IO Manager and connection
@@ -342,6 +342,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
                   instanceSocket.current.needsReinitialization = true;
 
                   instanceSocket.current.createSocket();
+
+                  // Copy preservedSessionId to the new socket object
+                  if (instanceSocket.current.preservedSessionId && instanceSocket.current.socket) {
+                    instanceSocket.current.socket.preservedSessionId = instanceSocket.current.preservedSessionId;
+                    logger.debug('✅ Copied preservedSessionId to new socket:', instanceSocket.current.preservedSessionId);
+                  }
 
                   // CRITICAL: Update store's socket reference after creating new socket
                   if (store.current && store.current.updateSocket) {

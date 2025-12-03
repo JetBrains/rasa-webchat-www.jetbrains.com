@@ -717,35 +717,17 @@ class Widget extends Component {
       logger.debug('Cleaned customData:', cleanCustomData);
     }
 
-    // CRITICAL: Preserve session_id for reconnect after restart
-    if (sessionId && socket) {
-      socket.preservedSessionId = sessionId;
-      {
-        logger.debug('Preserved session_id for potential reconnect:', sessionId);
-      }
-    }
-
     this.props.dispatch(clearMessages());
 
     // First send /restart
     socket.emit('user_uttered', {
       message: '/restart',
       customData: cleanCustomData,
-      session_id: sessionId
+      session_id: sessionId // TODO: here
     });
 
     logger.info('Restart payload sent with session_id:', sessionId);
-
-    // CRITICAL: After /restart, we need to re-establish the session
-    // Send session_request WITHOUT session_id to get a fresh session from backend
-    setTimeout(() => {
-      logger.info('📤 Sending session_request after /restart (requesting new session)');
-      socket.emit('session_request', { customData: cleanCustomData });
-    }, 100);
-
-    {
-      logger.info('=== END SESSION RESTART ===');
-    }
+    logger.info('=== END SESSION RESTART ===');
   }
 
   render() {
