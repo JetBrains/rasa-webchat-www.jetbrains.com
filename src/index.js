@@ -577,6 +577,13 @@ const ConnectedWidget = forwardRef((props, ref) => {
     if (reason === 'transport error' || reason === 'io server disconnect') {
       logger.info('🔄 Disconnect likely due to token expiration, refreshing token...');
 
+      // CRITICAL: Preserve session_id before reconnect
+      const sessionId = instanceSocket.current?.sessionId;
+      if (sessionId && instanceSocket.current) {
+        instanceSocket.current.preservedSessionId = sessionId;
+        logger.debug('🔒 Preserved session_id before reconnect:', sessionId);
+      }
+
       if (instanceSocket.current) {
         instanceSocket.current.isDisconnecting = true;
       }
@@ -630,13 +637,30 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
         const newProtocolOptions = { ...props.protocolOptions, token };
 
+        // Handle reconnect - copy preservedSessionId to socket object
+        const handleSocketConnect = () => {
+          if (instanceSocket.current?.preservedSessionId && instanceSocket.current.socket) {
+            instanceSocket.current.socket.preservedSessionId = instanceSocket.current.preservedSessionId;
+            logger.debug('✅ Reconnected: copied preservedSessionId to socket:', instanceSocket.current.preservedSessionId);
+          }
+
+          // Call original connect handler if it exists
+          if (props.onSocketEvent?.connect) {
+            props.onSocketEvent.connect();
+          }
+        };
+
         instanceSocket.current = new Socket(
           rasaSocketUrl,
           newCustomData,
           props.socketPath,
           props.protocol,
           newProtocolOptions,
-          { ...props.onSocketEvent, disconnect: handleSocketDisconnect },
+          {
+            ...props.onSocketEvent,
+            disconnect: handleSocketDisconnect,
+            connect: handleSocketConnect
+          },
           onConnectionError
         );
 

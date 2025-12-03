@@ -40,31 +40,39 @@ function initStore(
         // Get fresh session ID each time
         const localSession = getLocalSession(storage, SESSION_NAME);
         let sessionId = localSession?.session_id;
-        
+
         // Try multiple sources for session ID
         if (!sessionId && activeSocket.sessionId) {
           sessionId = activeSocket.sessionId;
         }
-        
+
         if (!sessionId) {
           sessionId = localStorage.getItem('chat_session_id');
         }
-        
+
         // Get fresh customData and socket reference
         const realSocket = activeSocket.socket || activeSocket;
         const currentCustomData = activeSocket.customData || {};
-        
+
         logger.debug('📤 MIDDLEWARE: Using socket reference:', activeSocket.marker || 'unknown');
         logger.debug('📤 Sending message with token:', currentCustomData?.auth_header ? currentCustomData.auth_header.substring(0, 30) + '...' : 'none');
         logger.debug('📤 Session ID:', sessionId);
         logger.debug('📤 Real Socket ID:', realSocket?.id || 'N/A');
         logger.debug('📤 Socket connected:', realSocket?.connected || false);
-        
+
         if (!realSocket || !realSocket.connected) {
           logger.error('❌ Socket not connected, cannot send message');
           return;
         }
-        
+
+        if (!sessionId) {
+          logger.error('❌ CRITICAL: No session_id available! Cannot send message. Payload:', payload);
+          logger.error('❌ Checked sources: localSession, activeSocket.sessionId, localStorage');
+          logger.error('❌ This indicates a bug - session_id must be available before sending messages');
+          logger.error('❌ Message will not be sent to prevent creating orphaned messages');
+          return;
+        }
+
         // Use activeSocket.emit, not socket.emit
         activeSocket.emit(
           'user_uttered', {
@@ -73,7 +81,7 @@ function initStore(
             session_id: sessionId
           }
         );
-        
+
         store.dispatch({
           type: actionTypes.ADD_NEW_USER_MESSAGE,
           text: 'text',
@@ -81,7 +89,7 @@ function initStore(
           hidden: true
         });
       };
-      
+
       if (currentSocketRef.sessionConfirmed) {
         emit();
       } else {
@@ -151,7 +159,6 @@ function initStore(
     metadata: metadata(storage)
   });
 
-
   // eslint-disable-next-line no-underscore-dangle
   const composeEnhancer = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
@@ -169,6 +176,5 @@ function initStore(
   
   return store;
 }
-
 
 export { initStore };
