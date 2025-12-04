@@ -8,8 +8,8 @@ function Send({ ready }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="25"
-      height="25"
+      width="20"
+      height="20"
       enableBackground="new 0 0 535.5 535.5"
       version="1.1"
       viewBox="0 0 535.5 535.5"

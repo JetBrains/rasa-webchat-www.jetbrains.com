@@ -15,7 +15,7 @@
       }
 
       ul {
-          padding-left: 10px;
+          padding-left: 0px;
           list-style: none;
       }
   }
@@ -33,7 +33,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #6B57FF;
+  background-color: rgba(107, 87, 255, 0.8);
   border: 0;
   border-radius: 50%;
   cursor: pointer;
@@ -55,8 +55,8 @@
   }
 
   img {
-    width: 70%;
-    max-height: 70%;
+    width: 130%;
+    max-height: 130%;
     object-fit: contain;
   }
 

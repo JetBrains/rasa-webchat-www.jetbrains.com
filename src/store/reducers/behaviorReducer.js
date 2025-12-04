@@ -19,6 +19,7 @@ export default function (
     connectingText,
     unreadCount: 0,
     messageDelayed: false,
+    isBotProcessing: false,
     oldUrl: '',
     pageChangeCallbacks: Map(),
     firstChatStarted: false
@@ -99,6 +100,9 @@ export default function (
       case actionTypes.SET_FIRST_CHAT_STARTED: {
         return storeParams(state.set('firstChatStarted', true));
       }
+      case actionTypes.SET_BOT_PROCESSING: {
+        return storeParams(state.set('isBotProcessing', action.isProcessing));
+      }
 
       // Pull params from storage to redux store
       case actionTypes.PULL_SESSION: {
@@ -107,8 +111,9 @@ export default function (
         // Do not persist connected state
         const connected = state.get('connected');
         const messageDelayed = state.get('messageDelayed');
+        const isBotProcessing = state.get('isBotProcessing');
         if (localSession && localSession.params) {
-          return fromJS({ ...localSession.params, connected, messageDelayed });
+          return fromJS({ ...localSession.params, connected, messageDelayed, isBotProcessing });
         }
         return state;
       }

@@ -35,11 +35,25 @@ export default function (socketUrl, customData, _path, options) {
     });
   });
 
-  socketProxy.on('session_request', () => {
+  socketProxy.on('session_request', (payload) => {
     const authData = options.authData || null;
+    const session_id = payload?.session_id || null;
+    const payloadCustomData = payload?.customData || {};
+
+    const messageContent = {
+      authData,
+      ...customData,
+      ...payloadCustomData
+    };
+
+    // Include session_id if provided (for session persistence)
+    if (session_id) {
+      messageContent.session_id = session_id;
+    }
+
     send({
       type: 'SESSION_REQUEST',
-      content: JSON.stringify({ authData, ...customData }),
+      content: JSON.stringify(messageContent),
       sender: 'client'
     });
   });

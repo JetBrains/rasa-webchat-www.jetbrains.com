@@ -265,3 +265,10 @@ export function setFirstChatStarted() {
   };
 }
 
+export function setBotProcessing(isProcessing) {
+  return {
+    type: actions.SET_BOT_PROCESSING,
+    isProcessing
+  };
+}
+

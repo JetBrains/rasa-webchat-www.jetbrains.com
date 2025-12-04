@@ -2,19 +2,40 @@ import io from 'socket.io-client';
 import logger from './utils/logger';
 
 export default function (socketUrl, customData, path, protocolOptions, onError) {
-  const options = path ? { path } : {};
+  // const options = path ? { path } : {};
+  const options = {
+    path: '/custom-socket.io',
+    transports: ["polling"],
+    // transports: ["websocket", "polling"],  // Try WebSocket first, fallback to polling if blocked
+    // upgrade: true,  // Allow upgrade from polling to websocket after successful auth
+  };
 
   // Pass customData in Socket.IO connection options so it's sent during handshake
   // Rasa expects token in customData.auth_header (via metadata_key: customData config)
+  logger.debug('Socket.IO: customData:', customData);
   if (customData) {
     options.auth = customData;
-    
+    logger.info('🔍 Socket.IO: customData.auth_header:', customData.auth_header ? `${customData.auth_header.substring(0, 30)}...` : 'NULL');
     // Also pass token via extraHeaders for HTTP polling transport
     if (customData.auth_header) {
       options.extraHeaders = {
         Authorization: `Bearer ${customData.auth_header}`
       };
+      logger.info('🔍 Socket.IO: extraHeaders.Authorization SET:', `Bearer ${customData.auth_header.substring(0, 30)}...`);
+    } else {
+      logger.warn('⚠️ Socket.IO: customData.auth_header is MISSING!');
     }
+  } else {
+    logger.warn('⚠️ Socket.IO: customData is NULL!');
+  }
+
+  // Add X-Client-Page-URL header with current page URL
+  if (typeof window !== 'undefined' && window.location && window.location.href) {
+    if (!options.extraHeaders) {
+      options.extraHeaders = {};
+    }
+    options.extraHeaders['X-Client-Page-URL'] = window.location.href;
+    logger.info('🔍 Socket.IO: X-Client-Page-URL SET:', window.location.href);
   }
 
   // Add protocol options if provided (for token updates)
@@ -35,18 +56,23 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   logger.debug('Socket.IO: customData:', customData);
   logger.debug('Socket.IO: options:', options);
 
-  // CRITICAL: Close any existing managers for this URL to prevent duplicates
+  // CRITICAL: Close any existing managers for this URL to prevent duplicates and stale tokens
   if (typeof window !== 'undefined' && window.io && window.io.managers) {
-    const managerKey = socketUrl;
-    if (window.io.managers[managerKey]) {
-      logger.debug('🧹 Closing existing manager for:', managerKey);
-      try {
-        window.io.managers[managerKey].close();
-        delete window.io.managers[managerKey];
-      } catch (e) {
-        logger.error('Error closing manager:', e);
+    // Extract base URL without query params for manager key matching
+    const baseUrl = socketUrl.split('?')[0];
+
+    // Close all managers that match the base URL (including those with timestamps)
+    Object.keys(window.io.managers).forEach(managerKey => {
+      if (managerKey.startsWith(baseUrl)) {
+        logger.debug('🧹 Closing existing manager for:', managerKey);
+        try {
+          window.io.managers[managerKey].close();
+          delete window.io.managers[managerKey];
+        } catch (e) {
+          logger.error('Error closing manager:', e);
+        }
       }
-    }
+    });
   }
 
   const socket = io(socketUrl, options);

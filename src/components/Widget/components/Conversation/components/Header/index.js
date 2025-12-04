@@ -5,6 +5,7 @@ import close from 'assets/clear-button.svg';
 import refreshIcon from 'assets/refresh.svg';
 import fullscreen from 'assets/fullscreen_button.svg';
 import fullscreenExit from 'assets/fullscreen_exit_button.svg';
+import jetbrainsLogo from 'assets/jetbrains-logo.svg';
 import ThemeContext from '../../../../ThemeContext';
 
 import './style.scss';
@@ -41,27 +42,27 @@ const Header = ({
               />
             </button>
           }
-          {
-            showCloseButton &&
-            <button className="rw-close-button" onClick={toggleChat}>
-              <img
-                className={`rw-close ${closeImage ? '' : 'rw-default'}`}
-                src={closeImage || close}
-                alt="close"
-              />
-            </button>
-          }
         </div>
         <div className="rw-title-wrap">
-          <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>{title}</h4>
+          <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>
+            <img src={jetbrainsLogo} alt="JetBrains" className="rw-title-icon" />
+            {title}
+          </h4>
           {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
           <div className="rw-header-buttons">
             <button className="rw-header-button rw-header-button_refresh" type="button" onClick={refreshSession}>
               <img alt="" src={refreshIcon} />
             </button>
-            <button className="rw-header-button" type="button" onClick={toggleChat}>
-              <img alt="" src={close} />
-            </button>
+            {
+              showCloseButton &&
+              <button className="rw-header-button" type="button" onClick={toggleChat}>
+                <img
+                  className={closeImage ? '' : 'rw-default'}
+                  alt="close"
+                  src={closeImage || close}
+                />
+              </button>
+            }
           </div>
         </div>
       </div>
