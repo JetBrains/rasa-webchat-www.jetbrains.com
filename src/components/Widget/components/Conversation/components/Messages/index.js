@@ -22,6 +22,18 @@ const formatDate = (date) => {
   return `${showDate}${dateToFormat.toLocaleTimeString('en-US', { timeStyle: 'short' })}`;
 };
 
+const isUserAtBottom = () => {
+  const messagesDiv = document.getElementById('rw-messages');
+  if (!messagesDiv) return true;
+
+  // Check if user is near the bottom
+  const indent = 50; // 50px from the bottom
+  const position = messagesDiv.scrollTop + messagesDiv.clientHeight;
+  const height = messagesDiv.scrollHeight;
+
+  return position >= height - indent;
+};
+
 const scrollToBottom = () => {
   const messagesDiv = document.getElementById('rw-messages');
   if (messagesDiv) {
@@ -30,12 +42,28 @@ const scrollToBottom = () => {
 };
 
 class Messages extends Component {
+  constructor(props) {
+    super(props);
+    this.wasAtBottom = true; // Track if user was at bottom before update
+  }
+
   componentDidMount() {
+    // Always scroll to bottom on initial mount
     scrollToBottom();
   }
 
-  componentDidUpdate() {
-    scrollToBottom();
+  getSnapshotBeforeUpdate(prevProps) {
+    // Check if user is at bottom BEFORE the new message is rendered
+    this.wasAtBottom = isUserAtBottom();
+    return null;
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    // Only auto-scroll if user was at the bottom before the update
+    // This allows users to read history without being interrupted
+    if (this.wasAtBottom) {
+      scrollToBottom();
+    }
   }
 
   getComponentToRender = (message, index, isLast) => {
