@@ -19,6 +19,7 @@ const Header = ({
   refreshSession,
   showCloseButton,
   showFullScreenButton,
+  showRefreshButton,
   closeImage,
   profileAvatar
 }) => {
@@ -50,9 +51,12 @@ const Header = ({
           </h4>
           {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
           <div className="rw-header-buttons">
-            <button className="rw-header-button rw-header-button_refresh" type="button" onClick={refreshSession}>
-              <img alt="" src={refreshIcon} />
-            </button>
+            {
+              showRefreshButton &&
+              <button className="rw-header-button rw-header-button_refresh" type="button" onClick={refreshSession}>
+                <img alt="" src={refreshIcon} />
+              </button>
+            }
             {
               showCloseButton &&
               <button className="rw-header-button" type="button" onClick={toggleChat}>
@@ -78,6 +82,7 @@ Header.propTypes = {
   refreshSession: PropTypes.func,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
+  showRefreshButton: PropTypes.bool,
   closeImage: PropTypes.string,
   profileAvatar: PropTypes.string
 };
