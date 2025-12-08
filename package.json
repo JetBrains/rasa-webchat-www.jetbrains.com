@@ -16,6 +16,7 @@
     "build-dev": "cross-env ENVIRONMENT=development webpack --config webpack.prod.js -p",
     "build-stage": "cross-env ENVIRONMENT=staging webpack --config webpack.prod.js -p",
     "build-prod": "cross-env ENVIRONMENT=production webpack --config webpack.prod.js -p",
+    "build-off": "cross-env ENVIRONMENT=stub webpack --config webpack.stub.js -p",
     "test": "jest",
     "prepare": "npm run build",
     "release": "standard-version"
