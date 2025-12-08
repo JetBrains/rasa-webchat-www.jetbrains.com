@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { PROP_TYPES } from 'constants';
-import { addUserMessage, emitUserMessage, setButtons, toggleInputDisabled } from 'actions';
+import { addUserMessage, emitUserMessage, setButtons, toggleInputDisabled, setBotProcessing } from 'actions';
 import Message from '../Message/index';
 
 import './styles.scss';
@@ -125,6 +125,7 @@ const mapDispatchToProps = dispatch => ({
     dispatch(setButtons(id, title));
     dispatch(addUserMessage(title));
     dispatch(emitUserMessage(payload));
+    dispatch(setBotProcessing(true));
     // dispatch(toggleInputDisabled());
   }
 });

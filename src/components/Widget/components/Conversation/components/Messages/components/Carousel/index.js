@@ -2,7 +2,7 @@ import React, { useRef, useState, useContext } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
-import { addUserMessage, emitUserMessage } from 'actions';
+import { addUserMessage, emitUserMessage, setBotProcessing } from 'actions';
 import { PROP_TYPES } from 'constants';
 import Arrow from 'assets/arrow';
 import ThemeContext from '../../../../../../ThemeContext';
@@ -180,6 +180,7 @@ const mapDispatchToProps = dispatch => ({
   chooseReply: (payload, title) => {
     if (title) dispatch(addUserMessage(title));
     dispatch(emitUserMessage(payload));
+    dispatch(setBotProcessing(true));
   }
 });
 

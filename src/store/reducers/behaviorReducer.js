@@ -108,10 +108,11 @@ export default function (
       case actionTypes.PULL_SESSION: {
         const localSession = getLocalSession(storage, SESSION_NAME);
 
-        // Do not persist connected state
+        // Do not persist connected state, messageDelayed, and isBotProcessing
+        // isBotProcessing should always be false on session restore to prevent blinking
         const connected = state.get('connected');
         const messageDelayed = state.get('messageDelayed');
-        const isBotProcessing = state.get('isBotProcessing');
+        const isBotProcessing = false;
         if (localSession && localSession.params) {
           return fromJS({ ...localSession.params, connected, messageDelayed, isBotProcessing });
         }
