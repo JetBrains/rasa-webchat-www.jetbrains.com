@@ -16,9 +16,13 @@ import {
 } from './utils/auth-utils';
 import { environment, getEnvUrl } from './utils/environment';
 import { TOKEN_KEY, REFRESH_TOKEN_KEY, SOCKET_RECONNECT_DELAY } from './constants/token';
+import { SOCKET_TEMPLATE } from './constants/socket';
 import { TokenManager } from './services/TokenManager';
+import { SocketWrapper } from './services/SocketWrapper';
 import { updateSocketAuth, updateAndVerifySocketAuth, updateSocketProtocolOptions } from './utils/SocketAuthUpdater';
 import { reconnectSocketWithNewToken } from './utils/SocketReconnection';
+import { createSocketEventHandlers } from './utils/SocketEventHandlers';
+import { useOAuthCallback } from './hooks/useOAuthCallback';
 
 const tokenKey = TOKEN_KEY;
 const tokenRefreshKey = REFRESH_TOKEN_KEY;
@@ -31,160 +35,7 @@ const rasaSocketUrl = getEnvUrl(
   process.env.RASA_URL_PROD
 );
 
-const socketTemplate = {
-  isInitialized: () => false,
-  on: () => {
-  },
-  emit: () => {
-  },
-  close: () => {
-  },
-  createSocket: () => {
-  },
-  marker: Math.random(),
-  isDummy: true
-};
-
 const ConnectedWidget = forwardRef((props, ref) => {
-  class Socket {
-    constructor(
-      url,
-      customData,
-      path,
-      protocol,
-      protocolOptions,
-      onSocketEvent,
-      onConnectionError
-    ) {
-      this.url = url;
-      this.customData = customData;
-      this.path = path;
-      this.protocol = protocol;
-      this.protocolOptions = protocolOptions;
-      this.onSocketEvent = onSocketEvent;
-      this.socket = null;
-      this.onEvents = [];
-      this.marker = Math.random();
-      this.onConnectionError = onConnectionError;
-    }
-
-    updateProtocolOptions(newProtocolOptions) {
-      this.protocolOptions = newProtocolOptions;
-    }
-
-    isInitialized() {
-      return this.socket !== null && this.socket.connected;
-    }
-
-    on(event, callback) {
-      if (!this.socket) {
-        this.onEvents.push({ event, callback });
-      } else {
-        this.socket.on(event, callback);
-      }
-    }
-
-    emit(message, data) {
-      if (this.socket) {
-        // CRITICAL: Always use the most current socket
-        logger.debug('🔍 EMIT: Using socket ID:', this.socket.id, 'connected:', this.socket.connected);
-
-        if (!this.socket.connected) {
-          logger.error('❌ EMIT: Socket not connected, cannot send message');
-          return;
-        }
-
-        this.socket.emit(message, data);
-      } else {
-        logger.error('❌ EMIT: No socket available');
-      }
-    }
-
-    close() {
-      if (this.socket) {
-        this.socket.close();
-      }
-    }
-
-    createSocket() {
-      // Check if socket exists and is connected
-      if (this.socket && this.socket.connected) {
-        logger.debug('⚠️ Socket already connected, skipping creation. ID:', this.socket.id);
-        return;
-      }
-
-      // Store pending events before cleanup
-      const pendingEvents = [...this.onEvents];
-
-      // If socket exists but disconnected, clean it up
-      if (this.socket) {
-        logger.debug('🧹 Cleaning up disconnected socket...');
-        try {
-          this.socket.removeAllListeners();
-          this.socket.close();
-        } catch (e) {
-          logger.error('Error cleaning socket:', e);
-        }
-        this.socket = null;
-      }
-
-      logger.info('🔄 Creating new socket...');
-      this.socket = socket(
-        this.url,
-        this.customData,
-        this.path,
-        this.protocol,
-        this.protocolOptions,
-        this.onConnectionError
-      );
-
-
-      this.socket.customData = this.customData;
-
-      // We set a function on session_confirm here so as to avoid any race condition
-      // this will be called first and will set those parameters for everyone to use.
-      this.socket.on('session_confirm', (sessionObject) => {
-        this.sessionConfirmed = true;
-        const newSessionId = (sessionObject && sessionObject.session_id)
-          ? sessionObject.session_id
-          : sessionObject;
-
-        // Check if we have a preserved session ID from reconnection
-        if (this.socket.preservedSessionId) {
-          logger.debug('🔄 Using preserved session ID:', this.socket.preservedSessionId);
-          this.sessionId = this.socket.preservedSessionId;
-          // Store in localStorage for persistence
-          localStorage.setItem('chat_session_id', this.socket.preservedSessionId);
-        } else {
-          // Check if we have a stored session ID
-          const storedSessionId = localStorage.getItem('chat_session_id');
-          if (storedSessionId) {
-            logger.debug('🔄 Using stored session ID:', storedSessionId);
-            this.sessionId = storedSessionId;
-          } else {
-            logger.debug('🆕 New session ID:', newSessionId);
-            this.sessionId = newSessionId;
-            localStorage.setItem('chat_session_id', newSessionId);
-          }
-        }
-      });
-
-      // Apply pending events (these were registered via socket.on() before socket was created)
-      pendingEvents.forEach((event) => {
-        this.socket.on(event.event, event.callback);
-      });
-
-      // Apply previously registered events from onSocketEvent (includes connect, disconnect, etc.)
-      Object.keys(this.onSocketEvent).forEach((event) => {
-        this.socket.on(event, this.onSocketEvent[event]);
-      });
-
-      this.onEvents = [];
-
-      logger.debug('✅ Socket created with all event handlers attached');
-    }
-  }
-
   const instanceSocket = useRef(null);
   const store = useRef(null);
   const tokenManagerRef = useRef(null);
@@ -548,74 +399,14 @@ const ConnectedWidget = forwardRef((props, ref) => {
   }, []);
 
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
-  const processedCodesRef = useRef(new Set()); // Track processed OAuth codes to prevent duplicates
 
-  const authCallback = useCallback((event) => {
-    logger.info('🔍 authCallback: Received message event, type:', event.data?.type);
-
-    if (isAuth) {
-      logger.debug('Already authenticated, ignoring message');
-      return;
-    }
-
-    if (event.data?.type === 'oauth-code') {
-      const code = event.data.code;
-      const popupState = event.data.popupState;
-
-      logger.debug('📨 Received OAuth callback:', { code: code?.substring(0, 10) + '...', popupState });
-
-      // Prevent duplicate processing of the same OAuth code
-      if (processedCodesRef.current.has(code)) {
-        logger.warn('⚠️ OAuth code already processed, ignoring duplicate message');
-        return;
-      }
-      processedCodesRef.current.add(code);
-
-      if (state !== popupState) {
-        logger.error('❌ State mismatch:', { received: popupState, expected: state });
-        return;
-      }
-
-      const getChatToken = async () => {
-        try {
-          logger.debug('🔄 Exchanging code for token...');
-          const data = await exchangeTokenReq(code);
-          const { id_token, refresh_token } = data;
-
-          if (!id_token) {
-            logger.error('❌ No id_token in response:', data);
-            return;
-          }
-
-          logger.info('✅ Token received, storing with key:', tokenKey);
-          logger.info('🔍 Token value (first 30 chars):', id_token.substring(0, 30) + '...');
-          localStorage.setItem(tokenKey, id_token);
-          localStorage.setItem(tokenRefreshKey, refresh_token);
-          logger.info('🔍 Token stored, verifying...');
-          const storedToken = localStorage.getItem(tokenKey);
-          logger.info('🔍 Verification - token in localStorage:', storedToken ? 'EXISTS' : 'NULL');
-          setToken(id_token);
-          setIsAuth(true);
-          scheduleTokenRefresh(id_token);
-          logger.info('✅ Auth completed successfully');
-        } catch (error) {
-          logger.error('❌ Token exchange error:', error);
-        }
-      };
-
-      getChatToken();
-    }
-  }, [isAuth, scheduleTokenRefresh]);
-
-  useEffect(() => {
-    window.addEventListener('message', authCallback);
-    logger.debug('👂 Message listener added');
-
-    return () => {
-      window.removeEventListener('message', authCallback);
-      logger.debug('👋 Message listener removed');
-    };
-  }, [authCallback]);
+  // Use OAuth callback hook
+  useOAuthCallback({
+    isAuth,
+    setToken,
+    setIsAuth,
+    scheduleTokenRefresh
+  });
 
 
   const onConnectionError = () => {
@@ -690,30 +481,21 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
         const newProtocolOptions = { ...props.protocolOptions, token };
 
-        // Handle reconnect - copy preservedSessionId to socket object
-        const handleSocketConnect = () => {
-          if (instanceSocket.current?.preservedSessionId && instanceSocket.current.socket) {
-            instanceSocket.current.socket.preservedSessionId = instanceSocket.current.preservedSessionId;
-            logger.debug('✅ Reconnected: copied preservedSessionId to socket:', instanceSocket.current.preservedSessionId);
-          }
+        // Create socket event handlers with disconnect/connect logic
+        const socketEventHandlers = createSocketEventHandlers({
+          onDisconnect: handleSocketDisconnect,
+          onConnect: props.onSocketEvent?.connect,
+          userHandlers: props.onSocketEvent,
+          instanceSocket: instanceSocket.current
+        });
 
-          // Call original connect handler if it exists
-          if (props.onSocketEvent?.connect) {
-            props.onSocketEvent.connect();
-          }
-        };
-
-        instanceSocket.current = new Socket(
+        instanceSocket.current = new SocketWrapper(
           rasaSocketUrl,
           newCustomData,
           props.socketPath,
           props.protocol,
           newProtocolOptions,
-          {
-            ...props.onSocketEvent,
-            disconnect: handleSocketDisconnect,
-            connect: handleSocketConnect
-          },
+          socketEventHandlers,
           onConnectionError
         );
 
@@ -746,7 +528,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
 
   if (!store.current && !instanceSocket.current) {
-    instanceSocket.current = socketTemplate;
+    instanceSocket.current = SOCKET_TEMPLATE;
   }
 
   if (!store.current) {

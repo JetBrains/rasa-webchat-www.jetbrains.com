@@ -1,5 +1,14 @@
 import logger from './logger';
 import { environment, getEnvUrl } from './environment';
+import { generateCodeVerifier, hashToBase64Url } from './pkce';
+import {
+  authBaseUrl,
+  tokenEndpoint,
+  clientId,
+  redirectUri,
+  scope,
+  OAUTH_POPUP_FEATURES
+} from '../config/oauth';
 
 // 🔍 DIAGNOSTIC LOGGING
 logger.info('🔍 AUTH-UTILS: Current environment:', environment);
@@ -16,69 +25,9 @@ const rasaBaseUrl = getEnvUrl(
 );
 export const rasaEndpoint = `${rasaBaseUrl}/webhooks/rest/webhook`;
 
-// Auth URLs
-export const authBaseUrl = getEnvUrl(
-  process.env.AUTH_BASE_URL_LOCAL,
-  process.env.AUTH_BASE_URL_DEV,
-  process.env.AUTH_BASE_URL_STAGE,
-  process.env.AUTH_BASE_URL_PROD
-);
-
-export const tokenEndpoint = getEnvUrl(
-  process.env.TOKEN_ENDPOINT_LOCAL,
-  process.env.TOKEN_ENDPOINT_DEV,
-  process.env.TOKEN_ENDPOINT_STAGE,
-  process.env.TOKEN_ENDPOINT_PROD
-);
-
-const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=100, left=100';
-
-// Client ID
-export const clientId = getEnvUrl(
-  process.env.CLIENT_ID_LOCAL,
-  process.env.CLIENT_ID_DEV,
-  process.env.CLIENT_ID_STAGE,
-  process.env.CLIENT_ID_PROD
-);
-
-// Redirect URI
-export const redirectUri = getEnvUrl(
-  process.env.REDIRECT_URI_LOCAL,
-  process.env.REDIRECT_URI_DEV,
-  process.env.REDIRECT_URI_STAGE,
-  process.env.REDIRECT_URI_PROD
-);
-
-// Scope
-export const scope = process.env.SCOPE || 'openid offline_access r_assets';
-
-export function generateCodeVerifier(length = 64) {
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/[=]/g, '')
-    .slice(0, length);
-}
-
-
+// Generate PKCE code verifier and state
 const codeVerifier = generateCodeVerifier();
-
 export const state = crypto.randomUUID();
-
-export async function hashToBase64Url(input) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(input);
-
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-
-  return btoa(String.fromCharCode(...hashArray))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/[=]+$/, '');
-}
 
 export const getAuthCode = async () => {
   const codeChallenge = await hashToBase64Url(codeVerifier);
@@ -94,7 +43,7 @@ export const getAuthCode = async () => {
   };
 
   const queryString = new URLSearchParams(params).toString();
-  window.open(`${authBaseUrl}?${queryString}`, 'popup', strWindowFeatures);
+  window.open(`${authBaseUrl}?${queryString}`, 'popup', OAUTH_POPUP_FEATURES);
 };
 
 export const exchangeTokenReq = async (code) => {
