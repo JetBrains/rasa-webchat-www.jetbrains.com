@@ -12,24 +12,16 @@ import {
   exchangeTokenReq,
   getAuthCode,
   getIsTokenValid,
-  refreshTokenReq,
-  getTokenExpirationTime,
   state
 } from './utils/auth-utils';
+import { environment, getEnvUrl } from './utils/environment';
+import { TOKEN_KEY, REFRESH_TOKEN_KEY, SOCKET_RECONNECT_DELAY } from './constants/token';
+import { TokenManager } from './services/TokenManager';
+import { updateSocketAuth, updateAndVerifySocketAuth, updateSocketProtocolOptions } from './utils/SocketAuthUpdater';
+import { reconnectSocketWithNewToken } from './utils/SocketReconnection';
 
-const tokenKey = 'chat_token';
-const tokenRefreshKey = 'chat_refresh_token';
-
-const environment = process.env.ENVIRONMENT || 'staging';
-
-// Function to get URL based on environment
-const getEnvUrl = (localUrl, devUrl, stageUrl, prodUrl) => {
-  if (environment === 'production') return prodUrl;
-  if (environment === 'staging') return stageUrl;
-  if (environment === 'development') return devUrl;
-  if (environment === 'local') return localUrl;
-  return stageUrl; // default to staging
-};
+const tokenKey = TOKEN_KEY;
+const tokenRefreshKey = REFRESH_TOKEN_KEY;
 
 // Rasa socket URL
 const rasaSocketUrl = getEnvUrl(
@@ -195,7 +187,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const instanceSocket = useRef(null);
   const store = useRef(null);
-  const refreshTimerRef = useRef(null);
+  const tokenManagerRef = useRef(null);
+  const [socketKey, setSocketKey] = useState('initial');
   const [token, setToken] = useState(() => {
     const initialToken = localStorage.getItem(tokenKey);
     logger.info('🔍 INIT: Token from localStorage:', initialToken ? `${initialToken.substring(0, 30)}...` : 'NULL');
@@ -209,7 +202,42 @@ const ConnectedWidget = forwardRef((props, ref) => {
     return isValid;
   });
 
+  // Initialize TokenManager once
+  useEffect(() => {
+    if (!tokenManagerRef.current) {
+      tokenManagerRef.current = new TokenManager({
+        tokenKey: TOKEN_KEY,
+        refreshTokenKey: REFRESH_TOKEN_KEY,
+        useTestMode: false, // Set to true for testing (2 sec refresh), false for production (5 min before expiry)
+        onTokenRefreshed: (newIdToken, newRefreshToken) => {
+          // Called after successful token refresh
+          setToken(newIdToken);
+          setIsAuth(true);
+
+          // Reconnect socket with new token (only for auto-refresh)
+          if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+            reconnectSocketWithNewToken(instanceSocket.current, newIdToken, props.customData, store.current, setSocketKey);
+          }
+        },
+        onTokenRefreshFailed: (error) => {
+          logger.error('Token refresh failed:', error);
+          setIsAuth(false);
+        }
+      });
+    }
+  }, []);
+
+  // Legacy function - now delegates to TokenManager
   const scheduleTokenRefresh = (rToken) => {
+    if (tokenManagerRef.current) {
+      tokenManagerRef.current.scheduleAutoRefresh(rToken);
+    }
+  };
+
+  // OLD IMPLEMENTATION REPLACED BY TokenManager
+  // Keeping commented for reference during transition
+  /*
+  const scheduleTokenRefresh_OLD = (rToken) => {
     logger.debug('🕐 Scheduling token refresh...');
 
     if (refreshTimerRef.current) {
@@ -235,10 +263,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
     logger.debug('🕐 Token expires in:', Math.round(timeUntilExpiration / 1000), 'seconds');
 
     // TEST MODE: Refresh after n seconds for testing
-    // const refreshTime = 15 * 1000; // n seconds
+    const refreshTime = 2 * 1000; // n seconds
 
     // PRODUCTION: Uncomment this line and remove the line above
-    const refreshTime = timeUntilExpiration - (5 * 60 * 1000);
+    // const refreshTime = timeUntilExpiration - (5 * 60 * 1000);
 
     const timeToRefresh = Math.max(refreshTime, 5 * 1000);
 
@@ -448,111 +476,46 @@ const ConnectedWidget = forwardRef((props, ref) => {
       }
     }, timeToRefresh);
   };
+  */
 
   // Manual token refresh, can be triggered from UI (header refresh button)
   // Returns a Promise to allow callers to await completion before further actions
-  const refreshTokenNow = useCallback(() => {
-    logger.info('🔄 Manual token refresh triggered...');
-
-    // Clear any pending timer to avoid double refreshes
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = null;
-      logger.debug('🕐 Cleared existing refresh timer before manual refresh');
+  const refreshTokenNow = useCallback(async () => {
+    if (!tokenManagerRef.current) {
+      logger.warn('TokenManager not initialized');
+      return false;
     }
 
-    const refreshToken = localStorage.getItem(tokenRefreshKey);
-    logger.debug('🔄 Manual-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+    const success = await tokenManagerRef.current.refreshManually();
 
-    if (!refreshToken) {
-      logger.warn('❌ No refresh token available; cannot refresh manually');
-      return Promise.resolve(false);
+    if (success) {
+      const newToken = localStorage.getItem(tokenKey);
+      setToken(newToken);
+      setIsAuth(true);
+
+      // Update socket with new token (NO destruction - manual refresh uses /restart)
+      if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+        updateSocketAuth(instanceSocket.current, newToken, props.customData);
+      }
     }
 
-    return refreshTokenReq(refreshToken)
-      .then((data) => {
-        const { id_token, refresh_token } = data || {};
-        if (!id_token) {
-          logger.error('❌ Manual refresh did not return id_token');
-          return false;
-        }
+    return success;
+  }, [props.customData]);
 
-        localStorage.setItem(tokenKey, id_token);
-        logger.info('✅ Manual-refresh: id_token updated');
-
-        if (refresh_token) {
-          localStorage.setItem(tokenRefreshKey, refresh_token);
-          logger.info('✅ Manual-refresh: refresh_token updated');
-        } else {
-          logger.warn('⚠️ Manual-refresh: Server did NOT return new refresh_token, keeping old one');
-        }
-
-        // Update socket with new token (NO destruction - manual refresh uses /restart)
-        if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
-          const newCustomData = { ...props.customData, auth_header: id_token };
-          instanceSocket.current.customData = newCustomData;
-
-          if (instanceSocket.current.socket.updateAuthHeaders) {
-            instanceSocket.current.socket.updateAuthHeaders(id_token);
-          }
-
-          if (instanceSocket.current.socket.customData) {
-            instanceSocket.current.socket.customData = newCustomData;
-          }
-
-          logger.info('✅ Manual refresh: socket updated in-place, ID:', instanceSocket.current.socket.id);
-        }
-
-        setToken(id_token);
-        setIsAuth(true);
-        scheduleTokenRefresh(id_token);
-        logger.info('✅ Manual token refresh complete');
-        return true;
-      })
-      .catch((err) => {
-        logger.error('❌ Manual token refresh failed:', err);
-        setIsAuth(false);
-        return false;
-      });
-  }, [props.customData, scheduleTokenRefresh]);
-
-  const checkAndRefreshToken = (resetAuth) => {
+  const checkAndRefreshToken = async (resetAuth) => {
     if (isAuth) return;
-    const chatToken = localStorage.getItem(tokenKey);
-    const refreshToken = localStorage.getItem(tokenRefreshKey);
-    const isTokenValid = getIsTokenValid(chatToken);
 
-    logger.debug('🔄 Check-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+    if (!tokenManagerRef.current) {
+      logger.warn('TokenManager not initialized');
+      return;
+    }
 
-    if (chatToken && !isTokenValid) {
-      refreshTokenReq(refreshToken)
-        .then((data) => {
-          // eslint-disable-next-line camelcase
-          const { id_token, refresh_token } = data;
-          // eslint-disable-next-line camelcase
-          if (!id_token) return;
-          localStorage.setItem(tokenKey, id_token);
-          logger.info('✅ Check-refresh: id_token updated');
+    const isValid = await tokenManagerRef.current.checkAndRefreshIfNeeded(resetAuth);
 
-          if (refresh_token) {
-            localStorage.setItem(tokenRefreshKey, refresh_token);
-            logger.info('✅ Check-refresh: refresh_token updated');
-          } else {
-            logger.warn('⚠️ Check-refresh: Server did NOT return new refresh_token, keeping old one');
-          }
-
-          setToken(id_token);
-          setIsAuth(true);
-          scheduleTokenRefresh(id_token);
-        })
-        .catch((err) => {
-          if (resetAuth) {
-            setIsAuth(false);
-          }
-          logger.error('❌ Check-refresh failed:', err);
-        });
-    } else if (resetAuth) {
-      setIsAuth(false);
+    if (isValid) {
+      const newToken = localStorage.getItem(tokenKey);
+      setToken(newToken);
+      setIsAuth(true);
     }
   };
 
@@ -566,8 +529,9 @@ const ConnectedWidget = forwardRef((props, ref) => {
   }, []);
 
   useEffect(() => () => {
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
+    // Cleanup TokenManager
+    if (tokenManagerRef.current) {
+      tokenManagerRef.current.destroy();
     }
 
     // Cleanup all socket managers on unmount
@@ -583,7 +547,6 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
   }, []);
 
-  const [socketKey, setSocketKey] = useState('initial'); // For a forced re-render
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
   const processedCodesRef = useRef(new Set()); // Track processed OAuth codes to prevent duplicates
 
@@ -660,7 +623,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
     checkAndRefreshToken(true);
   };
 
-  const handleSocketDisconnect = (reason) => {
+  const handleSocketDisconnect = async (reason) => {
     logger.info('🔌 Socket disconnected, reason:', reason);
 
     // Prevent multiple disconnect handlers
@@ -684,43 +647,30 @@ const ConnectedWidget = forwardRef((props, ref) => {
         instanceSocket.current.isDisconnecting = true;
       }
 
-      const refreshToken = localStorage.getItem(tokenRefreshKey);
-      logger.debug('🔄 Disconnect-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+      try {
+        if (tokenManagerRef.current) {
+          const success = await tokenManagerRef.current.refreshOnDisconnect();
 
-      if (refreshToken) {
-        refreshTokenReq(refreshToken)
-          .then((data) => {
-            const { id_token, refresh_token } = data;
-            if (id_token) {
-              logger.info('✅ Token refreshed on disconnect, updating socket...');
-              localStorage.setItem(tokenKey, id_token);
-              logger.info('✅ Disconnect-refresh: id_token updated');
+          if (success) {
+            const newToken = localStorage.getItem(tokenKey);
+            setToken(newToken);
 
-              if (refresh_token) {
-                localStorage.setItem(tokenRefreshKey, refresh_token);
-                logger.info('✅ Disconnect-refresh: refresh_token updated');
-              } else {
-                logger.warn('⚠️ Disconnect-refresh: Server did NOT return new refresh_token, keeping old one');
-              }
-              setToken(id_token);
-              scheduleTokenRefresh(id_token);
-
-              // CRITICAL: Update store socket reference after token refresh
-              if (store.current && store.current.updateSocket) {
-                store.current.updateSocket(instanceSocket.current);
-                logger.debug('🔄 Store socket updated after disconnect token refresh');
-              }
+            // CRITICAL: Update store socket reference after token refresh
+            if (store.current && store.current.updateSocket) {
+              store.current.updateSocket(instanceSocket.current);
+              logger.debug('🔄 Store socket updated after disconnect token refresh');
             }
-          })
-          .catch((err) => {
-            logger.error('❌ Failed to refresh token on disconnect:', err);
+          } else {
             setIsAuth(false);
-          })
-          .finally(() => {
-            if (instanceSocket.current) {
-              instanceSocket.current.isDisconnecting = false;
-            }
-          });
+          }
+        }
+      } catch (err) {
+        logger.error('❌ Failed to refresh token on disconnect:', err);
+        setIsAuth(false);
+      } finally {
+        if (instanceSocket.current) {
+          instanceSocket.current.isDisconnecting = false;
+        }
       }
     }
   };
@@ -783,22 +733,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
       } else {
         // Token changed - just update customData, DON'T destroy socket
         logger.debug('🔄 Token updated, refreshing socket customData...');
-        
-        instanceSocket.current.customData = newCustomData;
-        
-        if (instanceSocket.current.socket && instanceSocket.current.socket.connected) {
-          instanceSocket.current.socket.customData = newCustomData;
-          
-          if (instanceSocket.current.socket.updateAuthHeaders) {
-            instanceSocket.current.socket.updateAuthHeaders(token);
-          }
-          
-          logger.info('✅ Socket customData updated, ID:', instanceSocket.current.socket.id);
-        }
-        
-        const updatedProtocolOptions = { ...props.protocolOptions, token };
-        instanceSocket.current.updateProtocolOptions(updatedProtocolOptions);
-        
+
+        updateSocketAuth(instanceSocket.current, token, props.customData);
+        updateSocketProtocolOptions(instanceSocket.current, token, props.protocolOptions);
+
         if (store.current && store.current.updateSocket) {
           store.current.updateSocket(instanceSocket.current);
         }

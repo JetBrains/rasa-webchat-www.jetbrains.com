@@ -1,21 +1,11 @@
 import logger from './logger';
-
-const environment = process.env.ENVIRONMENT || 'staging';
+import { environment, getEnvUrl } from './environment';
 
 // 🔍 DIAGNOSTIC LOGGING
 logger.info('🔍 AUTH-UTILS: Current environment:', environment);
 logger.info('🔍 AUTH-UTILS: process.env.ENVIRONMENT:', process.env.ENVIRONMENT);
 logger.log('🔍 Current environment:', environment);
 logger.log('🔍 RASA_URL_STAGE:', process.env.RASA_URL_STAGE);
-
-// Function to get URL based on environment
-const getEnvUrl = (localUrl, devUrl, stageUrl, prodUrl) => {
-  if (environment === 'production') return prodUrl;
-  if (environment === 'staging') return stageUrl;
-  if (environment === 'development') return devUrl;
-  if (environment === 'local') return localUrl;
-  return stageUrl; // default to staging
-};
 
 // Rasa endpoint with automatic /webhooks/rest/webhook suffix
 const rasaBaseUrl = getEnvUrl(
@@ -90,7 +80,6 @@ export async function hashToBase64Url(input) {
     .replace(/[=]+$/, '');
 }
 
-
 export const getAuthCode = async () => {
   const codeChallenge = await hashToBase64Url(codeVerifier);
 
@@ -127,32 +116,6 @@ export const exchangeTokenReq = async (code) => {
   });
 
   return res.json();
-};
-
-// TODO: wtf?
-export const authInRasa = async (idToken) => {
-  try {
-    const response = await fetch(rasaEndpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: 'test_user',
-        message: '/session_start',
-        metadata: {
-          auth_header: idToken
-        }
-      })
-    });
-
-    return await response.json();
-  } catch (err) {
-    logger.error('authInRasa request failed:', err);
-  }
-
-  return null;
 };
 
 export const refreshTokenReq = async (refreshToken) => {
@@ -194,7 +157,7 @@ export const refreshTokenReq = async (refreshToken) => {
   }
 };
 
-const getTokenPayload = (token) => {
+export const getTokenPayload = (token) => {
   if (!token) return null;
 
   try {
@@ -220,19 +183,6 @@ export const getIsTokenValid = (token) => {
     return exp > now;
   } catch (e) {
     return false;
-  }
-};
-
-export const getEmailFromToken = (token) => {
-  if (!token) return null;
-
-  try {
-    const payload = getTokenPayload(token);
-    const { email } = JSON.parse(payload) || {};
-
-    return email || null;
-  } catch (e) {
-    return null;
   }
 };
 

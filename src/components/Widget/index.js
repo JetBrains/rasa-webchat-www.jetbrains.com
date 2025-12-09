@@ -2,6 +2,7 @@ import ImmutablePropTypes from 'react-immutable-proptypes';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
+import { logTokenExpiration } from '../../utils/TokenDiagnostics';
 import {
   toggleFullScreen,
   toggleChat,
@@ -458,18 +459,7 @@ class Widget extends Component {
 
       // DIAGNOSTIC: Check token expiration before session_request
       if (customData?.auth_header) {
-        try {
-          const tokenPayload = customData.auth_header.split('.')[1];
-          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
-          const now = Date.now() / 1000;
-          const timeLeft = decoded.exp - now;
-          logger.info('🔍 SESSION_REQUEST: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
-          if (timeLeft < 0) {
-            logger.error('❌ SESSION_REQUEST: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
-          }
-        } catch (e) {
-          logger.error('❌ SESSION_REQUEST: Failed to decode access token:', e);
-        }
+        logTokenExpiration(customData.auth_header, '🔍 SESSION_REQUEST');
       }
 
       // Only include session_id if we have one, otherwise let backend create new one
@@ -611,18 +601,7 @@ class Widget extends Component {
 
       // DIAGNOSTIC: Check token expiration before /session_start
       if (customData?.auth_header) {
-        try {
-          const tokenPayload = customData.auth_header.split('.')[1];
-          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
-          const now = Date.now() / 1000;
-          const timeLeft = decoded.exp - now;
-          logger.info('🔍 INIT_PAYLOAD (/session_start): Access token expires in:', Math.round(timeLeft / 60), 'minutes');
-          if (timeLeft < 0) {
-            logger.error('❌ INIT_PAYLOAD: Sending /session_start with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
-          }
-        } catch (e) {
-          logger.error('❌ INIT_PAYLOAD: Failed to decode access token:', e);
-        }
+        logTokenExpiration(customData.auth_header, '🔍 INIT_PAYLOAD (/session_start)');
       }
 
       socket.emit('user_uttered', { message: '/session_start', customData, session_id: sessionId });
@@ -650,18 +629,7 @@ class Widget extends Component {
 
       // DIAGNOSTIC: Check token expiration before tooltip
       if (customData?.auth_header) {
-        try {
-          const tokenPayload = customData.auth_header.split('.')[1];
-          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
-          const now = Date.now() / 1000;
-          const timeLeft = decoded.exp - now;
-          logger.info('🔍 TOOLTIP: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
-          if (timeLeft < 0) {
-            logger.error('❌ TOOLTIP: Sending tooltip with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
-          }
-        } catch (e) {
-          logger.error('❌ TOOLTIP: Failed to decode access token:', e);
-        }
+        logTokenExpiration(customData.auth_header, '🔍 TOOLTIP');
       }
 
       socket.emit('user_uttered', { message: tooltipPayload, customData, session_id: sessionId });
@@ -798,18 +766,7 @@ class Widget extends Component {
 
       // DIAGNOSTIC: Check token expiration during restart
       if (customData.auth_header) {
-        try {
-          const tokenPayload = customData.auth_header.split('.')[1];
-          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
-          const now = Date.now() / 1000;
-          const timeLeft = decoded.exp - now;
-          logger.info('🔍 RESTART: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
-          if (timeLeft < 0) {
-            logger.error('❌ RESTART: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
-          }
-        } catch (e) {
-          logger.error('❌ RESTART: Failed to decode access token:', e);
-        }
+        logTokenExpiration(customData.auth_header, '🔍 RESTART');
       }
     }
 
