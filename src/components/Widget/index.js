@@ -456,6 +456,22 @@ class Widget extends Component {
         socketId: socket.socket?.id
       });
 
+      // DIAGNOSTIC: Check token expiration before session_request
+      if (customData?.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 SESSION_REQUEST: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ SESSION_REQUEST: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ SESSION_REQUEST: Failed to decode access token:', e);
+        }
+      }
+
       // Only include session_id if we have one, otherwise let backend create new one
       const payload = { customData };
       if (localId) {
@@ -592,6 +608,23 @@ class Widget extends Component {
       const sessionId = this.getSessionId();
       // check that session_id is confirmed
       if (!sessionId) return;
+
+      // DIAGNOSTIC: Check token expiration before /session_start
+      if (customData?.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 INIT_PAYLOAD (/session_start): Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ INIT_PAYLOAD: Sending /session_start with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ INIT_PAYLOAD: Failed to decode access token:', e);
+        }
+      }
+
       socket.emit('user_uttered', { message: '/session_start', customData, session_id: sessionId });
       dispatch(initialize());
       // Show WIP bubble while waiting for bot's response to /session_start
@@ -614,6 +647,22 @@ class Widget extends Component {
       const sessionId = this.getSessionId();
 
       if (!sessionId) return;
+
+      // DIAGNOSTIC: Check token expiration before tooltip
+      if (customData?.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 TOOLTIP: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ TOOLTIP: Sending tooltip with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ TOOLTIP: Failed to decode access token:', e);
+        }
+      }
 
       socket.emit('user_uttered', { message: tooltipPayload, customData, session_id: sessionId });
 
@@ -746,6 +795,22 @@ class Widget extends Component {
       logger.debug('Session ID (must not change):', sessionId);
       logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
       logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
+
+      // DIAGNOSTIC: Check token expiration during restart
+      if (customData.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 RESTART: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ RESTART: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ RESTART: Failed to decode access token:', e);
+        }
+      }
     }
 
     // Reset socket handlers registration flag to allow re-registration

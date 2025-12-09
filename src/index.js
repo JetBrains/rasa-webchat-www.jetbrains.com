@@ -294,6 +294,30 @@ const ConnectedWidget = forwardRef((props, ref) => {
             localStorage.setItem(tokenKey, id_token);
             logger.info('✅ Auto-refresh: id_token updated');
 
+            // DIAGNOSTIC: Verify token was actually updated in localStorage
+            const verifyToken = localStorage.getItem(tokenKey);
+            if (verifyToken === id_token) {
+              logger.info('✅ Auto-refresh: Token verification PASSED - localStorage updated correctly');
+            } else {
+              logger.error('❌ Auto-refresh: Token verification FAILED!');
+              logger.error('❌ Expected:', id_token.substring(0, 40) + '...');
+              logger.error('❌ Got from localStorage:', verifyToken ? verifyToken.substring(0, 40) + '...' : 'NULL');
+            }
+
+            // DIAGNOSTIC: Check expiration of new token
+            try {
+              const tokenPayload = id_token.split('.')[1];
+              const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+              const now = Date.now() / 1000;
+              const timeLeft = decoded.exp - now;
+              logger.info('✅ Auto-refresh: New access token expires in:', Math.round(timeLeft / 60), 'minutes');
+              if (timeLeft < 0) {
+                logger.error('❌ Auto-refresh: Server returned ALREADY EXPIRED token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+              }
+            } catch (e) {
+              logger.error('❌ Auto-refresh: Failed to decode new access token:', e);
+            }
+
             logger.info('🔄 Token refreshed automatically, reconnecting socket with new token...');
 
             // Reconnect socket to ensure fresh token in all requests
@@ -371,6 +395,30 @@ const ConnectedWidget = forwardRef((props, ref) => {
                   if (instanceSocket.current.preservedSessionId && instanceSocket.current.socket) {
                     instanceSocket.current.socket.preservedSessionId = instanceSocket.current.preservedSessionId;
                     logger.debug('✅ Copied preservedSessionId to new socket:', instanceSocket.current.preservedSessionId);
+                  }
+
+                  // CRITICAL: Update socket.customData with fresh token for future reconnections
+                  if (instanceSocket.current.socket) {
+                    instanceSocket.current.socket.customData = newCustomData;
+                    logger.info('✅ Updated socket.customData with new token for reconnections');
+                  }
+
+                  // CRITICAL FIX: Force update auth headers in Socket.IO engine to prevent stale token caching
+                  if (instanceSocket.current.socket && instanceSocket.current.socket.updateAuthHeaders) {
+                    logger.warn('🔧 FORCE UPDATING Socket.IO engine headers with new token to prevent caching issue');
+                    instanceSocket.current.socket.updateAuthHeaders(id_token);
+
+                    // Double-check: Verify headers were actually updated
+                    if (instanceSocket.current.socket.io && instanceSocket.current.socket.io.engine && instanceSocket.current.socket.io.engine.opts) {
+                      const currentAuthHeader = instanceSocket.current.socket.io.engine.opts.extraHeaders?.Authorization;
+                      if (currentAuthHeader && currentAuthHeader.includes(id_token.substring(0, 20))) {
+                        logger.info('✅ VERIFIED: Socket.IO engine headers updated with new token');
+                      } else {
+                        logger.error('❌ VERIFICATION FAILED: Socket.IO engine still has OLD token!');
+                        logger.error('❌ Expected token start:', id_token.substring(0, 30));
+                        logger.error('❌ Current header:', currentAuthHeader ? currentAuthHeader.substring(0, 50) : 'NULL');
+                      }
+                    }
                   }
 
                   // CRITICAL: Update store's socket reference after creating new socket
