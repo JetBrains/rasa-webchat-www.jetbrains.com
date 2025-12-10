@@ -1,22 +1,41 @@
 /* eslint-disable func-names */
-import Enzyme from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
+import '@testing-library/jest-dom';
 
-Enzyme.configure({ adapter: new Adapter() });
+// Mock matchMedia
 window.matchMedia =
   window.matchMedia ||
   function () {
     return {
       matches: false,
       addListener() {},
-      removeListener() {}
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent() { return true; }
     };
   };
 
+// Mock requestAnimationFrame
 window.requestAnimationFrame =
   window.requestAnimationFrame ||
   function (callback) {
     setTimeout(callback, 0);
   };
 
-Enzyme.configure({ adapter: new Adapter() });
+// Mock localStorage
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn()
+};
+global.localStorage = localStorageMock;
+
+// Mock console methods to reduce noise in tests
+global.console = {
+  ...console,
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  log: jest.fn()
+};

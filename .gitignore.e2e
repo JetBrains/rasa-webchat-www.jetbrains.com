@@ -1,0 +1,5 @@
+# Playwright E2E артефакты
+e2e/reports/
+test-results/
+playwright-report/
+playwright/.cache/
