@@ -21,8 +21,8 @@ import {
   evalUrl,
   setFirstChatStarted,
   setBotProcessing
-} from 'actions';
-import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
+} from '../../store/actions';
+import { SESSION_NAME, NEXT_MESSAGE } from '../../constants';
 import WidgetLayout from './layout';
 import { storeLocalSession } from '../../store/reducers/helper';
 import logger from '../../utils/logger';
@@ -422,11 +422,16 @@ class Widget extends Component {
   }
 
   refresh = () => {
-    const { socket, customData } = this.props;
+    const { socket, customData: propsCustomData } = this.props;
     const sessionId = this.sessionManager.getSessionIdWithFallback(socket);
+
+    // CRITICAL: Use socket.customData if available (contains fresh token after manual refresh)
+    // Otherwise fall back to props.customData
+    const customData = (socket && socket.socket && socket.socket.customData) || propsCustomData;
 
     {
       logger.info('=== SESSION RESTART ===');
+      logger.debug('Using customData from:', socket?.socket?.customData ? 'socket.customData (fresh)' : 'props.customData');
       logger.debug('Session ID (must not change):', sessionId);
       logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
       logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
@@ -437,8 +442,15 @@ class Widget extends Component {
       }
     }
 
-    // Reset socket handlers registration flag to allow re-registration
-    this.socketEventManager.resetHandlers();
+    // IMPORTANT: Do NOT reset handlers on refresh!
+    // Socket remains the same, only sending /restart message to backend
+    // Handlers were already registered and should stay registered
+
+    // CRITICAL: Preserve session_id for potential reconnect after restart
+    if (sessionId && socket) {
+      socket.preservedSessionId = sessionId;
+      logger.debug('🔒 Preserved session_id for potential reconnect:', sessionId);
+    }
 
     // Remove session_id from customData if it exists to avoid duplication
     const cleanCustomData = { ...customData };
@@ -448,16 +460,29 @@ class Widget extends Component {
       logger.debug('Cleaned customData:', cleanCustomData);
     }
 
+    // Clear Redux store messages
     this.props.dispatch(clearMessages());
 
-    // First send /restart
-    socket.emit('user_uttered', {
+    // IMPORTANT: Clear message queue to prevent old delayed messages from appearing
+    this.messageQueueManager.clear();
+
+    // Send /restart to backend (backend will send greeting messages again)
+    const restartPayload = {
       message: '/restart',
       customData: cleanCustomData,
       session_id: sessionId
+    };
+
+    logger.info('📤 RESTART: Payload to send:', {
+      message: restartPayload.message,
+      session_id: restartPayload.session_id,
+      customData_keys: Object.keys(cleanCustomData),
+      customData_auth_header_prefix: cleanCustomData.auth_header ? cleanCustomData.auth_header.substring(0, 30) + '...' : 'NULL'
     });
 
-    logger.info('Restart payload sent with session_id:', sessionId);
+    socket.emit('user_uttered', restartPayload);
+
+    logger.info('✅ RESTART: Payload sent with session_id:', sessionId);
     logger.info('=== END SESSION RESTART ===');
   }
 

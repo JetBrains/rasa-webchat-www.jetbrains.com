@@ -2,8 +2,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
-import Conversation from './components/Conversation';
-import Launcher from './components/Launcher';
+import Conversation from '../Conversation';
+import Launcher from '../Launcher';
 import './style.scss';
 
 const WidgetLayout = (props) => {

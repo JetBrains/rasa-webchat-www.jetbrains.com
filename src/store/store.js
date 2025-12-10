@@ -1,13 +1,13 @@
 import { createStore, combineReducers, compose, applyMiddleware } from 'redux';
 
-import { SESSION_NAME } from 'constants';
+import { SESSION_NAME } from '../constants';
 
 import behavior from './reducers/behaviorReducer';
 import messages from './reducers/messagesReducer';
 import metadata from './reducers/metadataReducer';
 
 import { getLocalSession } from './reducers/helper';
-import * as actionTypes from './actions/actionTypes';
+import * as actionTypes from './actions';
 import logger from '../utils/logger';
 
 const cleanURL = (url) => {

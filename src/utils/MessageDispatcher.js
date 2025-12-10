@@ -12,7 +12,7 @@ import {
   renderCustomComponent,
   setCustomCss
 } from 'actions';
-import { isText, isButtons, isCarousel, isVideo, isImage } from '../components/Widget/msgProcessor';
+import { isText, isButtons, isCarousel, isVideo, isImage } from '../handlers/msgProcessor';
 
 export class MessageDispatcher {
   constructor(dispatch, customComponent) {

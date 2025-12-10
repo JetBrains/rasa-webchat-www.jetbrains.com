@@ -1,7 +1,11 @@
 import { Map, fromJS } from 'immutable';
-import { MESSAGES_TYPES, MESSAGE_SENDER, SESSION_NAME } from 'constants';
+import { MESSAGES_TYPES, MESSAGE_SENDER, SESSION_NAME } from '../../constants';
 
-import { Video, Image, Message, Carousel, Buttons } from 'messagesComponents';
+import Video from '../../components/MessageVideo';
+import Image from '../../components/MessageImage';
+import Message from '../../components/Message';
+import Carousel from '../../components/MessageCarousel';
+import Buttons from '../../components/MessageButtons';
 
 export function createNewMessage(text, sender, nextMessageIsTooltip, hidden) {
   return Map({

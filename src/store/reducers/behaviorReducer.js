@@ -1,6 +1,6 @@
 import { Map, fromJS } from 'immutable';
-import { SESSION_NAME } from 'constants';
-import * as actionTypes from '../actions/actionTypes';
+import { SESSION_NAME } from '../../constants';
+import * as actionTypes from '../actions';
 import { getLocalSession, storeParamsTo } from './helper';
 
 export default function (

@@ -5,8 +5,8 @@
 
 import logger from '../utils/logger';
 import { logTokenExpiration } from '../utils/TokenDiagnostics';
-import { connectServer, disconnectServer } from 'actions';
-import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
+import { connectServer, disconnectServer } from '../store/actions';
+import { SESSION_NAME, NEXT_MESSAGE } from '../constants';
 import { getLocalSession, storeLocalSession } from '../store/reducers/helper';
 
 export class SocketEventManager {
@@ -88,7 +88,19 @@ export class SocketEventManager {
    * Unregister handlers (for cleanup)
    */
   unregister() {
+    logger.info('🧹 Unregistering socket event handlers...');
+
+    // Remove all event listeners to prevent duplicates
+    // this.socket is SocketWrapper, real socket is in this.socket.socket
+    if (this.socket && this.socket.socket) {
+      this.socket.socket.off('bot_uttered');
+      this.socket.socket.off('connect');
+      this.socket.socket.off('session_confirm');
+      this.socket.socket.off('disconnect');
+    }
+
     this.handlersRegistered = false;
+
     if (this.tooltipTimeout) {
       clearTimeout(this.tooltipTimeout);
       this.tooltipTimeout = null;
@@ -97,8 +109,20 @@ export class SocketEventManager {
 
   /**
    * Reset handlers flag (for socket recreation)
+   * Also removes existing handlers to prevent duplicates
    */
   resetHandlers() {
+    logger.info('🔄 Resetting socket handlers...');
+
+    // Remove existing handlers before allowing re-registration
+    // this.socket is SocketWrapper, real socket is in this.socket.socket
+    if (this.socket && this.socket.socket) {
+      this.socket.socket.off('bot_uttered');
+      this.socket.socket.off('connect');
+      this.socket.socket.off('session_confirm');
+      this.socket.socket.off('disconnect');
+    }
+
     this.handlersRegistered = false;
   }
 

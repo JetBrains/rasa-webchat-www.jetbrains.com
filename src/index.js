@@ -5,8 +5,8 @@ import { Provider } from 'react-redux';
 
 import Widget from './components/Widget';
 import { initStore } from './store/store';
-import socket from './socket';
-import ThemeContext from '../src/components/Widget/ThemeContext';
+import socket from './sockets/socket';
+import ThemeContext from './components/Widget/ThemeContext';
 import logger from './utils/logger';
 import {
   getAuthCode,
@@ -19,9 +19,9 @@ import { TokenManager } from './services/TokenManager';
 import { SocketWrapper } from './services/SocketWrapper';
 import { OAuthManager } from './services/OAuthManager';
 import { SocketLifecycleManager } from './services/SocketLifecycleManager';
-import { updateSocketAuth, updateSocketProtocolOptions } from './utils/SocketAuthUpdater';
-import { reconnectSocketWithNewToken } from './utils/SocketReconnection';
-import { createSocketEventHandlers } from './utils/SocketEventHandlers';
+import { updateSocketAuth, updateSocketProtocolOptions } from './sockets/SocketAuthUpdater';
+import { reconnectSocketWithNewToken } from './sockets/SocketReconnection';
+import { createSocketEventHandlers } from './sockets/SocketEventHandlers';
 import { useOAuthCallback } from './hooks/useOAuthCallback';
 
 const tokenKey = TOKEN_KEY;
@@ -64,13 +64,35 @@ const ConnectedWidget = forwardRef((props, ref) => {
         tokenKey: TOKEN_KEY,
         refreshTokenKey: REFRESH_TOKEN_KEY,
         useTestMode: false,
-        onTokenRefreshed: (newIdToken, newRefreshToken) => {
+        onTokenRefreshed: (newIdToken, newRefreshToken, options = {}) => {
           setToken(newIdToken);
           setIsAuth(true);
 
-          // Reconnect socket with new token
-          if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+          // Reconnect socket with new token (unless skipSocketReconnect is true for manual refresh before /restart)
+          if (!options.skipSocketReconnect && instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
             reconnectSocketWithNewToken(instanceSocket.current, newIdToken, props.customData, store.current, setSocketKey);
+          } else if (options.skipSocketReconnect) {
+            logger.info('⏭️ Skipping socket reconnect (manual refresh before /restart)');
+            // Just update the socket auth without destroying/recreating
+            if (instanceSocket.current && instanceSocket.current.socket) {
+              // Update customData with new token
+              const updatedCustomData = { ...props.customData, auth_header: newIdToken };
+
+              // Update socket.auth (Socket.IO handshake auth)
+              instanceSocket.current.socket.auth = updatedCustomData;
+
+              // CRITICAL: Update socket.customData for polling transport and future requests
+              instanceSocket.current.socket.customData = updatedCustomData;
+              instanceSocket.current.customData = updatedCustomData;
+              logger.info('✅ Updated socket.customData with new token');
+
+              // Update all auth header locations using the dedicated updater
+              if (instanceSocket.current.socket.updateAuthHeaders) {
+                instanceSocket.current.socket.updateAuthHeaders(newIdToken);
+              }
+
+              logger.info('✅ Updated socket auth with new token (no reconnect)');
+            }
           }
         },
         onTokenRefreshFailed: (error) => {
@@ -114,17 +136,16 @@ const ConnectedWidget = forwardRef((props, ref) => {
       return false;
     }
 
-    const success = await tokenManagerRef.current.refreshManually();
+    // IMPORTANT: Skip socket reconnection during manual refresh
+    // Socket will remain alive for the subsequent /restart message
+    const success = await tokenManagerRef.current.refreshManually({ skipSocketReconnect: true });
 
     if (success) {
       const newToken = localStorage.getItem(tokenKey);
       setToken(newToken);
       setIsAuth(true);
 
-      // Update socket with new token (NO destruction - manual refresh uses /restart)
-      if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
-        updateSocketAuth(instanceSocket.current, newToken, props.customData);
-      }
+      logger.info('✅ Manual refresh completed - socket auth updated, no reconnection');
     }
 
     return success;

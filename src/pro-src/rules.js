@@ -3,10 +3,10 @@
 /* eslint-disable class-methods-use-this */
 import logger from '../utils/logger';
 
-import { UrlTracker } from './services/UrlTracker';
-import { EventListenerManager } from './services/EventListenerManager';
-import { BubbleCreator } from './services/BubbleCreator';
-import { RuleEvaluator } from './services/RuleEvaluator';
+import { UrlTracker } from '../services/proactive/UrlTracker';
+import { EventListenerManager } from '../services/proactive/EventListenerManager';
+import { BubbleCreator } from '../services/proactive/BubbleCreator';
+import { RuleEvaluator } from '../services/proactive/RuleEvaluator';
 
 export const RULES_HANDLER_SINGLETON = 'rasaWebchatRulesHandler';
 

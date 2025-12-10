@@ -3,7 +3,7 @@
  * Extracted from Widget component to improve code organization
  */
 
-import { SESSION_NAME } from 'constants';
+import { SESSION_NAME } from '../constants';
 import { getLocalSession, storeLocalSession } from '../store/reducers/helper';
 
 export class SessionManager {

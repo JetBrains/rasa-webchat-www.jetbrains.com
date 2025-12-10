@@ -1,5 +1,5 @@
 import { List, fromJS } from 'immutable';
-import { MESSAGE_SENDER, SESSION_NAME } from 'constants';
+import { MESSAGE_SENDER, SESSION_NAME } from '../../constants';
 
 import {
   createButtons,
@@ -12,7 +12,7 @@ import {
   getLocalSession
 } from './helper';
 
-import * as actionTypes from '../actions/actionTypes';
+import * as actionTypes from '../actions';
 
 export default function (storage) {
   const initialState = List([]);

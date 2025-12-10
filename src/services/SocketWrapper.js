@@ -5,7 +5,7 @@
  */
 
 import logger from '../utils/logger';
-import socket from '../socket';
+import socket from '../sockets/socket';
 
 /**
  * Socket wrapper class that manages Socket.IO connection lifecycle
@@ -63,7 +63,26 @@ export class SocketWrapper {
         return;
       }
 
+      // Detailed logging for debugging
+      logger.info(`📤 EMIT: Event="${message}"`);
+      if (data) {
+        const safeData = { ...data };
+        if (safeData.customData && safeData.customData.auth_header) {
+          safeData.customData = {
+            ...safeData.customData,
+            auth_header: safeData.customData.auth_header.substring(0, 30) + '...'
+          };
+        }
+        logger.info(`📤 EMIT: Data keys:`, Object.keys(data));
+        logger.info(`📤 EMIT: Data (sanitized):`, safeData);
+      }
+
+      // Check current socket auth state
+      logger.debug('🔍 EMIT: socket.auth:', this.socket.auth);
+      logger.debug('🔍 EMIT: engine.opts.extraHeaders:', this.socket.io?.engine?.opts?.extraHeaders);
+
       this.socket.emit(message, data);
+      logger.info(`✅ EMIT: "${message}" sent successfully`);
     } else {
       logger.error('❌ EMIT: No socket available');
     }

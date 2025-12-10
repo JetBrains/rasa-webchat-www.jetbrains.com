@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import Widget from '../index';
+import Widget from '../';
 
 import RulesHandler, { RULES_HANDLER_SINGLETON } from './rules';
 import { rasaWebchatProTypes, rasaWebchatProDefaultTypes } from '../../index';

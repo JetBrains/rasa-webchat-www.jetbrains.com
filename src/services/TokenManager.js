@@ -29,9 +29,11 @@ export class TokenManager {
    *
    * @param {string} refreshToken - Refresh token to use
    * @param {string} context - Context label for logging
+   * @param {Object} options - Additional options
+   * @param {boolean} options.skipSocketReconnect - If true, don't trigger socket reconnection
    * @returns {Promise<Object>} Token data {id_token, refresh_token}
    */
-  async refreshToken(refreshToken, context = 'Token refresh') {
+  async refreshToken(refreshToken, context = 'Token refresh', options = {}) {
     logger.debug(`🔄 ${context}: using refresh_token from localStorage:`,
       refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
 
@@ -57,9 +59,9 @@ export class TokenManager {
       // Log new token expiration
       logTokenExpiration(id_token, `✅ ${context}`);
 
-      // Notify listeners
+      // Notify listeners (but allow skipping socket reconnect for manual refresh before /restart)
       if (this.onTokenRefreshed) {
-        this.onTokenRefreshed(id_token, refresh_token);
+        this.onTokenRefreshed(id_token, refresh_token, options);
       }
 
       logger.info(`✅ ${context} completed successfully`);
@@ -180,9 +182,11 @@ export class TokenManager {
   /**
    * Manual token refresh (triggered by user action)
    *
+   * @param {Object} options - Additional options
+   * @param {boolean} options.skipSocketReconnect - If true, don't trigger socket reconnection
    * @returns {Promise<boolean>} True if refresh succeeded
    */
-  async refreshManually() {
+  async refreshManually(options = {}) {
     logger.info('🔄 Manual token refresh triggered...');
 
     // Clear any pending auto-refresh to avoid conflicts
@@ -196,7 +200,7 @@ export class TokenManager {
     }
 
     try {
-      const { id_token } = await this.refreshToken(refreshToken, 'Manual-refresh');
+      const { id_token } = await this.refreshToken(refreshToken, 'Manual-refresh', options);
 
       // Schedule next auto-refresh
       this.scheduleAutoRefresh(id_token);
