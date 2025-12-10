@@ -42,6 +42,7 @@ const Conversation = (props) => {
       fullScreenMode={props.fullScreenMode}
       showCloseButton={props.showCloseButton}
       showFullScreenButton={props.showFullScreenButton}
+      showRefreshButton={!props.onAuthButtonClick}
       connected={props.connected}
       connectingText={props.connectingText}
       closeImage={props.closeImage}

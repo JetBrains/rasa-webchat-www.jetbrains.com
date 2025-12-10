@@ -1,6 +1,6 @@
 {
   "name": "rasa-webchat",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Chat web widget for React apps and Rasa Core chatbots",
   "module": "module/chat.js",
   "main": "lib/chat.js",
@@ -16,6 +16,7 @@
     "build-dev": "cross-env ENVIRONMENT=development webpack --config webpack.prod.js -p",
     "build-stage": "cross-env ENVIRONMENT=staging webpack --config webpack.prod.js -p",
     "build-prod": "cross-env ENVIRONMENT=production webpack --config webpack.prod.js -p",
+    "build-off": "cross-env ENVIRONMENT=stub webpack --config webpack.stub.js -p",
     "test": "jest",
     "prepare": "npm run build",
     "release": "standard-version"

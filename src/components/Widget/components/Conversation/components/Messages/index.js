@@ -22,6 +22,18 @@ const formatDate = (date) => {
   return `${showDate}${dateToFormat.toLocaleTimeString('en-US', { timeStyle: 'short' })}`;
 };
 
+const isUserAtBottom = () => {
+  const messagesDiv = document.getElementById('rw-messages');
+  if (!messagesDiv) return true;
+
+  // Check if user is near the bottom
+  const indent = 50; // 50px from the bottom
+  const position = messagesDiv.scrollTop + messagesDiv.clientHeight;
+  const height = messagesDiv.scrollHeight;
+
+  return position >= height - indent;
+};
+
 const scrollToBottom = () => {
   const messagesDiv = document.getElementById('rw-messages');
   if (messagesDiv) {
@@ -30,12 +42,81 @@ const scrollToBottom = () => {
 };
 
 class Messages extends Component {
-  componentDidMount() {
-    scrollToBottom();
+  constructor(props) {
+    super(props);
+    this.wasAtBottom = true; // Track if user was at bottom before update
+    this.state = {
+      hasUnreadMessages: false
+    };
+    this.messagesEndRef = React.createRef();
   }
 
-  componentDidUpdate() {
+  componentDidMount() {
+    // Always scroll to bottom on initial mount
     scrollToBottom();
+    // Add scroll event listener to detect when user scrolls back to bottom
+    const messagesDiv = document.getElementById('rw-messages');
+    if (messagesDiv) {
+      messagesDiv.addEventListener('scroll', this.handleScroll);
+    }
+  }
+
+  componentWillUnmount() {
+    // Clean up scroll event listener
+    const messagesDiv = document.getElementById('rw-messages');
+    if (messagesDiv) {
+      messagesDiv.removeEventListener('scroll', this.handleScroll);
+    }
+  }
+
+  handleScroll = () => {
+    // If user scrolls to bottom manually, clear unread indicator
+    // Only update state if it actually changed to avoid unnecessary re-renders
+    if (isUserAtBottom() && this.state.hasUnreadMessages) {
+      this.setState({ hasUnreadMessages: false });
+    }
+  }
+
+  getSnapshotBeforeUpdate(prevProps) {
+    // Check if user is at bottom BEFORE the new message is rendered
+    this.wasAtBottom = isUserAtBottom();
+    return null;
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    const { messages } = this.props;
+    const hasNewMessages = prevProps.messages.size < messages.size;
+
+    // Check if the new message is from user (client) - if so, always scroll to bottom
+    let isUserMessage = false;
+    if (hasNewMessages) {
+      const lastMessage = messages.last();
+      isUserMessage = lastMessage && lastMessage.get('sender') === 'client';
+    }
+
+    // Always auto-scroll if user sent a message
+    if (isUserMessage) {
+      scrollToBottom();
+      this.setState({ hasUnreadMessages: false });
+      return;
+    }
+
+    // Only auto-scroll if user was at the bottom before the update
+    if (this.wasAtBottom) {
+      scrollToBottom();
+      // Clear unread indicator if we auto-scrolled
+      if (this.state.hasUnreadMessages) {
+        this.setState({ hasUnreadMessages: false });
+      }
+    } else if (hasNewMessages) {
+      // User is not at bottom and new messages arrived - show unread indicator
+      this.setState({ hasUnreadMessages: true });
+    }
+  }
+
+  handleScrollToBottom = () => {
+    scrollToBottom();
+    this.setState({ hasUnreadMessages: false });
   }
 
   getComponentToRender = (message, index, isLast) => {
@@ -139,6 +220,7 @@ class Messages extends Component {
       ));
     };
     const { assistBackgoundColor } = this.context;
+    const { hasUnreadMessages } = this.state;
 
     return (
       <div id="rw-messages" className="rw-messages-container">
@@ -157,6 +239,16 @@ class Messages extends Component {
               </div>
             </div>
           </div>
+        )}
+        {hasUnreadMessages && (
+          <button
+            className="rw-new-messages-indicator"
+            onClick={this.handleScrollToBottom}
+            aria-label="Scroll to new messages"
+          >
+            <span className="rw-new-messages-text">New messages</span>
+            <span className="rw-arrow-down">↓</span>
+          </button>
         )}
       </div>
     );

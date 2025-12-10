@@ -61,6 +61,7 @@
 
 
 .#{$namespace}messages-container {
+  position: relative;
   overscroll-behavior: contain;
   height: 50vh;
   max-height: 425px;
@@ -135,5 +136,47 @@ div#wave {
 
   30% {
     transform: translateY(-5px);
+  }
+}
+
+.#{$namespace}new-messages-indicator {
+  position: fixed;
+  bottom: 65px;
+  left: 50%;
+  transform: translateX(-50%);
+  //background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(255, 255, 255, 0.85);
+  color: #333;
+  border: none;
+  border-radius: 24px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+    //transform: translateX(-50%) translateY(-2px);
+  }
+
+  &:active {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .#{$namespace}new-messages-text {
+    font-size: 13px;
+  }
+
+  .#{$namespace}arrow-down {
+    font-size: 16px;
+    line-height: 1;
   }
 }
