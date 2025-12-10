@@ -36,7 +36,7 @@ function initStore(
       const emit = () => {
         // CRITICAL: Always use the most current socket reference
         const activeSocket = currentSocketRef;
-        
+
         // Get fresh session ID each time
         const localSession = getLocalSession(storage, SESSION_NAME);
         let sessionId = localSession?.session_id;
@@ -59,6 +59,26 @@ function initStore(
         logger.debug('📤 Session ID:', sessionId);
         logger.debug('📤 Real Socket ID:', realSocket?.id || 'N/A');
         logger.debug('📤 Socket connected:', realSocket?.connected || false);
+
+        // DIAGNOSTIC: Check if access token is expired before sending message
+        if (currentCustomData?.auth_header) {
+          try {
+            const tokenPayload = currentCustomData.auth_header.split('.')[1];
+            const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+            const now = Date.now() / 1000;
+            const timeLeft = decoded.exp - now;
+            logger.info('🔍 MIDDLEWARE: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+            if (timeLeft < 0) {
+              logger.error('❌ MIDDLEWARE: Sending message with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+            } else if (timeLeft < 5 * 60) {
+              logger.warn('⚠️ MIDDLEWARE: Access token expires soon (< 5 min)');
+            }
+          } catch (e) {
+            logger.error('❌ MIDDLEWARE: Failed to decode access token:', e);
+          }
+        } else {
+          logger.warn('⚠️ MIDDLEWARE: No access token in customData!');
+        }
 
         if (!realSocket || !realSocket.connected) {
           logger.error('❌ Socket not connected, cannot send message');

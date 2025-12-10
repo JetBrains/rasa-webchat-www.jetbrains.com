@@ -244,7 +244,6 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
     logger.debug('🕐 Will refresh token in:', Math.round(timeToRefresh / 1000), 'seconds');
 
-
     refreshTimerRef.current = setTimeout(() => {
       logger.debug('🔄 Token refresh timer triggered!');
 
@@ -257,23 +256,72 @@ const ConnectedWidget = forwardRef((props, ref) => {
       logger.debug('🔄 Starting token refresh process...');
       
       const refreshToken = localStorage.getItem(tokenRefreshKey);
+      logger.debug('🔄 Auto-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
       if (refreshToken) {
         refreshTokenReq(refreshToken)
           .then((data) => {
             // eslint-disable-next-line camelcase
             const { id_token, refresh_token } = data;
             // eslint-disable-next-line camelcase
-            if (id_token) {
-              localStorage.setItem(tokenKey, id_token);
-              // eslint-disable-next-line camelcase
-              if (refresh_token) {
-                localStorage.setItem(tokenRefreshKey, refresh_token);
+            if (!id_token) {
+              logger.error('❌ Auto-refresh: No id_token in response');
+              return;
+            }
+
+            // CRITICAL: If server uses rotating refresh tokens, it MUST return new refresh_token
+            // If it doesn't return new token, the old one is likely invalidated
+            // eslint-disable-next-line camelcase
+            if (!refresh_token) {
+              logger.warn('⚠️ Auto-refresh: Server did NOT return new refresh_token');
+              logger.warn('⚠️ This may indicate rotating refresh tokens - old token may be invalidated');
+              logger.warn('⚠️ Keeping old refresh_token and hoping it still works...');
+              // IMPORTANT: Some OAuth servers don't return new refresh_token on every refresh
+              // Old refresh_token should still be valid in this case
+              // If your server uses rotating tokens, this is a SERVER BUG
+            } else {
+              const oldToken = localStorage.getItem(tokenRefreshKey);
+              logger.info('✅ Auto-refresh: OLD refresh_token in localStorage:', oldToken ? oldToken.substring(0, 40) + '...' : 'NULL');
+              logger.info('✅ Auto-refresh: NEW refresh_token from server:', refresh_token.substring(0, 40) + '...');
+              logger.info('✅ Auto-refresh: Full OLD token:', oldToken);
+              logger.info('✅ Auto-refresh: Full NEW token:', refresh_token);
+              logger.info('✅ Auto-refresh: Are they SAME?', oldToken === refresh_token);
+
+              localStorage.setItem(tokenRefreshKey, refresh_token);
+              const storedToken = localStorage.getItem(tokenRefreshKey);
+              logger.info('✅ Auto-refresh: Verification - saved correctly?', refresh_token === storedToken);
+            }
+
+            localStorage.setItem(tokenKey, id_token);
+            logger.info('✅ Auto-refresh: id_token updated');
+
+            // DIAGNOSTIC: Verify token was actually updated in localStorage
+            const verifyToken = localStorage.getItem(tokenKey);
+            if (verifyToken === id_token) {
+              logger.info('✅ Auto-refresh: Token verification PASSED - localStorage updated correctly');
+            } else {
+              logger.error('❌ Auto-refresh: Token verification FAILED!');
+              logger.error('❌ Expected:', id_token.substring(0, 40) + '...');
+              logger.error('❌ Got from localStorage:', verifyToken ? verifyToken.substring(0, 40) + '...' : 'NULL');
+            }
+
+            // DIAGNOSTIC: Check expiration of new token
+            try {
+              const tokenPayload = id_token.split('.')[1];
+              const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+              const now = Date.now() / 1000;
+              const timeLeft = decoded.exp - now;
+              logger.info('✅ Auto-refresh: New access token expires in:', Math.round(timeLeft / 60), 'minutes');
+              if (timeLeft < 0) {
+                logger.error('❌ Auto-refresh: Server returned ALREADY EXPIRED token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
               }
+            } catch (e) {
+              logger.error('❌ Auto-refresh: Failed to decode new access token:', e);
+            }
 
-              logger.info('🔄 Token refreshed automatically, reconnecting socket with new token...');
+            logger.info('🔄 Token refreshed automatically, reconnecting socket with new token...');
 
-              // Reconnect socket to ensure fresh token in all requests
-              if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+            // Reconnect socket to ensure fresh token in all requests
+            if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
                 const oldSocketId = instanceSocket.current.socket.id;
                 const sessionId = instanceSocket.current.sessionId;
 
@@ -349,6 +397,30 @@ const ConnectedWidget = forwardRef((props, ref) => {
                     logger.debug('✅ Copied preservedSessionId to new socket:', instanceSocket.current.preservedSessionId);
                   }
 
+                  // CRITICAL: Update socket.customData with fresh token for future reconnections
+                  if (instanceSocket.current.socket) {
+                    instanceSocket.current.socket.customData = newCustomData;
+                    logger.info('✅ Updated socket.customData with new token for reconnections');
+                  }
+
+                  // CRITICAL FIX: Force update auth headers in Socket.IO engine to prevent stale token caching
+                  if (instanceSocket.current.socket && instanceSocket.current.socket.updateAuthHeaders) {
+                    logger.warn('🔧 FORCE UPDATING Socket.IO engine headers with new token to prevent caching issue');
+                    instanceSocket.current.socket.updateAuthHeaders(id_token);
+
+                    // Double-check: Verify headers were actually updated
+                    if (instanceSocket.current.socket.io && instanceSocket.current.socket.io.engine && instanceSocket.current.socket.io.engine.opts) {
+                      const currentAuthHeader = instanceSocket.current.socket.io.engine.opts.extraHeaders?.Authorization;
+                      if (currentAuthHeader && currentAuthHeader.includes(id_token.substring(0, 20))) {
+                        logger.info('✅ VERIFIED: Socket.IO engine headers updated with new token');
+                      } else {
+                        logger.error('❌ VERIFICATION FAILED: Socket.IO engine still has OLD token!');
+                        logger.error('❌ Expected token start:', id_token.substring(0, 30));
+                        logger.error('❌ Current header:', currentAuthHeader ? currentAuthHeader.substring(0, 50) : 'NULL');
+                      }
+                    }
+                  }
+
                   // CRITICAL: Update store's socket reference after creating new socket
                   if (store.current && store.current.updateSocket) {
                     store.current.updateSocket(instanceSocket.current);
@@ -363,12 +435,11 @@ const ConnectedWidget = forwardRef((props, ref) => {
                   // Trigger a re-render to call componentDidUpdate
                   setSocketKey(`token-refresh-${Date.now()}`);
                 }, 100);
-              }
-
-              setToken(id_token);
-              logger.info('✅ Token refreshed and socket updated');
-              scheduleTokenRefresh(id_token);
             }
+
+            setToken(id_token);
+            logger.info('✅ Token refreshed and socket updated');
+            scheduleTokenRefresh(id_token);
           })
           .catch((err) => {
             logger.error(err);
@@ -391,6 +462,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
 
     const refreshToken = localStorage.getItem(tokenRefreshKey);
+    logger.debug('🔄 Manual-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+
     if (!refreshToken) {
       logger.warn('❌ No refresh token available; cannot refresh manually');
       return Promise.resolve(false);
@@ -405,8 +478,13 @@ const ConnectedWidget = forwardRef((props, ref) => {
         }
 
         localStorage.setItem(tokenKey, id_token);
+        logger.info('✅ Manual-refresh: id_token updated');
+
         if (refresh_token) {
           localStorage.setItem(tokenRefreshKey, refresh_token);
+          logger.info('✅ Manual-refresh: refresh_token updated');
+        } else {
+          logger.warn('⚠️ Manual-refresh: Server did NOT return new refresh_token, keeping old one');
         }
 
         // Update socket with new token (NO destruction - manual refresh uses /restart)
@@ -444,6 +522,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
     const refreshToken = localStorage.getItem(tokenRefreshKey);
     const isTokenValid = getIsTokenValid(chatToken);
 
+    logger.debug('🔄 Check-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+
     if (chatToken && !isTokenValid) {
       refreshTokenReq(refreshToken)
         .then((data) => {
@@ -452,7 +532,15 @@ const ConnectedWidget = forwardRef((props, ref) => {
           // eslint-disable-next-line camelcase
           if (!id_token) return;
           localStorage.setItem(tokenKey, id_token);
-          localStorage.setItem(tokenRefreshKey, refresh_token);
+          logger.info('✅ Check-refresh: id_token updated');
+
+          if (refresh_token) {
+            localStorage.setItem(tokenRefreshKey, refresh_token);
+            logger.info('✅ Check-refresh: refresh_token updated');
+          } else {
+            logger.warn('⚠️ Check-refresh: Server did NOT return new refresh_token, keeping old one');
+          }
+
           setToken(id_token);
           setIsAuth(true);
           scheduleTokenRefresh(id_token);
@@ -461,7 +549,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           if (resetAuth) {
             setIsAuth(false);
           }
-          logger.error(err);
+          logger.error('❌ Check-refresh failed:', err);
         });
     } else if (resetAuth) {
       setIsAuth(false);
@@ -497,10 +585,11 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   const [socketKey, setSocketKey] = useState('initial'); // For a forced re-render
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
+  const processedCodesRef = useRef(new Set()); // Track processed OAuth codes to prevent duplicates
 
   const authCallback = useCallback((event) => {
     logger.info('🔍 authCallback: Received message event, type:', event.data?.type);
-    
+
     if (isAuth) {
       logger.debug('Already authenticated, ignoring message');
       return;
@@ -511,6 +600,13 @@ const ConnectedWidget = forwardRef((props, ref) => {
       const popupState = event.data.popupState;
 
       logger.debug('📨 Received OAuth callback:', { code: code?.substring(0, 10) + '...', popupState });
+
+      // Prevent duplicate processing of the same OAuth code
+      if (processedCodesRef.current.has(code)) {
+        logger.warn('⚠️ OAuth code already processed, ignoring duplicate message');
+        return;
+      }
+      processedCodesRef.current.add(code);
 
       if (state !== popupState) {
         logger.error('❌ State mismatch:', { received: popupState, expected: state });
@@ -589,6 +685,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
       }
 
       const refreshToken = localStorage.getItem(tokenRefreshKey);
+      logger.debug('🔄 Disconnect-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+
       if (refreshToken) {
         refreshTokenReq(refreshToken)
           .then((data) => {
@@ -596,8 +694,13 @@ const ConnectedWidget = forwardRef((props, ref) => {
             if (id_token) {
               logger.info('✅ Token refreshed on disconnect, updating socket...');
               localStorage.setItem(tokenKey, id_token);
+              logger.info('✅ Disconnect-refresh: id_token updated');
+
               if (refresh_token) {
                 localStorage.setItem(tokenRefreshKey, refresh_token);
+                logger.info('✅ Disconnect-refresh: refresh_token updated');
+              } else {
+                logger.warn('⚠️ Disconnect-refresh: Server did NOT return new refresh_token, keeping old one');
               }
               setToken(id_token);
               scheduleTokenRefresh(id_token);
