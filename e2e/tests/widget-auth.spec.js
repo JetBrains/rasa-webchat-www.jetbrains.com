@@ -1,15 +1,23 @@
 /**
  * E2E тесты для авторизации в Rasa Webchat
- * Best Practice: Используем API для авторизации вместо UI
+ *
+ * ⚠️ ВАЖНО: Большинство тестов используют сохранённую сессию!
+ * Перед запуском выполни ОДИН РАЗ:
+ *   npx playwright test --headed -g "setup-auth"
  */
 
 const { test, expect } = require('@playwright/test');
 const { authenticateWithToken, authenticateViaUI, createAuthenticatedSession } = require('../helpers/auth-flow');
+const path = require('path');
+const fs = require('fs');
 
 const LAUNCHER_SELECTOR = '.rw-launcher';
 const AUTH_BUTTON_SELECTOR = '.auth-placeholder__button';
 const MESSAGE_INPUT_SELECTOR = '.rw-new-message';
 const HEADER_SELECTOR = '.rw-header';
+
+// Путь к сохранённой сессии
+const authFile = path.join(__dirname, '../.auth/user.json');
 
 // Test credentials (используйте переменные окружения!)
 const TEST_CREDENTIALS = {
@@ -17,7 +25,7 @@ const TEST_CREDENTIALS = {
   password: process.env.TEST_USER_PASSWORD || 'test-password'
 };
 
-test.describe('Widget Authorization Tests', () => {
+test.describe('Widget Authorization Tests (without saved session)', () => {
 
   /**
    * ТЕСТ 1: OAuth popup открывается
@@ -80,16 +88,17 @@ test.describe('Widget Authorization Tests', () => {
 
 /**
  * Тесты которые требуют авторизации
- * Используем fixture для создания авторизованной сессии
+ * Используем сохранённую сессию из setup-auth
  */
-test.describe('Tests with Authentication', () => {
+test.describe('Tests with Authentication (using saved session)', () => {
 
-  /**
-   * Before each test - создаем авторизованную сессию
-   */
-  test.beforeEach(async ({ page }) => {
-    // ✅ BEST PRACTICE: Используем API вместо UI
-    await createAuthenticatedSession(page);
+  // Используем сохранённую сессию
+
+  // Пропускаем если нет сессии
+  test.beforeAll(() => {
+    if (!fs.existsSync(authFile)) {
+      throw new Error('Run "setup-auth" test first!');
+    }
   });
 
   test('должен отправить сообщение', async ({ page }) => {
@@ -129,61 +138,6 @@ test.describe('Tests with Authentication', () => {
 });
 
 // ========================================================================
-// 🎯 MANUAL OAUTH TEST - для ручной авторизации в браузере
+// 🎯 MANUAL OAUTH TEST - перенесён в widget-auth-persistent.spec.js
+// Используй: npx playwright test --headed -g "setup-auth"
 // ========================================================================
-test.describe('Manual OAuth Testing', () => {
-
-  // Увеличиваем timeout для ручной авторизации (10 минут)
-  test('должен авторизоваться ВРУЧНУЮ через OAuth popup', async ({ page, context }) => {
-    test.setTimeout(600000); // 10 минут на весь тест
-
-    await page.goto('/');
-    await page.waitForSelector('.rw-widget-container');
-
-    const launcher = page.locator(LAUNCHER_SELECTOR);
-    await launcher.click();
-
-    // Кликаем на кнопку авторизации
-    const authButton = page.locator(AUTH_BUTTON_SELECTOR);
-    await expect(authButton).toBeVisible();
-
-    console.log('\n🔐 Сейчас откроется popup для авторизации...');
-
-    // Ждём popup
-    const popupPromise = context.waitForEvent('page');
-    await authButton.click();
-    const popup = await popupPromise;
-
-    console.log('✅ Popup открылся:', popup.url());
-    console.log('\n' + '='.repeat(60));
-    console.log('👉 АВТОРИЗУЙСЯ ВРУЧНУЮ В POPUP ОКНЕ!');
-    console.log('👉 У тебя есть 10 МИНУТ');
-    console.log('👉 После авторизации popup закроется автоматически');
-    console.log('👉 Тест продолжится...');
-    console.log('='.repeat(60) + '\n');
-
-    // ⏸️ ПАУЗА - авторизуйся вручную!
-    // Popup окно останется открытым 10 минут
-    // После успешной авторизации popup закроется автоматически
-
-    // Ждём когда popup закроется (значит авторизация прошла)
-    await popup.waitForEvent('close', { timeout: 600000 }); // 10 минут
-
-    console.log('✅ Popup закрылся - проверяем токен...');
-
-    // Проверяем что токен сохранился
-    const token = await page.evaluate(() => localStorage.getItem('chat_token'));
-    expect(token).toBeTruthy();
-    console.log('✅ Токен получен:', token.substring(0, 20) + '...');
-
-    // Перезагружаем страницу
-    await page.reload();
-    await page.waitForSelector('.rw-widget-container');
-
-    // Открываем чат - должен быть доступен input
-    await launcher.click();
-    await expect(page.locator(MESSAGE_INPUT_SELECTOR)).toBeVisible({ timeout: 10000 });
-
-    console.log('✅ Чат доступен - авторизация успешна!');
-  });
-});

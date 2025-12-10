@@ -1,9 +1,18 @@
 /**
  * E2E тесты для Rasa Webchat Widget
  * Реальный браузер + реальный backend
+ *
+ * ⚠️ ВАЖНО: Эти тесты требуют сохранённую авторизацию!
+ * Перед запуском выполни ОДИН РАЗ:
+ *   npx playwright test --headed -g "setup-auth"
+ *
+ * Сессия сохранится в e2e/.auth/user.json
+ * Потом все тесты работают автоматически!
  */
 
 const { test, expect } = require('@playwright/test');
+const path = require('path');
+const fs = require('fs');
 
 // Конфигурация для вашего проекта
 const WIDGET_SELECTOR = '.rw-widget-container';
@@ -15,11 +24,24 @@ const MESSAGE_SELECTOR = '.rw-message';
 const HEADER_SELECTOR = '.rw-header';
 const REFRESH_BUTTON_SELECTOR = '.rw-refresh-button';
 
-// Mock токены (замените на реальные для ваших тестов)
-const MOCK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiZXhwIjoxOTk5OTk5OTk5fQ.test';
-const MOCK_REFRESH_TOKEN = 'refresh_token_mock';
+// Путь к сохранённой сессии
+const authFile = path.join(__dirname, '../.auth/user.json');
+
+// ========================================================================
+// ИСПОЛЬЗУЕМ СОХРАНЁННУЮ СЕССИЮ ДЛЯ ВСЕХ ТЕСТОВ
+// ========================================================================
 
 test.describe('Rasa Webchat E2E Tests', () => {
+
+  // Пропускаем ВСЕ тесты если нет сохранённой сессии
+  test.beforeAll(() => {
+    if (!fs.existsSync(authFile)) {
+      console.log('\n❌ No saved session found!');
+      console.log('👉 Run this command first:');
+      console.log('   npx playwright test --headed -g "setup-auth"\n');
+      throw new Error('Auth session required. Run setup-auth test first.');
+    }
+  });
 
   /**
    * ТЕСТ 1: Виджет загрузился успешно

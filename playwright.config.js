@@ -2,9 +2,13 @@
 const { defineConfig, devices } = require('@playwright/test');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
 
 // Загружаем .env переменные
 dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+// Путь к сохранённой сессии авторизации
+const authFile = path.join(__dirname, 'e2e/.auth/user.json');
 
 /**
  * Playwright E2E Test Configuration
@@ -43,6 +47,9 @@ module.exports = defineConfig({
 
     /* User-Agent для MacOS (опционально - для корректного определения ОС) */
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+
+    /* 🔥 Сохранённая сессия авторизации (если файл существует) */
+    storageState: fs.existsSync(authFile) ? authFile : undefined,
 
     /* Скриншоты при падении */
     screenshot: 'only-on-failure',

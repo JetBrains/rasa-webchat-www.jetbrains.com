@@ -16,9 +16,18 @@
       - heading "JetBrains Support Assistant" [level=4] [ref=e15]:
         - img "JetBrains" [ref=e16]
         - text: Support Assistant
-      - button "close" [ref=e18] [cursor=pointer]:
-        - img "close" [ref=e19]
-    - generic [ref=e21]:
-      - paragraph [ref=e22]: Hi! To proceed with AI Assistant Chat Bot you need to authenticate first
-      - button "Authenticate here" [active] [ref=e23] [cursor=pointer]
+      - generic [ref=e17]:
+        - button [ref=e18] [cursor=pointer]
+        - button "close" [ref=e19] [cursor=pointer]:
+          - img "close" [ref=e20]
+    - generic [ref=e22]:
+      - paragraph [ref=e27]:
+        - strong [ref=e28]: Hi there! Looking for help? This is the right place!
+        - text: Here you can ask about JetBrains products and licenses, get help troubleshooting problems, report bugs, ask for features, etc.
+      - paragraph [ref=e33]: This chat is still work in progress, so provided information may be incomplete or inaccurate. We are working hard on making it better.
+      - paragraph [ref=e38]: What do you need help with?
+    - generic [ref=e39]:
+      - textbox "Type a message..." [active] [ref=e40]
+      - button [disabled] [ref=e41]:
+        - img [ref=e42]
 ```
