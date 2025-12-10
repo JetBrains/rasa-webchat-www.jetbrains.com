@@ -198,8 +198,22 @@ export class SocketEventManager {
       logger.info(`Token refresh: requested preserved session_id ${localId}, server returned ${remoteId}`);
     }
 
-    if (localId !== remoteId) {
-      // New session - store it and trigger init payload
+    // Check if session is stale (older than 30 minutes)
+    const localSession = this.getLocalSession();
+    const lastUpdate = localSession ? localSession.lastUpdate : 0;
+    const sessionAge = Date.now() - lastUpdate;
+    const isStaleSession = sessionAge > 30 * 60 * 1000; // 30 minutes
+
+    // If session_id matches BUT session is stale (first connection after long break)
+    // treat it as NEW session to trigger /session_start
+    const isNewSession = (localId !== remoteId) || isStaleSession;
+
+    if (isStaleSession && localId === remoteId) {
+      logger.info(`Session is stale (${Math.round(sessionAge / 60000)} minutes old), treating as new session`);
+    }
+
+    if (isNewSession) {
+      // New session or stale session - store it and trigger init payload
       if (this.onSessionConfirm) {
         this.onSessionConfirm(remoteId, true, this.sendInitPayload);
       }
@@ -249,5 +263,9 @@ export class SocketEventManager {
   getSessionId() {
     const localSession = getLocalSession(this.storage, SESSION_NAME);
     return localSession ? localSession.session_id : null;
+  }
+
+  getLocalSession() {
+    return getLocalSession(this.storage, SESSION_NAME);
   }
 }

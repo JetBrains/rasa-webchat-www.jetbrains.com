@@ -29,11 +29,9 @@ export class TokenManager {
    *
    * @param {string} refreshToken - Refresh token to use
    * @param {string} context - Context label for logging
-   * @param {Object} options - Additional options
-   * @param {boolean} options.skipSocketReconnect - If true, don't trigger socket reconnection
    * @returns {Promise<Object>} Token data {id_token, refresh_token}
    */
-  async refreshToken(refreshToken, context = 'Token refresh', options = {}) {
+  async refreshToken(refreshToken, context = 'Token refresh') {
     logger.debug(`🔄 ${context}: using refresh_token from localStorage:`,
       refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
 
@@ -59,9 +57,9 @@ export class TokenManager {
       // Log new token expiration
       logTokenExpiration(id_token, `✅ ${context}`);
 
-      // Notify listeners (but allow skipping socket reconnect for manual refresh before /restart)
+      // Notify listeners - they will handle socket reconnection
       if (this.onTokenRefreshed) {
-        this.onTokenRefreshed(id_token, refresh_token, options);
+        this.onTokenRefreshed(id_token, refresh_token);
       }
 
       logger.info(`✅ ${context} completed successfully`);
@@ -181,12 +179,11 @@ export class TokenManager {
 
   /**
    * Manual token refresh (triggered by user action)
+   * Always triggers socket reconnection (best practice for polling transport)
    *
-   * @param {Object} options - Additional options
-   * @param {boolean} options.skipSocketReconnect - If true, don't trigger socket reconnection
    * @returns {Promise<boolean>} True if refresh succeeded
    */
-  async refreshManually(options = {}) {
+  async refreshManually() {
     logger.info('🔄 Manual token refresh triggered...');
 
     // Clear any pending auto-refresh to avoid conflicts
@@ -200,7 +197,7 @@ export class TokenManager {
     }
 
     try {
-      const { id_token } = await this.refreshToken(refreshToken, 'Manual-refresh', options);
+      const { id_token } = await this.refreshToken(refreshToken, 'Manual-refresh');
 
       // Schedule next auto-refresh
       this.scheduleAutoRefresh(id_token);

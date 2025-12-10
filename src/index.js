@@ -15,6 +15,7 @@ import {
 import { getEnvUrl } from './utils/environment';
 import { TOKEN_KEY, REFRESH_TOKEN_KEY } from './constants/token';
 import { SOCKET_TEMPLATE } from './constants/socket';
+import { SESSION_NAME } from './constants/constants';
 import { TokenManager } from './services/TokenManager';
 import { SocketWrapper } from './services/SocketWrapper';
 import { OAuthManager } from './services/OAuthManager';
@@ -64,35 +65,16 @@ const ConnectedWidget = forwardRef((props, ref) => {
         tokenKey: TOKEN_KEY,
         refreshTokenKey: REFRESH_TOKEN_KEY,
         useTestMode: false,
-        onTokenRefreshed: (newIdToken, newRefreshToken, options = {}) => {
+        onTokenRefreshed: (newIdToken, newRefreshToken) => {
           setToken(newIdToken);
           setIsAuth(true);
 
-          // Reconnect socket with new token (unless skipSocketReconnect is true for manual refresh before /restart)
-          if (!options.skipSocketReconnect && instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+          // BEST PRACTICE: Always reconnect with new token for polling transport
+          // Polling transport cannot update auth in-place reliably
+          // Reconnect ensures all transport layers use the new token
+          if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+            logger.info('🔄 Token refreshed - reconnecting socket with new token (best practice for polling)');
             reconnectSocketWithNewToken(instanceSocket.current, newIdToken, props.customData, store.current, setSocketKey);
-          } else if (options.skipSocketReconnect) {
-            logger.info('⏭️ Skipping socket reconnect (manual refresh before /restart)');
-            // Just update the socket auth without destroying/recreating
-            if (instanceSocket.current && instanceSocket.current.socket) {
-              // Update customData with new token
-              const updatedCustomData = { ...props.customData, auth_header: newIdToken };
-
-              // Update socket.auth (Socket.IO handshake auth)
-              instanceSocket.current.socket.auth = updatedCustomData;
-
-              // CRITICAL: Update socket.customData for polling transport and future requests
-              instanceSocket.current.socket.customData = updatedCustomData;
-              instanceSocket.current.customData = updatedCustomData;
-              logger.info('✅ Updated socket.customData with new token');
-
-              // Update all auth header locations using the dedicated updater
-              if (instanceSocket.current.socket.updateAuthHeaders) {
-                instanceSocket.current.socket.updateAuthHeaders(newIdToken);
-              }
-
-              logger.info('✅ Updated socket auth with new token (no reconnect)');
-            }
           }
         },
         onTokenRefreshFailed: (error) => {
@@ -130,22 +112,19 @@ const ConnectedWidget = forwardRef((props, ref) => {
 
   // Manual token refresh, can be triggered from UI (header refresh button)
   // Returns a Promise to allow callers to await completion before further actions
+  // BEST PRACTICE: Triggers full socket reconnection with new token (required for polling transport)
   const refreshTokenNow = useCallback(async () => {
     if (!tokenManagerRef.current) {
       logger.warn('TokenManager not initialized');
       return false;
     }
 
-    // IMPORTANT: Skip socket reconnection during manual refresh
-    // Socket will remain alive for the subsequent /restart message
-    const success = await tokenManagerRef.current.refreshManually({ skipSocketReconnect: true });
+    // Manual refresh will trigger socket reconnection via onTokenRefreshed callback
+    // This is the correct approach for polling transport
+    const success = await tokenManagerRef.current.refreshManually();
 
     if (success) {
-      const newToken = localStorage.getItem(tokenKey);
-      setToken(newToken);
-      setIsAuth(true);
-
-      logger.info('✅ Manual refresh completed - socket auth updated, no reconnection');
+      logger.info('✅ Manual refresh completed - socket will reconnect with new token');
     }
 
     return success;

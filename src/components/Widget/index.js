@@ -240,14 +240,24 @@ class Widget extends Component {
   handleSessionConfirm(sessionId, isNewSession, shouldSendInitPayload, shouldSendTooltip) {
     const { dispatch, storage } = this.props;
 
+    logger.info('🔔 handleSessionConfirm:', {
+      sessionId,
+      isNewSession,
+      shouldSendInitPayload,
+      shouldSendTooltip
+    });
+
     if (isNewSession) {
+      logger.info('✨ New session detected - will store and send init payload');
       // Store the received session_id to storage
       storeLocalSession(storage, SESSION_NAME, sessionId);
       dispatch(pullSession());
       if (shouldSendInitPayload) {
+        logger.info('📤 Calling trySendInitPayload()...');
         this.trySendInitPayload();
       }
     } else {
+      logger.info('🔄 Existing session - checking for queued message');
       // Existing session - check for queued message
       const nextMessage = window.localStorage.getItem(NEXT_MESSAGE);
 
@@ -304,13 +314,26 @@ class Widget extends Component {
       dispatch
     } = this.props;
 
+    logger.info('🎯 trySendInitPayload called:', {
+      initialized,
+      connected,
+      isChatOpen,
+      isChatVisible,
+      embedded
+    });
+
     // Send initial payload when chat is opened or widget is shown
     if (!initialized && connected && ((isChatOpen && isChatVisible) || embedded)) {
       // Only send initial payload if the widget is connected to the server but not yet initialized
 
       const sessionId = this.sessionManager.getSessionId();
+      logger.info('🔍 Session ID from storage:', sessionId);
+
       // check that session_id is confirmed
-      if (!sessionId) return;
+      if (!sessionId) {
+        logger.warn('⚠️ No session_id in storage, cannot send init payload yet');
+        return;
+      }
 
       // DIAGNOSTIC: Check token expiration before /session_start
       if (customData?.auth_header) {
@@ -397,41 +420,39 @@ class Widget extends Component {
   }
 
 
-  // Compose behavior: first try to refresh token (new feature), then perform legacy restart (old behavior)
+  // Session restart: send /restart to backend to clear conversation and get greeting messages
   refreshTokenAndRestart = () => {
-    const { onRefreshToken } = this.props;
-    try {
-      const maybePromise = onRefreshToken ? onRefreshToken() : null;
-      if (maybePromise && typeof maybePromise.then === 'function') {
-        return maybePromise
-          .catch((err) => {
-            logger.error('Manual token refresh failed before restart:', err);
-          })
-          .finally(() => {
-            this.refresh();
-          });
-      }
-      // If refresh function not provided or doesn't return a promise, proceed with legacy restart immediately
-      this.refresh();
-      return Promise.resolve();
-    } catch (e) {
-      // Ensure legacy behavior even if something goes wrong
-      this.refresh();
-      return Promise.resolve();
-    }
+    // DEPRECATED: Token refresh logic removed from refresh button
+    // Reason: Token refresh triggers socket reconnection, which destroys the socket
+    // before refresh() can send /restart message. Token should auto-refresh separately.
+    //
+    // const { onRefreshToken } = this.props;
+    // try {
+    //   const maybePromise = onRefreshToken ? onRefreshToken() : null;
+    //   if (maybePromise && typeof maybePromise.then === 'function') {
+    //     return maybePromise
+    //       .catch((err) => {
+    //         logger.error('Manual token refresh failed before restart:', err);
+    //       })
+    //       .finally(() => {
+    //         this.refresh();
+    //       });
+    //   }
+    // } catch (e) {
+    //   // Error handling
+    // }
+
+    // Just send /restart to backend (original behavior)
+    this.refresh();
+    return Promise.resolve();
   }
 
   refresh = () => {
-    const { socket, customData: propsCustomData } = this.props;
+    const { socket, customData } = this.props;
     const sessionId = this.sessionManager.getSessionIdWithFallback(socket);
-
-    // CRITICAL: Use socket.customData if available (contains fresh token after manual refresh)
-    // Otherwise fall back to props.customData
-    const customData = (socket && socket.socket && socket.socket.customData) || propsCustomData;
 
     {
       logger.info('=== SESSION RESTART ===');
-      logger.debug('Using customData from:', socket?.socket?.customData ? 'socket.customData (fresh)' : 'props.customData');
       logger.debug('Session ID (must not change):', sessionId);
       logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
       logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');

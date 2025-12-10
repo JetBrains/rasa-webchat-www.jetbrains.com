@@ -40,13 +40,17 @@ export const reconnectSocketWithNewToken = (instanceSocket, newToken, baseCustom
     logger.error('Error closing socket:', e);
   }
 
-  // 3. Close and delete Manager from global cache
-  if (instanceSocket.socket.io) {
+  // 3. Close Manager from global cache (if it has the close method)
+  // Note: In Socket.IO v4, Manager may already be closed or not have close() method
+  if (instanceSocket.socket.io && typeof instanceSocket.socket.io.close === 'function') {
     try {
       instanceSocket.socket.io.close();
+      logger.debug('✅ Manager closed successfully');
     } catch (e) {
-      logger.error('Error closing manager:', e);
+      logger.debug('Manager close skipped (may already be closed):', e.message);
     }
+  } else {
+    logger.debug('Manager already closed or unavailable');
   }
 
   // 4. Manually delete Manager from window.io.managers cache
