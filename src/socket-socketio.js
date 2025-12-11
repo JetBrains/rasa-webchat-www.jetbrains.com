@@ -138,15 +138,8 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
       }
 
       // 4. Update transport-level headers if transport is active
-      if (this.io.engine && this.io.engine.transport) {
-        const transport = this.io.engine.transport;
-        if (transport.query) {
-          // Some transports use query params
-          transport.query.auth_header = newToken;
-          updateCount++;
-          logger.debug('✅ Updated: transport.query.auth_header');
-        }
-      }
+      // NOTE: Do NOT use transport.query - it puts auth_header in GET params (security issue)
+      // For polling transport, extraHeaders (set above) is the correct way
 
       // 5. NUCLEAR OPTION: Update global manager cache if it exists
       if (typeof window !== 'undefined' && window.io && window.io.managers && this.io.uri) {
