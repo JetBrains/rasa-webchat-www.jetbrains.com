@@ -301,7 +301,12 @@ class Widget extends Component {
     // If isFinal and chat is open, WIP will be hidden after message delay in newMessageTimeout
 
     if (botUtterance.metadata) this.propagateMetadata(botUtterance.metadata);
-    const newMessage = { ...botUtterance, text: String(botUtterance.text) };
+
+    // Fix: Convert \n to hard breaks (2 spaces + \n) for proper Markdown rendering
+    // This ensures single line breaks are preserved in the output
+    const fixedText = String(botUtterance.text).replace(/\n/g, '  \n');
+
+    const newMessage = { ...botUtterance, text: fixedText };
     if (botUtterance.metadata && botUtterance.metadata.customCss) {
       newMessage.customCss = botUtterance.metadata.customCss;
     }
