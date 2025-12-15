@@ -6,7 +6,7 @@ import { addUserMessage, emitUserMessage, setBotProcessing } from 'actions';
 import { PROP_TYPES } from 'constants';
 import Arrow from 'assets/arrow';
 import ThemeContext from '../../../../../../ThemeContext';
-import { startBotProcessingTimeoutGlobal } from '../../../../../index';
+import { startBotProcessingTimeout } from '../../../../../../../../utils/botProcessingTimeout';
 
 import './styles.scss';
 
@@ -183,7 +183,7 @@ const mapDispatchToProps = dispatch => ({
     dispatch(emitUserMessage(payload));
     dispatch(setBotProcessing(true));
     // Start 30-second timeout to reset bot processing if backend hangs
-    startBotProcessingTimeoutGlobal(dispatch);
+    startBotProcessingTimeout(dispatch);
   }
 });
 
