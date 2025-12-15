@@ -42,7 +42,7 @@ import { isVideo, isImage, isButtons, isText, isCarousel } from './msgProcessor'
 import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
 import logger from '../../utils/logger';
-
+import { startBotProcessingTimeout, clearBotProcessingTimeout } from '../../utils/botProcessingTimeout';
 
 class Widget extends Component {
   constructor(props) {
@@ -111,6 +111,7 @@ class Widget extends Component {
     }
     clearTimeout(this.tooltipTimeout);
     clearInterval(this.intervalId);
+    clearBotProcessingTimeout();
   }
 
   getSessionId() {
@@ -139,6 +140,7 @@ class Widget extends Component {
 
     return localId;
   }
+
   sendMessage(payload, text = '', when = 'always', tooltipSelector = false) {
     const { dispatch, initialized, messages } = this.props;
     const emit = () => {
@@ -157,6 +159,8 @@ class Widget extends Component {
         dispatch(setFirstChatStarted());
         // Set bot processing state when user sends a message
         dispatch(setBotProcessing(true));
+        // Start 30-second timeout to reset bot processing if backend hangs
+        startBotProcessingTimeout(dispatch);
       };
       if (when === 'always') {
         send();
@@ -228,6 +232,8 @@ class Widget extends Component {
         setTimeout(() => {
           logger.debug('Hiding WIP after message displayed');
           dispatch(setBotProcessing(false));
+          // Clear timeout when hiding WIP after final message
+          clearBotProcessingTimeout();
         }, 100);
       }
     }, customMessageDelay(message.text || ''));
@@ -294,9 +300,21 @@ class Widget extends Component {
     // If chat is open, message will have delay, so keep WIP active until message is shown
     if (!isChatOpen) {
       dispatch(setBotProcessing(!isFinal));
+      if (isFinal) {
+        // Clear timeout when receiving final message
+        clearBotProcessingTimeout();
+      } else {
+        // Start timeout when receiving non-final message
+        startBotProcessingTimeout(dispatch);
+      }
     } else if (!isFinal) {
       // If not final and chat is open, keep showing WIP
       dispatch(setBotProcessing(true));
+      // Start timeout when receiving non-final message
+      startBotProcessingTimeout(dispatch);
+    } else {
+      // If final and chat is open, clear the timeout (WIP will be hidden after message delay)
+      clearBotProcessingTimeout();
     }
     // If isFinal and chat is open, WIP will be hidden after message delay in newMessageTimeout
 
@@ -535,6 +553,8 @@ class Widget extends Component {
             dispatch(addUserMessage(message));
             dispatch(emitUserMessage(message));
             dispatch(setBotProcessing(true));
+            // Start 30-second timeout to reset bot processing if backend hangs
+            startBotProcessingTimeout(dispatch);
           }
         }
       }
@@ -634,6 +654,8 @@ class Widget extends Component {
       dispatch(initialize());
       // Show WIP bubble while waiting for bot's response to /session_start
       dispatch(setBotProcessing(true));
+      // Start 30-second timeout to reset bot processing if backend hangs
+      startBotProcessingTimeout(dispatch);
     }
   }
 
@@ -762,6 +784,8 @@ class Widget extends Component {
       this.props.dispatch(setFirstChatStarted());
       // Set bot processing state when user sends a message
       this.props.dispatch(setBotProcessing(true));
+      // Start 30-second timeout to reset bot processing if backend hangs
+      startBotProcessingTimeout(this.props.dispatch);
     }
     event.target.message.value = '';
   }
