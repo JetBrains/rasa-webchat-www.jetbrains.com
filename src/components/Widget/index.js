@@ -43,6 +43,8 @@ import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
 import logger from '../../utils/logger';
 
+// Global timeout for bot processing to handle backend hangs
+let globalBotProcessingTimeout = null;
 
 class Widget extends Component {
   constructor(props) {
@@ -111,6 +113,7 @@ class Widget extends Component {
     }
     clearTimeout(this.tooltipTimeout);
     clearInterval(this.intervalId);
+    clearTimeout(globalBotProcessingTimeout);
   }
 
   getSessionId() {
@@ -139,6 +142,26 @@ class Widget extends Component {
 
     return localId;
   }
+
+  startBotProcessingTimeout() {
+    const { dispatch } = this.props;
+
+    // Clear any existing timeout
+    clearTimeout(globalBotProcessingTimeout);
+
+    // Set 30-second timeout to reset isBotProcessing if backend hangs
+    globalBotProcessingTimeout = setTimeout(() => {
+      logger.warn('Bot processing timeout reached (30s). Force resetting isBotProcessing to false.');
+      dispatch(setBotProcessing(false));
+      this.lastIsFinal = true;
+    }, 30000);
+  }
+
+  clearBotProcessingTimeout() {
+    clearTimeout(globalBotProcessingTimeout);
+    globalBotProcessingTimeout = null;
+  }
+
   sendMessage(payload, text = '', when = 'always', tooltipSelector = false) {
     const { dispatch, initialized, messages } = this.props;
     const emit = () => {
@@ -157,6 +180,8 @@ class Widget extends Component {
         dispatch(setFirstChatStarted());
         // Set bot processing state when user sends a message
         dispatch(setBotProcessing(true));
+        // Start 30-second timeout to reset bot processing if backend hangs
+        this.startBotProcessingTimeout();
       };
       if (when === 'always') {
         send();
@@ -228,6 +253,8 @@ class Widget extends Component {
         setTimeout(() => {
           logger.debug('Hiding WIP after message displayed');
           dispatch(setBotProcessing(false));
+          // Clear timeout when hiding WIP after final message
+          this.clearBotProcessingTimeout();
         }, 100);
       }
     }, customMessageDelay(message.text || ''));
@@ -294,9 +321,21 @@ class Widget extends Component {
     // If chat is open, message will have delay, so keep WIP active until message is shown
     if (!isChatOpen) {
       dispatch(setBotProcessing(!isFinal));
+      if (isFinal) {
+        // Clear timeout when receiving final message
+        this.clearBotProcessingTimeout();
+      } else {
+        // Start timeout when receiving non-final message
+        this.startBotProcessingTimeout();
+      }
     } else if (!isFinal) {
       // If not final and chat is open, keep showing WIP
       dispatch(setBotProcessing(true));
+      // Start timeout when receiving non-final message
+      this.startBotProcessingTimeout();
+    } else {
+      // If final and chat is open, clear the timeout (WIP will be hidden after message delay)
+      this.clearBotProcessingTimeout();
     }
     // If isFinal and chat is open, WIP will be hidden after message delay in newMessageTimeout
 
@@ -535,6 +574,8 @@ class Widget extends Component {
             dispatch(addUserMessage(message));
             dispatch(emitUserMessage(message));
             dispatch(setBotProcessing(true));
+            // Start 30-second timeout to reset bot processing if backend hangs
+            this.startBotProcessingTimeout();
           }
         }
       }
@@ -634,6 +675,8 @@ class Widget extends Component {
       dispatch(initialize());
       // Show WIP bubble while waiting for bot's response to /session_start
       dispatch(setBotProcessing(true));
+      // Start 30-second timeout to reset bot processing if backend hangs
+      this.startBotProcessingTimeout();
     }
   }
 
@@ -762,6 +805,8 @@ class Widget extends Component {
       this.props.dispatch(setFirstChatStarted());
       // Set bot processing state when user sends a message
       this.props.dispatch(setBotProcessing(true));
+      // Start 30-second timeout to reset bot processing if backend hangs
+      this.startBotProcessingTimeout();
     }
     event.target.message.value = '';
   }
@@ -963,5 +1008,17 @@ Widget.defaultProps = {
     }
   }`
 };
+
+// Export helper function to start bot processing timeout from other components
+export function startBotProcessingTimeoutGlobal(dispatch) {
+  // Clear any existing timeout
+  clearTimeout(globalBotProcessingTimeout);
+
+  // Set 30-second timeout to reset isBotProcessing if backend hangs
+  globalBotProcessingTimeout = setTimeout(() => {
+    logger.warn('Bot processing timeout reached (30s). Force resetting isBotProcessing to false.');
+    dispatch(setBotProcessing(false));
+  }, 30000);
+}
 
 export default connect(mapStateToProps, null, null, { forwardRef: true })(Widget);
