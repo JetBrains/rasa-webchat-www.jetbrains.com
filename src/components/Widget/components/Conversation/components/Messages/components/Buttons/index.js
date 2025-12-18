@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { PROP_TYPES } from 'constants';
 import { addUserMessage, emitUserMessage, setButtons, toggleInputDisabled, setBotProcessing } from 'actions';
 import Message from '../Message/index';
+import { startBotProcessingTimeout } from '../../../../../../../../utils/botProcessingTimeout';
 
 import './styles.scss';
 import ThemeContext from '../../../../../../ThemeContext';
@@ -126,6 +127,8 @@ const mapDispatchToProps = dispatch => ({
     dispatch(addUserMessage(title));
     dispatch(emitUserMessage(payload));
     dispatch(setBotProcessing(true));
+    // Start 30-second timeout to reset bot processing if backend hangs
+    startBotProcessingTimeout(dispatch);
     // dispatch(toggleInputDisabled());
   }
 });

@@ -42,7 +42,7 @@ import { isVideo, isImage, isButtons, isText, isCarousel } from './msgProcessor'
 import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
 import logger from '../../utils/logger';
-
+import { startBotProcessingTimeout, clearBotProcessingTimeout } from '../../utils/botProcessingTimeout';
 
 class Widget extends Component {
   constructor(props) {
@@ -111,6 +111,7 @@ class Widget extends Component {
     }
     clearTimeout(this.tooltipTimeout);
     clearInterval(this.intervalId);
+    clearBotProcessingTimeout();
   }
 
   getSessionId() {
@@ -139,6 +140,7 @@ class Widget extends Component {
 
     return localId;
   }
+
   sendMessage(payload, text = '', when = 'always', tooltipSelector = false) {
     const { dispatch, initialized, messages } = this.props;
     const emit = () => {
@@ -157,6 +159,8 @@ class Widget extends Component {
         dispatch(setFirstChatStarted());
         // Set bot processing state when user sends a message
         dispatch(setBotProcessing(true));
+        // Start 30-second timeout to reset bot processing if backend hangs
+        startBotProcessingTimeout(dispatch);
       };
       if (when === 'always') {
         send();
@@ -228,6 +232,8 @@ class Widget extends Component {
         setTimeout(() => {
           logger.debug('Hiding WIP after message displayed');
           dispatch(setBotProcessing(false));
+          // Clear timeout when hiding WIP after final message
+          clearBotProcessingTimeout();
         }, 100);
       }
     }, customMessageDelay(message.text || ''));
@@ -294,14 +300,31 @@ class Widget extends Component {
     // If chat is open, message will have delay, so keep WIP active until message is shown
     if (!isChatOpen) {
       dispatch(setBotProcessing(!isFinal));
+      if (isFinal) {
+        // Clear timeout when receiving final message
+        clearBotProcessingTimeout();
+      } else {
+        // Start timeout when receiving non-final message
+        startBotProcessingTimeout(dispatch);
+      }
     } else if (!isFinal) {
       // If not final and chat is open, keep showing WIP
       dispatch(setBotProcessing(true));
+      // Start timeout when receiving non-final message
+      startBotProcessingTimeout(dispatch);
+    } else {
+      // If final and chat is open, clear the timeout (WIP will be hidden after message delay)
+      clearBotProcessingTimeout();
     }
     // If isFinal and chat is open, WIP will be hidden after message delay in newMessageTimeout
 
     if (botUtterance.metadata) this.propagateMetadata(botUtterance.metadata);
-    const newMessage = { ...botUtterance, text: String(botUtterance.text) };
+
+    // Fix: Convert \n to hard breaks (2 spaces + \n) for proper Markdown rendering
+    // This ensures single line breaks are preserved in the output
+    const fixedText = String(botUtterance.text).replace(/\n/g, '  \n');
+
+    const newMessage = { ...botUtterance, text: fixedText };
     if (botUtterance.metadata && botUtterance.metadata.customCss) {
       newMessage.customCss = botUtterance.metadata.customCss;
     }
@@ -456,6 +479,22 @@ class Widget extends Component {
         socketId: socket.socket?.id
       });
 
+      // DIAGNOSTIC: Check token expiration before session_request
+      if (customData?.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 SESSION_REQUEST: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ SESSION_REQUEST: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ SESSION_REQUEST: Failed to decode access token:', e);
+        }
+      }
+
       // Only include session_id if we have one, otherwise let backend create new one
       const payload = { customData };
       if (localId) {
@@ -514,6 +553,8 @@ class Widget extends Component {
             dispatch(addUserMessage(message));
             dispatch(emitUserMessage(message));
             dispatch(setBotProcessing(true));
+            // Start 30-second timeout to reset bot processing if backend hangs
+            startBotProcessingTimeout(dispatch);
           }
         }
       }
@@ -592,10 +633,29 @@ class Widget extends Component {
       const sessionId = this.getSessionId();
       // check that session_id is confirmed
       if (!sessionId) return;
+
+      // DIAGNOSTIC: Check token expiration before /session_start
+      if (customData?.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 INIT_PAYLOAD (/session_start): Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ INIT_PAYLOAD: Sending /session_start with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ INIT_PAYLOAD: Failed to decode access token:', e);
+        }
+      }
+
       socket.emit('user_uttered', { message: '/session_start', customData, session_id: sessionId });
       dispatch(initialize());
       // Show WIP bubble while waiting for bot's response to /session_start
       dispatch(setBotProcessing(true));
+      // Start 30-second timeout to reset bot processing if backend hangs
+      startBotProcessingTimeout(dispatch);
     }
   }
 
@@ -614,6 +674,22 @@ class Widget extends Component {
       const sessionId = this.getSessionId();
 
       if (!sessionId) return;
+
+      // DIAGNOSTIC: Check token expiration before tooltip
+      if (customData?.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 TOOLTIP: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ TOOLTIP: Sending tooltip with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ TOOLTIP: Failed to decode access token:', e);
+        }
+      }
 
       socket.emit('user_uttered', { message: tooltipPayload, customData, session_id: sessionId });
 
@@ -708,6 +784,8 @@ class Widget extends Component {
       this.props.dispatch(setFirstChatStarted());
       // Set bot processing state when user sends a message
       this.props.dispatch(setBotProcessing(true));
+      // Start 30-second timeout to reset bot processing if backend hangs
+      startBotProcessingTimeout(this.props.dispatch);
     }
     event.target.message.value = '';
   }
@@ -746,6 +824,22 @@ class Widget extends Component {
       logger.debug('Session ID (must not change):', sessionId);
       logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
       logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
+
+      // DIAGNOSTIC: Check token expiration during restart
+      if (customData.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 RESTART: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ RESTART: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ RESTART: Failed to decode access token:', e);
+        }
+      }
     }
 
     // Reset socket handlers registration flag to allow re-registration

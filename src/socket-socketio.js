@@ -16,6 +16,23 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   if (customData) {
     options.auth = customData;
     logger.info('🔍 Socket.IO: customData.auth_header:', customData.auth_header ? `${customData.auth_header.substring(0, 30)}...` : 'NULL');
+
+    // DIAGNOSTIC: Check token validity
+    if (customData.auth_header) {
+      try {
+        const tokenPayload = customData.auth_header.split('.')[1];
+        const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+        const now = Date.now() / 1000;
+        const timeLeft = decoded.exp - now;
+        logger.info('🔍 Socket.IO: Access token EXPIRES IN:', Math.round(timeLeft / 60), 'minutes');
+        if (timeLeft < 0) {
+          logger.error('❌ Socket.IO: Access token is ALREADY EXPIRED!', Math.round(-timeLeft / 60), 'minutes ago');
+        }
+      } catch (e) {
+        logger.error('❌ Socket.IO: Failed to decode access token:', e);
+      }
+    }
+
     // Also pass token via extraHeaders for HTTP polling transport
     if (customData.auth_header) {
       options.extraHeaders = {
@@ -80,36 +97,77 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   // Add method to update auth headers for token refresh (Socket.IO v4 compatible)
   socket.updateAuthHeaders = function(newToken) {
     if (newToken && this.io) {
-      logger.debug('🔧 Socket.IO v4: Updating auth headers with new token');
+      logger.warn('🔧 Socket.IO v4: AGGRESSIVELY updating ALL auth header locations with new token');
       logger.debug('🔧 NEW Authorization header:', `Bearer ${newToken.substring(0, 30)}...`);
-      
-      // Socket.IO v4: Update auth in manager
+
+      const newAuthHeader = `Bearer ${newToken}`;
+      let updateCount = 0;
+
+      // 1. Update socket.auth
       if (this.auth) {
         this.auth.auth_header = newToken;
+        updateCount++;
+        logger.debug('✅ Updated: socket.auth.auth_header');
       }
-      
-      // Update extraHeaders in engine options (v4 structure)
+
+      // 2. Update engine.opts.extraHeaders (CRITICAL for polling transport!)
       if (this.io.engine && this.io.engine.opts) {
         if (!this.io.engine.opts.extraHeaders) {
           this.io.engine.opts.extraHeaders = {};
         }
-        this.io.engine.opts.extraHeaders.Authorization = `Bearer ${newToken}`;
+        this.io.engine.opts.extraHeaders.Authorization = newAuthHeader;
+        updateCount++;
+        logger.debug('✅ Updated: socket.io.engine.opts.extraHeaders');
       }
-      
-      // Also update in manager opts if available
+
+      // 3. Update manager.opts.extraHeaders
       if (this.io.opts) {
         if (!this.io.opts.extraHeaders) {
           this.io.opts.extraHeaders = {};
         }
-        this.io.opts.extraHeaders.Authorization = `Bearer ${newToken}`;
-        
+        this.io.opts.extraHeaders.Authorization = newAuthHeader;
+        updateCount++;
+        logger.debug('✅ Updated: socket.io.opts.extraHeaders');
+
         if (!this.io.opts.auth) {
           this.io.opts.auth = {};
         }
         this.io.opts.auth.auth_header = newToken;
+        updateCount++;
+        logger.debug('✅ Updated: socket.io.opts.auth.auth_header');
       }
-      
-      logger.info('✅ Socket.IO v4: Auth headers updated successfully');
+
+      // 4. Update transport-level headers if transport is active
+      // NOTE: Do NOT use transport.query - it puts auth_header in GET params (security issue)
+      // For polling transport, extraHeaders (set above) is the correct way
+
+      // 5. NUCLEAR OPTION: Update global manager cache if it exists
+      if (typeof window !== 'undefined' && window.io && window.io.managers && this.io.uri) {
+        const managerKey = this.io.uri;
+        if (window.io.managers[managerKey]) {
+          const manager = window.io.managers[managerKey];
+          if (manager.opts) {
+            if (!manager.opts.extraHeaders) {
+              manager.opts.extraHeaders = {};
+            }
+            manager.opts.extraHeaders.Authorization = newAuthHeader;
+            updateCount++;
+            logger.debug('✅ Updated: global manager.opts.extraHeaders');
+          }
+        }
+      }
+
+      logger.info(`✅ Socket.IO v4: Updated ${updateCount} auth header locations`);
+
+      // Verification
+      const verifyHeader = this.io.engine?.opts?.extraHeaders?.Authorization;
+      if (verifyHeader === newAuthHeader) {
+        logger.info('✅ VERIFICATION PASSED: Engine has correct new token');
+      } else {
+        logger.error('❌ VERIFICATION FAILED after updateAuthHeaders!');
+        logger.error('❌ Expected:', newAuthHeader.substring(0, 50));
+        logger.error('❌ Got:', verifyHeader || 'NULL');
+      }
     }
   };
 
@@ -120,11 +178,22 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
 
   socket.io.on('reconnect', () => {
     logger.info('Socket.IO: Reconnected successfully');
-    
-    // Check if we have updated customData and apply it
+
+    // CRITICAL: Force-update headers after reconnection
     if (socket.customData && socket.customData.auth_header) {
-      logger.debug('Socket.IO: Applying updated customData after reconnection');
+      logger.warn('🔧 ON RECONNECT: Force-updating all auth headers to prevent stale token');
       socket.updateAuthHeaders(socket.customData.auth_header);
+
+      // Also manually update engine headers as extra safety
+      if (socket.io.engine && socket.io.engine.opts) {
+        if (!socket.io.engine.opts.extraHeaders) {
+          socket.io.engine.opts.extraHeaders = {};
+        }
+        socket.io.engine.opts.extraHeaders.Authorization = `Bearer ${socket.customData.auth_header}`;
+        logger.info('✅ ON RECONNECT: Engine extraHeaders force-updated');
+      }
+    } else {
+      logger.error('❌ ON RECONNECT: No customData.auth_header available!');
     }
   });
 
@@ -133,6 +202,39 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
     logger.debug(`Socket.IO: Transport: ${socket.io.engine.transport.name}`);
     socket.customData = customData;
     logger.debug('Socket.IO: customData set on socket');
+
+    // CRITICAL FIX: Force-update extraHeaders on connect to prevent stale token in polling requests
+    if (customData && customData.auth_header) {
+      logger.warn('🔧 ON CONNECT: Force-updating engine extraHeaders to ensure fresh token');
+
+      // Update extraHeaders in engine opts (where polling transport reads them)
+      if (socket.io.engine && socket.io.engine.opts) {
+        if (!socket.io.engine.opts.extraHeaders) {
+          socket.io.engine.opts.extraHeaders = {};
+        }
+        socket.io.engine.opts.extraHeaders.Authorization = `Bearer ${customData.auth_header}`;
+        logger.info('✅ ON CONNECT: Engine extraHeaders updated');
+      }
+
+      // Also update in manager opts
+      if (socket.io.opts) {
+        if (!socket.io.opts.extraHeaders) {
+          socket.io.opts.extraHeaders = {};
+        }
+        socket.io.opts.extraHeaders.Authorization = `Bearer ${customData.auth_header}`;
+        logger.info('✅ ON CONNECT: Manager extraHeaders updated');
+      }
+
+      // Verify the update
+      const currentHeader = socket.io.engine?.opts?.extraHeaders?.Authorization;
+      if (currentHeader && currentHeader.includes(customData.auth_header.substring(0, 20))) {
+        logger.info('✅ ON CONNECT: Verification PASSED - fresh token in engine');
+      } else {
+        logger.error('❌ ON CONNECT: Verification FAILED - stale token detected!');
+        logger.error('❌ Expected:', `Bearer ${customData.auth_header.substring(0, 30)}...`);
+        logger.error('❌ Got:', currentHeader || 'NULL');
+      }
+    }
   });
 
   // Log when transport upgrades

@@ -16,4 +16,26 @@ module
 coverage
 .env
 
+# Backup files
 docs
+*.bak
+
+# ========================================
+# E2E Testing (Playwright)
+# ========================================
+
+# Test reports (HTML reports - generating every time)
+e2e/reports/
+
+# Playwright test results (tmp files)
+test-results/
+playwright-report/
+
+# Playwright cache
+.playwright/
+
+# Auth sessions (tokens - do not commit!)
+e2e/.auth/*.json
+
+# but .gitignore inside .auth - OK
+!e2e/.auth/.gitignore
