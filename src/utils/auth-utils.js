@@ -72,7 +72,6 @@ export function generateCodeVerifier(length = 64) {
     .slice(0, length);
 }
 
-
 const codeVerifier = generateCodeVerifier();
 
 export const state = crypto.randomUUID();
@@ -90,7 +89,6 @@ export async function hashToBase64Url(input) {
     .replace(/[=]+$/, '');
 }
 
-
 export const getAuthCode = async () => {
   const codeChallenge = await hashToBase64Url(codeVerifier);
 
@@ -101,7 +99,7 @@ export const getAuthCode = async () => {
     client_id: clientId,
     redirect_uri: redirectUri,
     scope,
-    state
+    state,
   };
 
   const queryString = new URLSearchParams(params).toString();
@@ -115,15 +113,15 @@ export const exchangeTokenReq = async (code) => {
     ['client_id', clientId],
     ['redirect_uri', redirectUri],
     ['code_verifier', codeVerifier],
-    ['state', state]
+    ['state', state],
   ]);
 
   const res = await fetch(tokenEndpoint, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: body.toString()
+    body: body.toString(),
   });
 
   return res.json();
@@ -136,15 +134,15 @@ export const authInRasa = async (idToken) => {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${idToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         sender: 'test_user',
         message: '/session_start',
         metadata: {
-          auth_header: idToken
-        }
-      })
+          auth_header: idToken,
+        },
+      }),
     });
 
     return await response.json();
@@ -156,21 +154,24 @@ export const authInRasa = async (idToken) => {
 };
 
 export const refreshTokenReq = async (refreshToken) => {
-  logger.debug('🔄 refreshTokenReq called with token:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+  logger.debug(
+    '🔄 refreshTokenReq called with token:',
+    refreshToken ? `${refreshToken.substring(0, 20)}...` : 'NULL'
+  );
 
   const body = new URLSearchParams([
     ['refresh_token', refreshToken],
     ['grant_type', 'refresh_token'],
-    ['client_id', clientId]
+    ['client_id', clientId],
   ]);
 
   try {
     const response = await fetch(tokenEndpoint, {
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       method: 'POST',
-      body: body.toString()
+      body: body.toString(),
     });
 
     logger.debug('🔄 refreshTokenReq response status:', response.status);
@@ -184,7 +185,7 @@ export const refreshTokenReq = async (refreshToken) => {
     const data = await response.json();
     logger.debug('🔄 refreshTokenReq response data:', {
       has_id_token: !!data.id_token,
-      has_refresh_token: !!data.refresh_token
+      has_refresh_token: !!data.refresh_token,
     });
 
     return data;
@@ -248,4 +249,3 @@ export const getTokenExpirationTime = (token) => {
     return null;
   }
 };
-

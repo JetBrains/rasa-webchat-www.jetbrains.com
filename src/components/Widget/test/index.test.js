@@ -11,10 +11,10 @@ describe('<Widget />', () => {
   const newMessageEvent = {
     target: {
       message: {
-        value: 'New message'
-      }
+        value: 'New message',
+      },
     },
-    preventDefault() {}
+    preventDefault() {},
   };
   const dispatch = jest.fn();
 
@@ -27,7 +27,7 @@ describe('<Widget />', () => {
       tooltipSent
       tooltipDelay={0}
       socket={{
-        isInitialized: () => true
+        isInitialized: () => true,
       }}
     />
   );

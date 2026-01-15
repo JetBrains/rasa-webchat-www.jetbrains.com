@@ -10,7 +10,7 @@ import ThemeContext from '../../../../ThemeContext';
 
 import './style.scss';
 
-const Header = ({
+function Header({
   title,
   subtitle,
   fullScreenMode,
@@ -21,28 +21,28 @@ const Header = ({
   showFullScreenButton,
   showRefreshButton,
   closeImage,
-  profileAvatar
-}) => {
+  profileAvatar,
+}) {
   const { mainColor } = useContext(ThemeContext);
   return (
     <div className="rw-header-and-loading">
-      <div style={{ backgroundColor: mainColor }} className={`rw-header ${subtitle ? 'rw-with-subtitle' : ''}`}>
-        {
-          profileAvatar && (
-            <img src={profileAvatar} className="rw-avatar" alt="chat avatar" />
-          )
-        }
+      <div
+        style={{ backgroundColor: mainColor }}
+        className={`rw-header ${subtitle ? 'rw-with-subtitle' : ''}`}
+      >
+        {profileAvatar && <img src={profileAvatar} className="rw-avatar" alt="chat avatar" />}
         <div className="rw-header-buttons">
-          {
-            showFullScreenButton &&
+          {showFullScreenButton && (
             <button className="rw-toggle-fullscreen-button" onClick={toggleFullScreen}>
               <img
-                className={`rw-toggle-fullscreen ${fullScreenMode ? 'rw-fullScreenExitImage' : 'rw-fullScreenImage'}`}
+                className={`rw-toggle-fullscreen ${
+                  fullScreenMode ? 'rw-fullScreenExitImage' : 'rw-fullScreenImage'
+                }`}
                 src={fullScreenMode ? fullscreenExit : fullscreen}
                 alt="toggle fullscreen"
               />
             </button>
-          }
+          )}
         </div>
         <div className="rw-title-wrap">
           <h4 className={`rw-title ${profileAvatar && 'rw-with-avatar'}`}>
@@ -51,14 +51,16 @@ const Header = ({
           </h4>
           {subtitle && <span className={profileAvatar && 'rw-with-avatar'}>{subtitle}</span>}
           <div className="rw-header-buttons">
-            {
-              showRefreshButton &&
-              <button className="rw-header-button rw-header-button_refresh" type="button" onClick={refreshSession}>
+            {showRefreshButton && (
+              <button
+                className="rw-header-button rw-header-button_refresh"
+                type="button"
+                onClick={refreshSession}
+              >
                 <img alt="" src={refreshIcon} />
               </button>
-            }
-            {
-              showCloseButton &&
+            )}
+            {showCloseButton && (
               <button className="rw-header-button" type="button" onClick={toggleChat}>
                 <img
                   className={closeImage ? '' : 'rw-default'}
@@ -66,12 +68,13 @@ const Header = ({
                   src={closeImage || close}
                 />
               </button>
-            }
+            )}
           </div>
         </div>
       </div>
-    </div>);
-};
+    </div>
+  );
+}
 
 Header.propTypes = {
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
@@ -84,7 +87,7 @@ Header.propTypes = {
   showFullScreenButton: PropTypes.bool,
   showRefreshButton: PropTypes.bool,
   closeImage: PropTypes.string,
-  profileAvatar: PropTypes.string
+  profileAvatar: PropTypes.string,
 };
 
 export default Header;

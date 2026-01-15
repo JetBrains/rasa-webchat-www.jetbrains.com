@@ -11,7 +11,8 @@ const stubSocket = jest.fn();
 const store = initStore('dummy', stubSocket, localStorage);
 
 describe('link target', () => {
-  store.dispatch({ type: 'ADD_BUTTONS',
+  store.dispatch({
+    type: 'ADD_BUTTONS',
     buttons: {
       text: 'test',
       quick_replies: [
@@ -19,16 +20,17 @@ describe('link target', () => {
           type: 'postback',
           content_type: 'text',
           title: 'Button title 1',
-          payload: '/payload1'
+          payload: '/payload1',
         },
         {
           type: 'web_url',
           content_type: 'text',
           title: 'google',
-          url: 'http://www.google.ca'
-        }
-      ]
-    } });
+          url: 'http://www.google.ca',
+        },
+      ],
+    },
+  });
   const buttonsComponent = mount(
     <Provider store={store}>
       <Buttons

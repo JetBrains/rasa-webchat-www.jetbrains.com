@@ -21,17 +21,11 @@ const trimQueryString = (url) => {
   return url.replace(regexQueryString, '');
 };
 
-function initStore(
-  connectingText,
-  socket,
-  storage,
-  docViewer = false,
-  onWidgetEvent,
-) {
+function initStore(connectingText, socket, storage, onWidgetEvent, docViewer = false) {
   // Store reference to current socket that can be updated
   let currentSocketRef = socket;
-  
-  const customMiddleWare = store => next => (action) => {
+
+  const customMiddleWare = (store) => (next) => (action) => {
     const emitMessage = (payload) => {
       const emit = () => {
         // CRITICAL: Always use the most current socket reference
@@ -55,7 +49,12 @@ function initStore(
         const currentCustomData = activeSocket.customData || {};
 
         logger.debug('📤 MIDDLEWARE: Using socket reference:', activeSocket.marker || 'unknown');
-        logger.debug('📤 Sending message with token:', currentCustomData?.auth_header ? currentCustomData.auth_header.substring(0, 30) + '...' : 'none');
+        logger.debug(
+          '📤 Sending message with token:',
+          currentCustomData?.auth_header
+            ? `${currentCustomData.auth_header.substring(0, 30)}...`
+            : 'none'
+        );
         logger.debug('📤 Session ID:', sessionId);
         logger.debug('📤 Real Socket ID:', realSocket?.id || 'N/A');
         logger.debug('📤 Socket connected:', realSocket?.connected || false);
@@ -67,9 +66,17 @@ function initStore(
             const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
             const now = Date.now() / 1000;
             const timeLeft = decoded.exp - now;
-            logger.info('🔍 MIDDLEWARE: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+            logger.info(
+              '🔍 MIDDLEWARE: Access token expires in:',
+              Math.round(timeLeft / 60),
+              'minutes'
+            );
             if (timeLeft < 0) {
-              logger.error('❌ MIDDLEWARE: Sending message with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+              logger.error(
+                '❌ MIDDLEWARE: Sending message with EXPIRED access token! Expired',
+                Math.round(-timeLeft / 60),
+                'minutes ago'
+              );
             } else if (timeLeft < 5 * 60) {
               logger.warn('⚠️ MIDDLEWARE: Access token expires soon (< 5 min)');
             }
@@ -86,27 +93,30 @@ function initStore(
         }
 
         if (!sessionId) {
-          logger.error('❌ CRITICAL: No session_id available! Cannot send message. Payload:', payload);
+          logger.error(
+            '❌ CRITICAL: No session_id available! Cannot send message. Payload:',
+            payload
+          );
           logger.error('❌ Checked sources: localSession, activeSocket.sessionId, localStorage');
-          logger.error('❌ This indicates a bug - session_id must be available before sending messages');
+          logger.error(
+            '❌ This indicates a bug - session_id must be available before sending messages'
+          );
           logger.error('❌ Message will not be sent to prevent creating orphaned messages');
           return;
         }
 
         // Use activeSocket.emit, not socket.emit
-        activeSocket.emit(
-          'user_uttered', {
-            message: payload,
-            customData: currentCustomData,
-            session_id: sessionId
-          }
-        );
+        activeSocket.emit('user_uttered', {
+          message: payload,
+          customData: currentCustomData,
+          session_id: sessionId,
+        });
 
         store.dispatch({
           type: actionTypes.ADD_NEW_USER_MESSAGE,
           text: 'text',
           nextMessageIsTooltip: false,
-          hidden: true
+          hidden: true,
         });
       };
 
@@ -151,7 +161,8 @@ function initStore(
             } else {
               let cleanCurrentUrl = cleanURL(newUrl);
               let cleanCallBackUrl = cleanURL(callback.url);
-              if (!cleanCallBackUrl.match(/\?.+$/)) { // the callback does not have a querystring
+              if (!cleanCallBackUrl.match(/\?.+$/)) {
+                // the callback does not have a querystring
                 cleanCurrentUrl = trimQueryString(cleanCurrentUrl);
                 cleanCallBackUrl = trimQueryString(cleanCallBackUrl);
               }
@@ -176,24 +187,26 @@ function initStore(
   const reducer = combineReducers({
     behavior: behavior(connectingText, storage, docViewer, onWidgetEvent),
     messages: messages(storage),
-    metadata: metadata(storage)
+    metadata: metadata(storage),
   });
 
   // eslint-disable-next-line no-underscore-dangle
   const composeEnhancer = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
-  const store = createStore(
-    reducer,
-    composeEnhancer(applyMiddleware(customMiddleWare)),
-  );
-  
+  const store = createStore(reducer, composeEnhancer(applyMiddleware(customMiddleWare)));
+
   // Add method to update socket reference in middleware
   store.updateSocket = (newSocket) => {
-    logger.warn('🔄 CRITICAL: Updating socket reference from', currentSocketRef.marker || 'unknown', 'to', newSocket.marker || 'unknown');
+    logger.warn(
+      '🔄 CRITICAL: Updating socket reference from',
+      currentSocketRef.marker || 'unknown',
+      'to',
+      newSocket.marker || 'unknown'
+    );
     currentSocketRef = newSocket;
     logger.info('✅ Store socket reference updated successfully');
   };
-  
+
   return store;
 }
 
