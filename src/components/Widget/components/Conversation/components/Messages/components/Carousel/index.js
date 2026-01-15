@@ -10,7 +10,7 @@ import { startBotProcessingTimeout } from '../../../../../../../../utils/botProc
 
 import './styles.scss';
 
-const Carousel = (props) => {
+function Carousel(props) {
   const carousel = props.message.toJS();
 
   const handleClick = (action) => {
@@ -23,7 +23,6 @@ const Carousel = (props) => {
   const [leftButton, setLeftButton] = useState(false);
   const [rightButton, setRightButton] = useState(true);
   const { mainColor, assistTextColor } = useContext(ThemeContext);
-
 
   const handleScroll = () => {
     const current = scrollContainer.current;
@@ -42,21 +41,21 @@ const Carousel = (props) => {
   const handleLeftArrow = () => {
     scrollContainer.current.scrollTo({
       left: scrollContainer.current.scrollLeft - 230,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   };
 
   const handleRightArrow = () => {
     scrollContainer.current.scrollTo({
       left: scrollContainer.current.scrollLeft + 230,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   };
 
   const { linkTarget } = props;
 
   return (
-    <React.Fragment>
+    <>
       <div className="rw-carousel-container" ref={scrollContainer} onScroll={() => handleScroll()}>
         {carousel.elements.map((carouselCard, index) => {
           const defaultActionUrl =
@@ -145,7 +144,9 @@ const Carousel = (props) => {
             role="button"
             tabIndex={0}
           >
-            <div className="rw-arrow" alt="left carousel arrow" ><Arrow /></div>
+            <div className="rw-arrow" alt="left carousel arrow">
+              <Arrow />
+            </div>
           </div>
         )}
         {rightButton && (
@@ -156,35 +157,36 @@ const Carousel = (props) => {
             role="button"
             tabIndex={0}
           >
-            <div className="rw-arrow" alt="right carousel arrow"><Arrow /></div>
+            <div className="rw-arrow" alt="right carousel arrow">
+              <Arrow />
+            </div>
           </div>
         )}
       </div>
-    </React.Fragment>
+    </>
   );
-};
-
+}
 
 Carousel.propTypes = {
   message: PROP_TYPES.CAROUSEL,
   // completely bugged, it's actually used in handle click
   // eslint-disable-next-line react/no-unused-prop-types
   chooseReply: PropTypes.func.isRequired,
-  linkTarget: PropTypes.string
+  linkTarget: PropTypes.string,
 };
 
-const mapStateToProps = state => ({
-  linkTarget: state.metadata.get('linkTarget')
+const mapStateToProps = (state) => ({
+  linkTarget: state.metadata.get('linkTarget'),
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
   chooseReply: (payload, title) => {
     if (title) dispatch(addUserMessage(title));
     dispatch(emitUserMessage(payload));
     dispatch(setBotProcessing(true));
     // Start 30-second timeout to reset bot processing if backend hangs
     startBotProcessingTimeout(dispatch);
-  }
+  },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Carousel);

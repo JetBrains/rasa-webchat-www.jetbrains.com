@@ -20,7 +20,8 @@ describe('Message custom Css', () => {
     sender: 'response',
     showAvatar: true,
     timestamp: 1580141564886,
-    customCss: { css: 'color:red;', style: 'custom' } });
+    customCss: { css: 'color:red;', style: 'custom' },
+  });
 
   // a response with customcss of type class
   messages.push({
@@ -29,7 +30,8 @@ describe('Message custom Css', () => {
     sender: 'response',
     showAvatar: true,
     timestamp: 1580141564886,
-    customCss: { css: 'test-class', style: 'class' } });
+    customCss: { css: 'test-class', style: 'class' },
+  });
 
   // a user with customcss should not happen, but testing it nonetheless
   messages.push({
@@ -38,7 +40,8 @@ describe('Message custom Css', () => {
     sender: 'client',
     showAvatar: true,
     timestamp: 1580141564886,
-    customCss: { css: 'color:red;', style: 'custom' } });
+    customCss: { css: 'color:red;', style: 'custom' },
+  });
 
   it('check that a custom style is correctly applied', () => {
     const messageComponent = mount(
@@ -52,7 +55,9 @@ describe('Message custom Css', () => {
         />
       </Provider>
     );
-    expect(messageComponent.find('div.rw-response').prop('style')).toEqual({ cssText: 'color:red;' });
+    expect(messageComponent.find('div.rw-response').prop('style')).toEqual({
+      cssText: 'color:red;',
+    });
   });
 
   it('check that a class style is correctly applied', () => {
@@ -67,7 +72,9 @@ describe('Message custom Css', () => {
         />
       </Provider>
     );
-    expect(messageComponent.find('div.rw-response').prop('className')).toEqual('rw-response test-class');
+    expect(messageComponent.find('div.rw-response').prop('className')).toEqual(
+      'rw-response test-class'
+    );
     expect(messageComponent.find('div.rw-response').prop('style')).toEqual(undefined);
   });
 
@@ -84,6 +91,9 @@ describe('Message custom Css', () => {
       </Provider>
     );
     expect(messageComponent.find('div.rw-client').prop('className')).toEqual('rw-client');
-    expect(messageComponent.find('div.rw-client').prop('style')).toEqual({ backgroundColor: '', color: '' });
+    expect(messageComponent.find('div.rw-client').prop('style')).toEqual({
+      backgroundColor: '',
+      color: '',
+    });
   });
 });

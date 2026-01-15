@@ -3,12 +3,7 @@ import { SESSION_NAME } from 'constants';
 import * as actionTypes from '../actions/actionTypes';
 import { getLocalSession, storeParamsTo } from './helper';
 
-export default function (
-  connectingText,
-  storage,
-  docViewer = false,
-  onWidgetEvent = {},
-) {
+export default (connectingText, storage, docViewer = false, onWidgetEvent = {}) => {
   const initialState = Map({
     connected: false,
     initialized: false,
@@ -22,7 +17,7 @@ export default function (
     isBotProcessing: false,
     oldUrl: '',
     pageChangeCallbacks: Map(),
-    firstChatStarted: false
+    firstChatStarted: false,
   });
 
   return function reducer(state = initialState, action) {
@@ -44,7 +39,9 @@ export default function (
           onWidgetEvent.onChatOpen();
         }
 
-        return storeParams(state.update('isChatOpen', isChatOpen => !isChatOpen).set('unreadCount', 0));
+        return storeParams(
+          state.update('isChatOpen', (isChatOpen) => !isChatOpen).set('unreadCount', 0)
+        );
       }
       case actionTypes.OPEN_CHAT: {
         if (onWidgetEvent.onChatOpen) onWidgetEvent.onChatOpen();
@@ -56,7 +53,7 @@ export default function (
       }
       case actionTypes.TOGGLE_FULLSCREEN: {
         if (onWidgetEvent.onChatFullScreen) onWidgetEvent.onChatFullScreen();
-        return storeParams(state.update('fullScreenMode', fullScreenMode => !fullScreenMode));
+        return storeParams(state.update('fullScreenMode', (fullScreenMode) => !fullScreenMode));
       }
       case actionTypes.TOGGLE_INPUT_DISABLED: {
         const disable = action.disable;
@@ -64,7 +61,7 @@ export default function (
           return storeParams(state.update('disabledInput', () => disable));
         }
 
-        return storeParams(state.update('disabledInput', disabledInput => !disabledInput));
+        return storeParams(state.update('disabledInput', (disabledInput) => !disabledInput));
       }
       case actionTypes.CONNECT: {
         return storeParams(state.set('connected', true).set('disabledInput', false));
@@ -122,4 +119,4 @@ export default function (
         return state;
     }
   };
-}
+};

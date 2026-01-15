@@ -12,7 +12,7 @@ let sentToSocket = [];
 const mockSocket = {
   emit: jest.fn((action, message) => sentToSocket.push({ action, message })),
   on: () => {},
-  sessionConfirmed: true
+  sessionConfirmed: true,
 };
 const store = initStore('dummy', mockSocket, localStorage);
 
@@ -21,7 +21,8 @@ describe('Metadata store affect app behavior', () => {
   const handleUserMessage = jest.fn();
 
   store.dispatch({
-    type: 'CONNECT' });
+    type: 'CONNECT',
+  });
   const widgetComponent = shallow(
     <Provider store={store}>
       <Widget
@@ -37,49 +38,55 @@ describe('Metadata store affect app behavior', () => {
         and some how the styles applied in the test are wrong, but trying the same behavior on the real webchat does not create any issue
         if you remove this props to experiment, it seems that it's the applyCustomStyle in handleMessageReceived that causing the test to fail */
       />
-    </Provider>
-    , { disableLifecycleMethods: true }
+    </Provider>,
+    { disableLifecycleMethods: true }
   );
 
   let elemAttributes;
   const classes = [];
   let eventListener;
 
-
-  const querySelectorAllspyFunc = jest.fn(() => ([{
-    addEventListener(event, handler) {
-      eventListener = { event, handler };
-    },
-
-    setAttribute(attribute, value) {
-      elemAttributes = { attribute, value };
-    },
-    classList: {
-      add(className) {
-        classes.push(className);
+  const querySelectorAllspyFunc = jest.fn(() => [
+    {
+      addEventListener(event, handler) {
+        eventListener = { event, handler };
       },
-      remove(className) {
-        const index = classes.indexOf(className);
-        classes.splice(index, 1);
-      }
-    } }]));
+
+      setAttribute(attribute, value) {
+        elemAttributes = { attribute, value };
+      },
+      classList: {
+        add(className) {
+          classes.push(className);
+        },
+        remove(className) {
+          const index = classes.indexOf(className);
+          classes.splice(index, 1);
+        },
+      },
+    },
+  ]);
   Object.defineProperty(document, 'querySelectorAll', { value: querySelectorAllspyFunc });
 
-  beforeEach(() => sentToSocket = []);
+  beforeEach(() => {
+    sentToSocket = [];
+  });
 
   it('should use the callbackIntent on expected url change', () => {
     store.dispatch({ type: 'SET_OLD_URL', url: 'http://lorem.com' });
-    store.dispatch({ type: 'SET_PAGECHANGE_CALLBACKS',
+    store.dispatch({
+      type: 'SET_PAGECHANGE_CALLBACKS',
       pageChangeCallbacks: {
         pageChanges: [
           {
             url: 'http://ipsum.com/cool',
             callbackIntent: '/yes',
-            regex: false
-          }
+            regex: false,
+          },
         ],
-        errorIntent: '/no'
-      } });
+        errorIntent: '/no',
+      },
+    });
     store.dispatch({ type: 'EVAL_URL', url: 'http://ipsum.com/cool' });
     expect(sentToSocket).toHaveLength(1);
     expect(sentToSocket[0].message.message).toEqual('/yes');
@@ -87,36 +94,39 @@ describe('Metadata store affect app behavior', () => {
 
   it('should ignore host and use the callbackIntent on expected url change', () => {
     store.dispatch({ type: 'SET_OLD_URL', url: 'http://lorem.com/blo' });
-    store.dispatch({ type: 'SET_PAGECHANGE_CALLBACKS',
+    store.dispatch({
+      type: 'SET_PAGECHANGE_CALLBACKS',
       pageChangeCallbacks: {
         pageChanges: [
           {
             url: 'http://ipsum.com/bla',
             callbackIntent: '/yes',
-            regex: false
-          }
+            regex: false,
+          },
         ],
-        errorIntent: '/no'
-      } });
+        errorIntent: '/no',
+      },
+    });
     store.dispatch({ type: 'EVAL_URL', url: 'http://lorem.com/bla' });
     expect(sentToSocket).toHaveLength(1);
     expect(sentToSocket[0].message.message).toEqual('/yes');
   });
 
-
   it('should use the errorIntent on bad url change', () => {
     store.dispatch({ type: 'SET_OLD_URL', url: 'http://lorem.com/bou' });
-    store.dispatch({ type: 'SET_PAGECHANGE_CALLBACKS',
+    store.dispatch({
+      type: 'SET_PAGECHANGE_CALLBACKS',
       pageChangeCallbacks: {
         pageChanges: [
           {
             url: 'http://ipsum.com/bla',
             callbackIntent: '/yes',
-            regex: false
-          }
+            regex: false,
+          },
         ],
-        errorIntent: '/no'
-      } });
+        errorIntent: '/no',
+      },
+    });
     store.dispatch({ type: 'EVAL_URL', url: 'http://dolor.com/blo' });
     expect(sentToSocket).toHaveLength(1);
     expect(sentToSocket[0].message.message).toEqual('/no');
@@ -124,17 +134,19 @@ describe('Metadata store affect app behavior', () => {
 
   it('should use the regex for urlchecking', () => {
     store.dispatch({ type: 'SET_OLD_URL', url: 'lorem.com' });
-    store.dispatch({ type: 'SET_PAGECHANGE_CALLBACKS',
+    store.dispatch({
+      type: 'SET_PAGECHANGE_CALLBACKS',
       pageChangeCallbacks: {
         pageChanges: [
           {
             url: /dolor.+sit/,
             callbackIntent: '/yes',
-            regex: true
-          }
+            regex: true,
+          },
         ],
-        errorIntent: '/no'
-      } });
+        errorIntent: '/no',
+      },
+    });
     store.dispatch({ type: 'EVAL_URL', url: 'dolor/amet/sit.com' });
     expect(sentToSocket).toHaveLength(1);
     expect(sentToSocket[0].message.message).toEqual('/yes');
@@ -142,41 +154,49 @@ describe('Metadata store affect app behavior', () => {
 
   it('should use multiple the regex/string for urlchecking', () => {
     store.dispatch({ type: 'SET_OLD_URL', url: 'http://lorem.com' });
-    store.dispatch({ type: 'SET_PAGECHANGE_CALLBACKS',
+    store.dispatch({
+      type: 'SET_PAGECHANGE_CALLBACKS',
       pageChangeCallbacks: {
         pageChanges: [
           {
             url: /dolor.+sit/,
             callbackIntent: '/dolor',
-            regex: true
+            regex: true,
           },
           {
             url: 'elit.com/se',
             callbackIntent: '/se',
-            regex: false
+            regex: false,
           },
           {
             url: /http:\/\/elit.+sed/,
             callbackIntent: '/yes',
-            regex: true
-          }
+            regex: true,
+          },
         ],
-        errorIntent: '/no'
-      } });
+        errorIntent: '/no',
+      },
+    });
     store.dispatch({ type: 'EVAL_URL', url: 'http://elit.com/sed' });
     expect(sentToSocket).toHaveLength(1);
     expect(sentToSocket[0].message.message).toEqual('/yes');
   });
 
   it('should change the style of a element', () => {
-    store.dispatch({ type: 'SET_DOM_HIGHLIGHT',
+    store.dispatch({
+      type: 'SET_DOM_HIGHLIGHT',
       domHighlight: {
         selector: '.test',
         style: 'custom',
-        css: 'color: red'
-      } });
+        css: 'color: red',
+      },
+    });
 
-    widgetComponent.dive().dive().dive().dive()
+    widgetComponent
+      .dive()
+      .dive()
+      .dive()
+      .dive()
       .dive()
       .instance()
       .applyCustomStyle();
@@ -184,9 +204,13 @@ describe('Metadata store affect app behavior', () => {
     expect(elemAttributes).toEqual({ attribute: 'style', value: 'color: red' });
     expect(querySelectorAllspyFunc).toHaveBeenCalled();
     const botUtter = {
-      text: 'test'
+      text: 'test',
     };
-    widgetComponent.dive().dive().dive().dive()
+    widgetComponent
+      .dive()
+      .dive()
+      .dive()
+      .dive()
       .dive()
       .instance()
       .handleBotUtterance(botUtter);
@@ -194,24 +218,36 @@ describe('Metadata store affect app behavior', () => {
   });
 
   it('should apply the default style to an element', () => {
-    store.dispatch({ type: 'SET_DOM_HIGHLIGHT',
+    store.dispatch({
+      type: 'SET_DOM_HIGHLIGHT',
       domHighlight: {
         selector: '.test',
         style: 'default',
-        css: ''
-      } });
+        css: '',
+      },
+    });
 
-    widgetComponent.dive().dive().dive().dive()
+    widgetComponent
+      .dive()
+      .dive()
+      .dive()
+      .dive()
       .dive()
       .instance()
       .applyCustomStyle();
 
-    expect(elemAttributes.value).toContain('animation: 0.5s linear infinite alternate default-botfront-blinker-animation; outline-style: solid;');
+    expect(elemAttributes.value).toContain(
+      'animation: 0.5s linear infinite alternate default-botfront-blinker-animation; outline-style: solid;'
+    );
     expect(querySelectorAllspyFunc).toHaveBeenCalled();
     const botUtter = {
-      text: 'test'
+      text: 'test',
     };
-    widgetComponent.dive().dive().dive().dive()
+    widgetComponent
+      .dive()
+      .dive()
+      .dive()
+      .dive()
       .dive()
       .instance()
       .handleBotUtterance(botUtter);
@@ -219,14 +255,20 @@ describe('Metadata store affect app behavior', () => {
   });
 
   it('should apply the specified class to an element', () => {
-    store.dispatch({ type: 'SET_DOM_HIGHLIGHT',
+    store.dispatch({
+      type: 'SET_DOM_HIGHLIGHT',
       domHighlight: {
         selector: '.test',
         style: 'class',
-        css: 'highlight-class'
-      } });
+        css: 'highlight-class',
+      },
+    });
 
-    widgetComponent.dive().dive().dive().dive()
+    widgetComponent
+      .dive()
+      .dive()
+      .dive()
+      .dive()
       .dive()
       .instance()
       .applyCustomStyle();
@@ -234,9 +276,13 @@ describe('Metadata store affect app behavior', () => {
     expect(classes).toEqual(['highlight-class']);
     expect(querySelectorAllspyFunc).toHaveBeenCalled();
     const botUtter = {
-      text: 'test'
+      text: 'test',
     };
-    widgetComponent.dive().dive().dive().dive()
+    widgetComponent
+      .dive()
+      .dive()
+      .dive()
+      .dive()
       .dive()
       .instance()
       .handleBotUtterance(botUtter);
@@ -251,14 +297,18 @@ describe('Metadata store affect app behavior', () => {
             {
               selector: 'body',
               payload: '/new_intent',
-              event: 'click'
-            }
-          ]
-        }
-      }
+              event: 'click',
+            },
+          ],
+        },
+      },
     };
 
-    widgetComponent.dive().dive().dive().dive()
+    widgetComponent
+      .dive()
+      .dive()
+      .dive()
+      .dive()
       .dive()
       .instance()
       .handleBotUtterance(botUtter);
@@ -266,4 +316,3 @@ describe('Metadata store affect app behavior', () => {
     expect(eventListener.handler).toBeInstanceOf(Function);
   });
 });
-

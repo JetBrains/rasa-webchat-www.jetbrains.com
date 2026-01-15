@@ -11,9 +11,11 @@ import ThemeContext from '../../../../ThemeContext';
 
 const isToday = (date) => {
   const today = new Date();
-  return date.getDate() === today.getDate() &&
+  return (
+    date.getDate() === today.getDate() &&
     date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear();
+    date.getFullYear() === today.getFullYear()
+  );
 };
 
 const formatDate = (date) => {
@@ -46,9 +48,8 @@ class Messages extends Component {
     super(props);
     this.wasAtBottom = true; // Track if user was at bottom before update
     this.state = {
-      hasUnreadMessages: false
+      hasUnreadMessages: false,
     };
-    this.messagesEndRef = React.createRef();
   }
 
   componentDidMount() {
@@ -61,29 +62,7 @@ class Messages extends Component {
     }
   }
 
-  componentWillUnmount() {
-    // Clean up scroll event listener
-    const messagesDiv = document.getElementById('rw-messages');
-    if (messagesDiv) {
-      messagesDiv.removeEventListener('scroll', this.handleScroll);
-    }
-  }
-
-  handleScroll = () => {
-    // If user scrolls to bottom manually, clear unread indicator
-    // Only update state if it actually changed to avoid unnecessary re-renders
-    if (isUserAtBottom() && this.state.hasUnreadMessages) {
-      this.setState({ hasUnreadMessages: false });
-    }
-  }
-
-  getSnapshotBeforeUpdate(prevProps) {
-    // Check if user is at bottom BEFORE the new message is rendered
-    this.wasAtBottom = isUserAtBottom();
-    return null;
-  }
-
-  componentDidUpdate(prevProps, prevState, snapshot) {
+  componentDidUpdate(prevProps) {
     const { messages } = this.props;
     const hasNewMessages = prevProps.messages.size < messages.size;
 
@@ -114,10 +93,32 @@ class Messages extends Component {
     }
   }
 
+  componentWillUnmount() {
+    // Clean up scroll event listener
+    const messagesDiv = document.getElementById('rw-messages');
+    if (messagesDiv) {
+      messagesDiv.removeEventListener('scroll', this.handleScroll);
+    }
+  }
+
+  handleScroll = () => {
+    // If user scrolls to bottom manually, clear unread indicator
+    // Only update state if it actually changed to avoid unnecessary re-renders
+    if (isUserAtBottom() && this.state.hasUnreadMessages) {
+      this.setState({ hasUnreadMessages: false });
+    }
+  };
+
+  getSnapshotBeforeUpdate() {
+    // Check if user is at bottom BEFORE the new message is rendered
+    this.wasAtBottom = isUserAtBottom();
+    return null;
+  }
+
   handleScrollToBottom = () => {
     scrollToBottom();
     this.setState({ hasUnreadMessages: false });
-  }
+  };
 
   getComponentToRender = (message, index, isLast) => {
     const { params } = this.props;
@@ -140,8 +141,8 @@ class Messages extends Component {
         }
         case MESSAGES_TYPES.CUSTOM_COMPONENT:
           return connect(
-            store => ({ store }),
-            dispatch => ({ dispatch })
+            (store) => ({ store }),
+            (dispatch) => ({ dispatch })
           )(this.props.customComponent);
         default:
           return null;
@@ -149,49 +150,50 @@ class Messages extends Component {
     })();
     if (message.get('type') === 'component') {
       const messageProps = message.get('props');
-      return (<ComponentToRender
-        id={index}
-        {...(messageProps.toJS ? messageProps.toJS() : messageProps)}
-        isLast={isLast}
-      />);
+      return (
+        <ComponentToRender
+          id={index}
+          {...(messageProps.toJS ? messageProps.toJS() : messageProps)}
+          isLast={isLast}
+        />
+      );
     }
     return <ComponentToRender id={index} params={params} message={message} isLast={isLast} />;
-  }
+  };
 
   render() {
     const { displayTypingIndication, profileAvatar } = this.props;
 
     const renderMessages = () => {
-      const {
-        messages,
-        showMessageDate
-      } = this.props;
+      const { messages, showMessageDate } = this.props;
 
       if (messages.isEmpty()) return null;
 
       const groups = [];
       let group = null;
 
-      const dateRenderer = typeof showMessageDate === 'function' ? showMessageDate :
-        showMessageDate === true ? formatDate : null;
+      const dateRenderer =
+        typeof showMessageDate === 'function'
+          ? showMessageDate
+          : showMessageDate === true
+          ? formatDate
+          : null;
 
       const renderMessageDate = (message) => {
         const timestamp = message.get('timestamp');
 
         if (!dateRenderer || !timestamp) return null;
         const dateToRender = dateRenderer(message.get('timestamp', message));
-        return dateToRender
-          ? <span className="rw-message-date">{dateRenderer(message.get('timestamp'), message)}</span>
-          : null;
+        return dateToRender ? (
+          <span className="rw-message-date">{dateRenderer(message.get('timestamp'), message)}</span>
+        ) : null;
       };
 
       const renderMessage = (message, index) => (
         <div className={`rw-message ${profileAvatar && 'rw-with-avatar'}`} key={index}>
-          {
-            profileAvatar &&
-            message.get('showAvatar') &&
+          {profileAvatar && message.get('showAvatar') && (
             <img src={profileAvatar} className="rw-avatar" alt="profile" />
-          }
+          )}
           {this.getComponentToRender(message, index, index === messages.size - 1)}
           {renderMessageDate(message)}
         </div>
@@ -204,7 +206,7 @@ class Messages extends Component {
 
           group = {
             from: msg.get('sender'),
-            messages: []
+            messages: [],
           };
         }
 
@@ -224,13 +226,10 @@ class Messages extends Component {
 
     return (
       <div id="rw-messages" className="rw-messages-container">
-        { renderMessages() }
+        {renderMessages()}
         {displayTypingIndication && (
           <div className={`rw-message rw-typing-indication ${profileAvatar && 'rw-with-avatar'}`}>
-            {
-              profileAvatar &&
-              <img src={profileAvatar} className="rw-avatar" alt="profile" />
-            }
+            {profileAvatar && <img src={profileAvatar} className="rw-avatar" alt="profile" />}
             <div style={{ backgroundColor: assistBackgoundColor }} className="rw-response">
               <div id="wave">
                 <span className="rw-dot" />
@@ -260,14 +259,14 @@ Messages.propTypes = {
   profileAvatar: PropTypes.string,
   customComponent: PropTypes.func,
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
-  displayTypingIndication: PropTypes.bool
+  displayTypingIndication: PropTypes.bool,
 };
 
 Message.defaultTypes = {
-  displayTypingIndication: false
+  displayTypingIndication: false,
 };
 
-export default connect(store => ({
+export default connect((store) => ({
   messages: store.messages,
-  displayTypingIndication: store.behavior.get('isBotProcessing')
+  displayTypingIndication: store.behavior.get('isBotProcessing'),
 }))(Messages);

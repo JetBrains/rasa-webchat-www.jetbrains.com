@@ -3,10 +3,10 @@ import React, { forwardRef, useEffect, useRef, useState, useCallback } from 'rea
 import PropTypes from 'prop-types';
 import { Provider } from 'react-redux';
 
+import ThemeContext from 'components/Widget/ThemeContext';
 import Widget from './components/Widget';
 import { initStore } from './store/store';
 import socket from './socket';
-import ThemeContext from '../src/components/Widget/ThemeContext';
 import logger from './utils/logger';
 import {
   exchangeTokenReq,
@@ -14,7 +14,7 @@ import {
   getIsTokenValid,
   refreshTokenReq,
   getTokenExpirationTime,
-  state
+  state,
 } from './utils/auth-utils';
 
 const tokenKey = 'chat_token';
@@ -41,16 +41,12 @@ const rasaSocketUrl = getEnvUrl(
 
 const socketTemplate = {
   isInitialized: () => false,
-  on: () => {
-  },
-  emit: () => {
-  },
-  close: () => {
-  },
-  createSocket: () => {
-  },
+  on: () => {},
+  emit: () => {},
+  close: () => {},
+  createSocket: () => {},
   marker: Math.random(),
-  isDummy: true
+  isDummy: true,
 };
 
 const ConnectedWidget = forwardRef((props, ref) => {
@@ -95,7 +91,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
     emit(message, data) {
       if (this.socket) {
         // CRITICAL: Always use the most current socket
-        logger.debug('🔍 EMIT: Using socket ID:', this.socket.id, 'connected:', this.socket.connected);
+        logger.debug(
+          '🔍 EMIT: Using socket ID:',
+          this.socket.id,
+          'connected:',
+          this.socket.connected
+        );
 
         if (!this.socket.connected) {
           logger.error('❌ EMIT: Socket not connected, cannot send message');
@@ -146,16 +147,14 @@ const ConnectedWidget = forwardRef((props, ref) => {
         this.onConnectionError
       );
 
-
       this.socket.customData = this.customData;
 
       // We set a function on session_confirm here so as to avoid any race condition
       // this will be called first and will set those parameters for everyone to use.
       this.socket.on('session_confirm', (sessionObject) => {
         this.sessionConfirmed = true;
-        const newSessionId = (sessionObject && sessionObject.session_id)
-          ? sessionObject.session_id
-          : sessionObject;
+        const newSessionId =
+          sessionObject && sessionObject.session_id ? sessionObject.session_id : sessionObject;
 
         // Check if we have a preserved session ID from reconnection
         if (this.socket.preservedSessionId) {
@@ -198,7 +197,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
   const refreshTimerRef = useRef(null);
   const [token, setToken] = useState(() => {
     const initialToken = localStorage.getItem(tokenKey);
-    logger.info('🔍 INIT: Token from localStorage:', initialToken ? `${initialToken.substring(0, 30)}...` : 'NULL');
+    logger.info(
+      '🔍 INIT: Token from localStorage:',
+      initialToken ? `${initialToken.substring(0, 30)}...` : 'NULL'
+    );
     logger.info('🔍 INIT: tokenKey used:', tokenKey);
     return initialToken;
   });
@@ -208,6 +210,8 @@ const ConnectedWidget = forwardRef((props, ref) => {
     logger.info('🔍 INIT: isAuth:', isValid, 'token valid:', isValid);
     return isValid;
   });
+
+  const [socketKey, setSocketKey] = useState('initial'); // For a forced re-render
 
   const scheduleTokenRefresh = (rToken) => {
     logger.debug('🕐 Scheduling token refresh...');
@@ -238,7 +242,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
     // const refreshTime = 15 * 1000; // n seconds
 
     // PRODUCTION: Uncomment this line and remove the line above
-    const refreshTime = timeUntilExpiration - (5 * 60 * 1000);
+    const refreshTime = timeUntilExpiration - 5 * 60 * 1000;
 
     const timeToRefresh = Math.max(refreshTime, 5 * 1000);
 
@@ -254,9 +258,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
       }
 
       logger.debug('🔄 Starting token refresh process...');
-      
+
       const refreshToken = localStorage.getItem(tokenRefreshKey);
-      logger.debug('🔄 Auto-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+      logger.debug(
+        '🔄 Auto-refresh: using refresh_token from localStorage:',
+        refreshToken ? `${refreshToken.substring(0, 20)}...` : 'NULL'
+      );
       if (refreshToken) {
         refreshTokenReq(refreshToken)
           .then((data) => {
@@ -273,22 +280,33 @@ const ConnectedWidget = forwardRef((props, ref) => {
             // eslint-disable-next-line camelcase
             if (!refresh_token) {
               logger.warn('⚠️ Auto-refresh: Server did NOT return new refresh_token');
-              logger.warn('⚠️ This may indicate rotating refresh tokens - old token may be invalidated');
+              logger.warn(
+                '⚠️ This may indicate rotating refresh tokens - old token may be invalidated'
+              );
               logger.warn('⚠️ Keeping old refresh_token and hoping it still works...');
               // IMPORTANT: Some OAuth servers don't return new refresh_token on every refresh
               // Old refresh_token should still be valid in this case
               // If your server uses rotating tokens, this is a SERVER BUG
             } else {
               const oldToken = localStorage.getItem(tokenRefreshKey);
-              logger.info('✅ Auto-refresh: OLD refresh_token in localStorage:', oldToken ? oldToken.substring(0, 40) + '...' : 'NULL');
-              logger.info('✅ Auto-refresh: NEW refresh_token from server:', refresh_token.substring(0, 40) + '...');
+              logger.info(
+                '✅ Auto-refresh: OLD refresh_token in localStorage:',
+                oldToken ? `${oldToken.substring(0, 40)}...` : 'NULL'
+              );
+              logger.info(
+                '✅ Auto-refresh: NEW refresh_token from server:',
+                `${refresh_token.substring(0, 40)}...`
+              );
               logger.info('✅ Auto-refresh: Full OLD token:', oldToken);
               logger.info('✅ Auto-refresh: Full NEW token:', refresh_token);
               logger.info('✅ Auto-refresh: Are they SAME?', oldToken === refresh_token);
 
               localStorage.setItem(tokenRefreshKey, refresh_token);
               const storedToken = localStorage.getItem(tokenRefreshKey);
-              logger.info('✅ Auto-refresh: Verification - saved correctly?', refresh_token === storedToken);
+              logger.info(
+                '✅ Auto-refresh: Verification - saved correctly?',
+                refresh_token === storedToken
+              );
             }
 
             localStorage.setItem(tokenKey, id_token);
@@ -297,11 +315,16 @@ const ConnectedWidget = forwardRef((props, ref) => {
             // DIAGNOSTIC: Verify token was actually updated in localStorage
             const verifyToken = localStorage.getItem(tokenKey);
             if (verifyToken === id_token) {
-              logger.info('✅ Auto-refresh: Token verification PASSED - localStorage updated correctly');
+              logger.info(
+                '✅ Auto-refresh: Token verification PASSED - localStorage updated correctly'
+              );
             } else {
               logger.error('❌ Auto-refresh: Token verification FAILED!');
-              logger.error('❌ Expected:', id_token.substring(0, 40) + '...');
-              logger.error('❌ Got from localStorage:', verifyToken ? verifyToken.substring(0, 40) + '...' : 'NULL');
+              logger.error('❌ Expected:', `${id_token.substring(0, 40)}...`);
+              logger.error(
+                '❌ Got from localStorage:',
+                verifyToken ? `${verifyToken.substring(0, 40)}...` : 'NULL'
+              );
             }
 
             // DIAGNOSTIC: Check expiration of new token
@@ -310,9 +333,17 @@ const ConnectedWidget = forwardRef((props, ref) => {
               const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
               const now = Date.now() / 1000;
               const timeLeft = decoded.exp - now;
-              logger.info('✅ Auto-refresh: New access token expires in:', Math.round(timeLeft / 60), 'minutes');
+              logger.info(
+                '✅ Auto-refresh: New access token expires in:',
+                Math.round(timeLeft / 60),
+                'minutes'
+              );
               if (timeLeft < 0) {
-                logger.error('❌ Auto-refresh: Server returned ALREADY EXPIRED token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+                logger.error(
+                  '❌ Auto-refresh: Server returned ALREADY EXPIRED token! Expired',
+                  Math.round(-timeLeft / 60),
+                  'minutes ago'
+                );
               }
             } catch (e) {
               logger.error('❌ Auto-refresh: Failed to decode new access token:', e);
@@ -321,120 +352,161 @@ const ConnectedWidget = forwardRef((props, ref) => {
             logger.info('🔄 Token refreshed automatically, reconnecting socket with new token...');
 
             // Reconnect socket to ensure fresh token in all requests
-            if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
-                const oldSocketId = instanceSocket.current.socket.id;
-                const sessionId = instanceSocket.current.sessionId;
+            if (
+              instanceSocket.current &&
+              instanceSocket.current.socket &&
+              instanceSocket.current.socket.connected
+            ) {
+              const oldSocketId = instanceSocket.current.socket.id;
+              const sessionId = instanceSocket.current.sessionId;
 
-                // Preserve session_id for reconnection - save to instanceSocket, not socket (which will be destroyed)
-                instanceSocket.current.preservedSessionId = sessionId;
-                logger.debug('🔒 Preserved session_id:', sessionId, 'from socket:', oldSocketId);
+              // Preserve session_id for reconnection - save to instanceSocket, not socket (which will be destroyed)
+              instanceSocket.current.preservedSessionId = sessionId;
+              logger.debug('🔒 Preserved session_id:', sessionId, 'from socket:', oldSocketId);
 
-                // CRITICAL: Completely destroy old Socket.IO Manager and connection
-                logger.debug('🧹 Destroying old Socket.IO connection and Manager...');
+              // CRITICAL: Completely destroy old Socket.IO Manager and connection
+              logger.debug('🧹 Destroying old Socket.IO connection and Manager...');
 
-                // 1. Get the Manager URL before closing
-                const oldManagerUrl = instanceSocket.current.socket.io ? instanceSocket.current.socket.io.uri : null;
+              // 1. Get the Manager URL before closing
+              const oldManagerUrl = instanceSocket.current.socket.io
+                ? instanceSocket.current.socket.io.uri
+                : null;
 
-                // 2. Close the socket first
+              // 2. Close the socket first
+              try {
+                instanceSocket.current.socket.close();
+              } catch (e) {
+                logger.error('Error closing socket:', e);
+              }
+
+              // 3. Close and delete Manager from global cache
+              if (instanceSocket.current.socket.io) {
                 try {
-                  instanceSocket.current.socket.close();
+                  instanceSocket.current.socket.io.close();
                 } catch (e) {
-                  logger.error('Error closing socket:', e);
+                  logger.error('Error closing manager:', e);
                 }
+              }
 
-                // 3. Close and delete Manager from global cache
-                if (instanceSocket.current.socket.io) {
-                  try {
-                    instanceSocket.current.socket.io.close();
-                  } catch (e) {
-                    logger.error('Error closing manager:', e);
-                  }
-                }
-
-                // 4. Manually delete Manager from window.io.managers cache
-                if (typeof window !== 'undefined' && window.io && window.io.managers && oldManagerUrl) {
-                  logger.debug('🧹 Removing Manager from cache:', oldManagerUrl);
-                  Object.keys(window.io.managers).forEach(key => {
-                    if (key === oldManagerUrl || key.startsWith(oldManagerUrl.split('?')[0])) {
-                      logger.debug('🗑️ Deleting Manager:', key);
-                      try {
-                        window.io.managers[key].close();
-                      } catch (e) {
-                        // Already closed
-                      }
-                      delete window.io.managers[key];
+              // 4. Manually delete Manager from window.io.managers cache
+              if (
+                typeof window !== 'undefined' &&
+                window.io &&
+                window.io.managers &&
+                oldManagerUrl
+              ) {
+                logger.debug('🧹 Removing Manager from cache:', oldManagerUrl);
+                Object.keys(window.io.managers).forEach((key) => {
+                  if (key === oldManagerUrl || key.startsWith(oldManagerUrl.split('?')[0])) {
+                    logger.debug('🗑️ Deleting Manager:', key);
+                    try {
+                      window.io.managers[key].close();
+                    } catch (e) {
+                      // Already closed
                     }
-                  });
+                    delete window.io.managers[key];
+                  }
+                });
+              }
+
+              instanceSocket.current.socket = null;
+
+              // Update customData with new token
+              const newCustomData = { ...props.customData, auth_header: id_token };
+              instanceSocket.current.customData = newCustomData;
+
+              // Add timestamp to force new Manager creation with fresh token
+              const originalUrl = instanceSocket.current.url;
+              const timestamp = Date.now();
+              instanceSocket.current.url = `${originalUrl}${
+                originalUrl.includes('?') ? '&' : '?'
+              }_t=${timestamp}`;
+              logger.debug(
+                '🔌 Using timestamped URL to force new Manager:',
+                instanceSocket.current.url
+              );
+
+              // Small delay to ensure old connection is fully closed before creating new one
+              logger.debug('⏱️ Waiting 100ms for old connection cleanup...');
+              setTimeout(() => {
+                // Create new socket with new token (preservedSessionId will be used)
+                logger.debug('🔌 Creating new socket with refreshed token...');
+
+                // CRITICAL: Mark socket as needing reinitialization BEFORE creating it
+                // This will trigger componentDidUpdate in Widget to call initializeWidget
+                instanceSocket.current.needsReinitialization = true;
+
+                instanceSocket.current.createSocket();
+
+                // Copy preservedSessionId to the new socket object
+                if (instanceSocket.current.preservedSessionId && instanceSocket.current.socket) {
+                  instanceSocket.current.socket.preservedSessionId =
+                    instanceSocket.current.preservedSessionId;
+                  logger.debug(
+                    '✅ Copied preservedSessionId to new socket:',
+                    instanceSocket.current.preservedSessionId
+                  );
                 }
 
-                instanceSocket.current.socket = null;
+                // CRITICAL: Update socket.customData with fresh token for future reconnections
+                if (instanceSocket.current.socket) {
+                  instanceSocket.current.socket.customData = newCustomData;
+                  logger.info('✅ Updated socket.customData with new token for reconnections');
+                }
 
-                // Update customData with new token
-                const newCustomData = { ...props.customData, auth_header: id_token };
-                instanceSocket.current.customData = newCustomData;
+                // CRITICAL FIX: Force update auth headers in Socket.IO engine to prevent stale token caching
+                if (
+                  instanceSocket.current.socket &&
+                  instanceSocket.current.socket.updateAuthHeaders
+                ) {
+                  logger.warn(
+                    '🔧 FORCE UPDATING Socket.IO engine headers with new token to prevent caching issue'
+                  );
+                  instanceSocket.current.socket.updateAuthHeaders(id_token);
 
-                // Add timestamp to force new Manager creation with fresh token
-                const originalUrl = instanceSocket.current.url;
-                const timestamp = Date.now();
-                instanceSocket.current.url = `${originalUrl}${originalUrl.includes('?') ? '&' : '?'}_t=${timestamp}`;
-                logger.debug('🔌 Using timestamped URL to force new Manager:', instanceSocket.current.url);
-
-                // Small delay to ensure old connection is fully closed before creating new one
-                logger.debug('⏱️ Waiting 100ms for old connection cleanup...');
-                setTimeout(() => {
-                  // Create new socket with new token (preservedSessionId will be used)
-                  logger.debug('🔌 Creating new socket with refreshed token...');
-
-                  // CRITICAL: Mark socket as needing reinitialization BEFORE creating it
-                  // This will trigger componentDidUpdate in Widget to call initializeWidget
-                  instanceSocket.current.needsReinitialization = true;
-
-                  instanceSocket.current.createSocket();
-
-                  // Copy preservedSessionId to the new socket object
-                  if (instanceSocket.current.preservedSessionId && instanceSocket.current.socket) {
-                    instanceSocket.current.socket.preservedSessionId = instanceSocket.current.preservedSessionId;
-                    logger.debug('✅ Copied preservedSessionId to new socket:', instanceSocket.current.preservedSessionId);
-                  }
-
-                  // CRITICAL: Update socket.customData with fresh token for future reconnections
-                  if (instanceSocket.current.socket) {
-                    instanceSocket.current.socket.customData = newCustomData;
-                    logger.info('✅ Updated socket.customData with new token for reconnections');
-                  }
-
-                  // CRITICAL FIX: Force update auth headers in Socket.IO engine to prevent stale token caching
-                  if (instanceSocket.current.socket && instanceSocket.current.socket.updateAuthHeaders) {
-                    logger.warn('🔧 FORCE UPDATING Socket.IO engine headers with new token to prevent caching issue');
-                    instanceSocket.current.socket.updateAuthHeaders(id_token);
-
-                    // Double-check: Verify headers were actually updated
-                    if (instanceSocket.current.socket.io && instanceSocket.current.socket.io.engine && instanceSocket.current.socket.io.engine.opts) {
-                      const currentAuthHeader = instanceSocket.current.socket.io.engine.opts.extraHeaders?.Authorization;
-                      if (currentAuthHeader && currentAuthHeader.includes(id_token.substring(0, 20))) {
-                        logger.info('✅ VERIFIED: Socket.IO engine headers updated with new token');
-                      } else {
-                        logger.error('❌ VERIFICATION FAILED: Socket.IO engine still has OLD token!');
-                        logger.error('❌ Expected token start:', id_token.substring(0, 30));
-                        logger.error('❌ Current header:', currentAuthHeader ? currentAuthHeader.substring(0, 50) : 'NULL');
-                      }
+                  // Double-check: Verify headers were actually updated
+                  if (
+                    instanceSocket.current.socket.io &&
+                    instanceSocket.current.socket.io.engine &&
+                    instanceSocket.current.socket.io.engine.opts
+                  ) {
+                    const currentAuthHeader =
+                      instanceSocket.current.socket.io.engine.opts.extraHeaders?.Authorization;
+                    if (
+                      currentAuthHeader &&
+                      currentAuthHeader.includes(id_token.substring(0, 20))
+                    ) {
+                      logger.info('✅ VERIFIED: Socket.IO engine headers updated with new token');
+                    } else {
+                      logger.error('❌ VERIFICATION FAILED: Socket.IO engine still has OLD token!');
+                      logger.error('❌ Expected token start:', id_token.substring(0, 30));
+                      logger.error(
+                        '❌ Current header:',
+                        currentAuthHeader ? currentAuthHeader.substring(0, 50) : 'NULL'
+                      );
                     }
                   }
+                }
 
-                  // CRITICAL: Update store's socket reference after creating new socket
-                  if (store.current && store.current.updateSocket) {
-                    store.current.updateSocket(instanceSocket.current);
-                    logger.debug('✅ Store socket reference updated');
-                  }
+                // CRITICAL: Update store's socket reference after creating new socket
+                if (store.current && store.current.updateSocket) {
+                  store.current.updateSocket(instanceSocket.current);
+                  logger.debug('✅ Store socket reference updated');
+                }
 
-                  // Restore original URL for next refresh
-                  instanceSocket.current.url = originalUrl;
+                // Restore original URL for next refresh
+                instanceSocket.current.url = originalUrl;
 
-                  logger.info('✅ Socket reconnected with new token, old ID:', oldSocketId, 'new ID:', instanceSocket.current.socket?.id);
+                logger.info(
+                  '✅ Socket reconnected with new token, old ID:',
+                  oldSocketId,
+                  'new ID:',
+                  instanceSocket.current.socket?.id
+                );
 
-                  // Trigger a re-render to call componentDidUpdate
-                  setSocketKey(`token-refresh-${Date.now()}`);
-                }, 100);
+                // Trigger a re-render to call componentDidUpdate
+                setSocketKey(`token-refresh-${Date.now()}`);
+              }, 100);
             }
 
             setToken(id_token);
@@ -462,7 +534,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
 
     const refreshToken = localStorage.getItem(tokenRefreshKey);
-    logger.debug('🔄 Manual-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+    logger.debug(
+      '🔄 Manual-refresh: using refresh_token from localStorage:',
+      refreshToken ? `${refreshToken.substring(0, 20)}...` : 'NULL'
+    );
 
     if (!refreshToken) {
       logger.warn('❌ No refresh token available; cannot refresh manually');
@@ -484,11 +559,17 @@ const ConnectedWidget = forwardRef((props, ref) => {
           localStorage.setItem(tokenRefreshKey, refresh_token);
           logger.info('✅ Manual-refresh: refresh_token updated');
         } else {
-          logger.warn('⚠️ Manual-refresh: Server did NOT return new refresh_token, keeping old one');
+          logger.warn(
+            '⚠️ Manual-refresh: Server did NOT return new refresh_token, keeping old one'
+          );
         }
 
         // Update socket with new token (NO destruction - manual refresh uses /restart)
-        if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
+        if (
+          instanceSocket.current &&
+          instanceSocket.current.socket &&
+          instanceSocket.current.socket.connected
+        ) {
           const newCustomData = { ...props.customData, auth_header: id_token };
           instanceSocket.current.customData = newCustomData;
 
@@ -500,7 +581,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
             instanceSocket.current.socket.customData = newCustomData;
           }
 
-          logger.info('✅ Manual refresh: socket updated in-place, ID:', instanceSocket.current.socket.id);
+          logger.info(
+            '✅ Manual refresh: socket updated in-place, ID:',
+            instanceSocket.current.socket.id
+          );
         }
 
         setToken(id_token);
@@ -522,7 +606,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
     const refreshToken = localStorage.getItem(tokenRefreshKey);
     const isTokenValid = getIsTokenValid(chatToken);
 
-    logger.debug('🔄 Check-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+    logger.debug(
+      '🔄 Check-refresh: using refresh_token from localStorage:',
+      refreshToken ? `${refreshToken.substring(0, 20)}...` : 'NULL'
+    );
 
     if (chatToken && !isTokenValid) {
       refreshTokenReq(refreshToken)
@@ -538,7 +625,9 @@ const ConnectedWidget = forwardRef((props, ref) => {
             localStorage.setItem(tokenRefreshKey, refresh_token);
             logger.info('✅ Check-refresh: refresh_token updated');
           } else {
-            logger.warn('⚠️ Check-refresh: Server did NOT return new refresh_token, keeping old one');
+            logger.warn(
+              '⚠️ Check-refresh: Server did NOT return new refresh_token, keeping old one'
+            );
           }
 
           setToken(id_token);
@@ -565,84 +654,95 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
   }, []);
 
-  useEffect(() => () => {
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-    }
+  useEffect(
+    () => () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
 
-    // Cleanup all socket managers on unmount
-    if (window.io && window.io.managers) {
-      logger.debug('🧹 Cleaning up Socket.IO managers on unmount...');
-      Object.keys(window.io.managers).forEach(key => {
-        const manager = window.io.managers[key];
-        if (manager && manager.close) {
-          manager.close();
-        }
-        delete window.io.managers[key];
-      });
-    }
-  }, []);
+      // Cleanup all socket managers on unmount
+      if (window.io && window.io.managers) {
+        logger.debug('🧹 Cleaning up Socket.IO managers on unmount...');
+        Object.keys(window.io.managers).forEach((key) => {
+          const manager = window.io.managers[key];
+          if (manager && manager.close) {
+            manager.close();
+          }
+          delete window.io.managers[key];
+        });
+      }
+    },
+    []
+  );
 
-  const [socketKey, setSocketKey] = useState('initial'); // For a forced re-render
   const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
   const processedCodesRef = useRef(new Set()); // Track processed OAuth codes to prevent duplicates
 
-  const authCallback = useCallback((event) => {
-    logger.info('🔍 authCallback: Received message event, type:', event.data?.type);
+  const authCallback = useCallback(
+    (event) => {
+      logger.info('🔍 authCallback: Received message event, type:', event.data?.type);
 
-    if (isAuth) {
-      logger.debug('Already authenticated, ignoring message');
-      return;
-    }
-
-    if (event.data?.type === 'oauth-code') {
-      const code = event.data.code;
-      const popupState = event.data.popupState;
-
-      logger.debug('📨 Received OAuth callback:', { code: code?.substring(0, 10) + '...', popupState });
-
-      // Prevent duplicate processing of the same OAuth code
-      if (processedCodesRef.current.has(code)) {
-        logger.warn('⚠️ OAuth code already processed, ignoring duplicate message');
-        return;
-      }
-      processedCodesRef.current.add(code);
-
-      if (state !== popupState) {
-        logger.error('❌ State mismatch:', { received: popupState, expected: state });
+      if (isAuth) {
+        logger.debug('Already authenticated, ignoring message');
         return;
       }
 
-      const getChatToken = async () => {
-        try {
-          logger.debug('🔄 Exchanging code for token...');
-          const data = await exchangeTokenReq(code);
-          const { id_token, refresh_token } = data;
+      if (event.data?.type === 'oauth-code') {
+        const code = event.data.code;
+        const popupState = event.data.popupState;
 
-          if (!id_token) {
-            logger.error('❌ No id_token in response:', data);
-            return;
-          }
+        logger.debug('📨 Received OAuth callback:', {
+          code: `${code?.substring(0, 10) || ''}...`,
+          popupState,
+        });
 
-          logger.info('✅ Token received, storing with key:', tokenKey);
-          logger.info('🔍 Token value (first 30 chars):', id_token.substring(0, 30) + '...');
-          localStorage.setItem(tokenKey, id_token);
-          localStorage.setItem(tokenRefreshKey, refresh_token);
-          logger.info('🔍 Token stored, verifying...');
-          const storedToken = localStorage.getItem(tokenKey);
-          logger.info('🔍 Verification - token in localStorage:', storedToken ? 'EXISTS' : 'NULL');
-          setToken(id_token);
-          setIsAuth(true);
-          scheduleTokenRefresh(id_token);
-          logger.info('✅ Auth completed successfully');
-        } catch (error) {
-          logger.error('❌ Token exchange error:', error);
+        // Prevent duplicate processing of the same OAuth code
+        if (processedCodesRef.current.has(code)) {
+          logger.warn('⚠️ OAuth code already processed, ignoring duplicate message');
+          return;
         }
-      };
+        processedCodesRef.current.add(code);
 
-      getChatToken();
-    }
-  }, [isAuth, scheduleTokenRefresh]);
+        if (state !== popupState) {
+          logger.error('❌ State mismatch:', { received: popupState, expected: state });
+          return;
+        }
+
+        const getChatToken = async () => {
+          try {
+            logger.debug('🔄 Exchanging code for token...');
+            const data = await exchangeTokenReq(code);
+            const { id_token, refresh_token } = data;
+
+            if (!id_token) {
+              logger.error('❌ No id_token in response:', data);
+              return;
+            }
+
+            logger.info('✅ Token received, storing with key:', tokenKey);
+            logger.info('🔍 Token value (first 30 chars):', `${id_token.substring(0, 30)}...`);
+            localStorage.setItem(tokenKey, id_token);
+            localStorage.setItem(tokenRefreshKey, refresh_token);
+            logger.info('🔍 Token stored, verifying...');
+            const storedToken = localStorage.getItem(tokenKey);
+            logger.info(
+              '🔍 Verification - token in localStorage:',
+              storedToken ? 'EXISTS' : 'NULL'
+            );
+            setToken(id_token);
+            setIsAuth(true);
+            scheduleTokenRefresh(id_token);
+            logger.info('✅ Auth completed successfully');
+          } catch (error) {
+            logger.error('❌ Token exchange error:', error);
+          }
+        };
+
+        getChatToken();
+      }
+    },
+    [isAuth, scheduleTokenRefresh]
+  );
 
   useEffect(() => {
     window.addEventListener('message', authCallback);
@@ -653,7 +753,6 @@ const ConnectedWidget = forwardRef((props, ref) => {
       logger.debug('👋 Message listener removed');
     };
   }, [authCallback]);
-
 
   const onConnectionError = () => {
     logger.info('🔌 Connection error detected, checking token...');
@@ -685,7 +784,10 @@ const ConnectedWidget = forwardRef((props, ref) => {
       }
 
       const refreshToken = localStorage.getItem(tokenRefreshKey);
-      logger.debug('🔄 Disconnect-refresh: using refresh_token from localStorage:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+      logger.debug(
+        '🔄 Disconnect-refresh: using refresh_token from localStorage:',
+        refreshToken ? `${refreshToken.substring(0, 20)}...` : 'NULL'
+      );
 
       if (refreshToken) {
         refreshTokenReq(refreshToken)
@@ -700,7 +802,9 @@ const ConnectedWidget = forwardRef((props, ref) => {
                 localStorage.setItem(tokenRefreshKey, refresh_token);
                 logger.info('✅ Disconnect-refresh: refresh_token updated');
               } else {
-                logger.warn('⚠️ Disconnect-refresh: Server did NOT return new refresh_token, keeping old one');
+                logger.warn(
+                  '⚠️ Disconnect-refresh: Server did NOT return new refresh_token, keeping old one'
+                );
               }
               setToken(id_token);
               scheduleTokenRefresh(id_token);
@@ -726,12 +830,20 @@ const ConnectedWidget = forwardRef((props, ref) => {
   };
 
   useEffect(() => {
-    logger.info('🔍 useEffect [isAuth, token]: isAuth=', isAuth, 'token=', token ? `${token.substring(0, 30)}...` : 'null');
+    logger.info(
+      '🔍 useEffect [isAuth, token]: isAuth=',
+      isAuth,
+      'token=',
+      token ? `${token.substring(0, 30)}...` : 'null'
+    );
     logger.info('🔍 localStorage token:', localStorage.getItem(tokenKey) ? 'EXISTS' : 'NULL');
-    
+
     if (isAuth && token && instanceSocket.current) {
       const newCustomData = { ...props.customData, auth_header: token };
-      logger.info('🔍 Creating customData with auth_header:', newCustomData.auth_header ? 'TOKEN_SET' : 'NO_TOKEN');
+      logger.info(
+        '🔍 Creating customData with auth_header:',
+        newCustomData.auth_header ? 'TOKEN_SET' : 'NO_TOKEN'
+      );
 
       if (instanceSocket.current.isDummy) {
         // First time creating socket after login
@@ -743,8 +855,12 @@ const ConnectedWidget = forwardRef((props, ref) => {
         // Handle reconnect - copy preservedSessionId to socket object
         const handleSocketConnect = () => {
           if (instanceSocket.current?.preservedSessionId && instanceSocket.current.socket) {
-            instanceSocket.current.socket.preservedSessionId = instanceSocket.current.preservedSessionId;
-            logger.debug('✅ Reconnected: copied preservedSessionId to socket:', instanceSocket.current.preservedSessionId);
+            instanceSocket.current.socket.preservedSessionId =
+              instanceSocket.current.preservedSessionId;
+            logger.debug(
+              '✅ Reconnected: copied preservedSessionId to socket:',
+              instanceSocket.current.preservedSessionId
+            );
           }
 
           // Call original connect handler if it exists
@@ -762,7 +878,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           {
             ...props.onSocketEvent,
             disconnect: handleSocketDisconnect,
-            connect: handleSocketConnect
+            connect: handleSocketConnect,
           },
           onConnectionError
         );
@@ -783,29 +899,28 @@ const ConnectedWidget = forwardRef((props, ref) => {
       } else {
         // Token changed - just update customData, DON'T destroy socket
         logger.debug('🔄 Token updated, refreshing socket customData...');
-        
+
         instanceSocket.current.customData = newCustomData;
-        
+
         if (instanceSocket.current.socket && instanceSocket.current.socket.connected) {
           instanceSocket.current.socket.customData = newCustomData;
-          
+
           if (instanceSocket.current.socket.updateAuthHeaders) {
             instanceSocket.current.socket.updateAuthHeaders(token);
           }
-          
+
           logger.info('✅ Socket customData updated, ID:', instanceSocket.current.socket.id);
         }
-        
+
         const updatedProtocolOptions = { ...props.protocolOptions, token };
         instanceSocket.current.updateProtocolOptions(updatedProtocolOptions);
-        
+
         if (store.current && store.current.updateSocket) {
           store.current.updateSocket(instanceSocket.current);
         }
       }
     }
   }, [isAuth, token]);
-
 
   if (!store.current && !instanceSocket.current) {
     instanceSocket.current = socketTemplate;
@@ -836,7 +951,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
           userTextColor: props.userTextColor,
           userBackgroundColor: props.userBackgroundColor,
           assistTextColor: props.assistTextColor,
-          assistBackgoundColor: props.assistBackgoundColor
+          assistBackgoundColor: props.assistBackgoundColor,
         }}
       >
         <Widget
@@ -885,7 +1000,6 @@ ConnectedWidget.propTypes = {
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   protocol: PropTypes.string,
-  socketUrl: PropTypes.string,
   socketPath: PropTypes.string,
   protocolOptions: PropTypes.shape({}),
   customData: PropTypes.shape({}),
@@ -917,7 +1031,7 @@ ConnectedWidget.propTypes = {
     onChatOpen: PropTypes.func,
     onChatClose: PropTypes.func,
     onChatVisible: PropTypes.func,
-    onChatHidden: PropTypes.func
+    onChatHidden: PropTypes.func,
   }),
   disableTooltips: PropTypes.bool,
   defaultHighlightCss: PropTypes.string,
@@ -927,7 +1041,7 @@ ConnectedWidget.propTypes = {
   userTextColor: PropTypes.string,
   userBackgroundColor: PropTypes.string,
   assistTextColor: PropTypes.string,
-  assistBackgoundColor: PropTypes.string
+  assistBackgoundColor: PropTypes.string,
 };
 
 ConnectedWidget.defaultProps = {
@@ -945,7 +1059,7 @@ ConnectedWidget.defaultProps = {
   badge: 0,
   embedded: false,
   params: {
-    storage: 'local'
+    storage: 'local',
   },
   docViewer: false,
   showCloseButton: true,
@@ -968,7 +1082,7 @@ ConnectedWidget.defaultProps = {
   userBackgroundColor: '',
   assistTextColor: '',
   assistBackgoundColor: '',
-  showAuthButton: null
+  showAuthButton: null,
 };
 
 export default ConnectedWidget;

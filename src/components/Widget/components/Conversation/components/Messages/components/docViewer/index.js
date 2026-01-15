@@ -13,8 +13,17 @@ class DocViewer extends Component {
     this.handleCloseModal = this.handleCloseModal.bind(this);
     this.state = {
       openedModal: false,
-      iFrameLoading: true
+      iFrameLoading: true,
     };
+  }
+
+  handleOpenModal() {
+    this.setState({ openedModal: true });
+    this.iframeTimeoutId = setInterval(this.updateIframeSrc, 1000 * 4);
+  }
+
+  handleCloseModal() {
+    this.setState({ openedModal: false, iFrameLoading: true });
   }
 
   getIframeLink() {
@@ -26,22 +35,9 @@ class DocViewer extends Component {
     this.setState({ iFrameLoading: false });
   }
 
-  bindActions() {
-    this.iframeLoaded = this.iframeLoaded.bind(this);
-  }
-
   updateIframeSrc() {
     if (this.iframe) this.iframe.src = this.getIframeLink();
     else clearInterval(this.iframeTimeoutId);
-  }
-
-  handleOpenModal() {
-    this.setState({ openedModal: true });
-    this.iframeTimeoutId = setInterval(this.updateIframeSrc, 1000 * 4);
-  }
-
-  handleCloseModal() {
-    this.setState({ openedModal: false, iFrameLoading: true });
   }
 
   render() {
@@ -54,7 +50,11 @@ class DocViewer extends Component {
         </button>
         {this.state.openedModal && (
           <Portal>
-            <div className="rw-doc-viewer-modal-fade" aria-hidden="true" onClick={this.handleCloseModal} />
+            <div
+              className="rw-doc-viewer-modal-fade"
+              aria-hidden="true"
+              onClick={this.handleCloseModal}
+            />
             <div className="rw-doc-viewer-modal">
               <div className="rw-doc-viewer-modal-body">
                 {this.state.iFrameLoading && <div className="rw-doc-viewer-spinner" />}
@@ -70,7 +70,11 @@ class DocViewer extends Component {
                 />
               </div>
               <div className="rw-doc-viewer-modal-footer">
-                <button type="button" className="rw-doc-viewer-close-modal" onClick={this.handleCloseModal}>
+                <button
+                  type="button"
+                  className="rw-doc-viewer-close-modal"
+                  onClick={this.handleCloseModal}
+                >
                   X
                 </button>
               </div>
@@ -83,7 +87,7 @@ class DocViewer extends Component {
 }
 
 DocViewer.propTypes = {
-  src: PropTypes.string.isRequired
+  src: PropTypes.string.isRequired,
 };
 
 export default DocViewer;

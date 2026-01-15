@@ -1,7 +1,6 @@
 import React from 'react';
 import { Provider } from 'react-redux';
-import { Map } from 'immutable';
-import { mount, shallow } from 'enzyme';
+import { mount } from 'enzyme';
 
 import LocalStorageMock from '../../../../mocks/localStorageMock';
 import Launcher from '../components/Launcher';
@@ -11,15 +10,10 @@ const localStorage = new LocalStorageMock();
 const stubSocket = jest.fn();
 const store = initStore('dummy', stubSocket, localStorage);
 
-
 describe('message target store affect app behavior', () => {
   const launcherCompoment = mount(
     <Provider store={store}>
-      <Launcher
-        toggle={() => { }}
-        isChatOpen={false}
-        fullScreenMode={false}
-      />
+      <Launcher toggle={() => {}} isChatOpen={false} fullScreenMode={false} />
     </Provider>
   );
 
