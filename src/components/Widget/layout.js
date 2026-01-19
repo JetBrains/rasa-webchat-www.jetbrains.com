@@ -1,3 +1,4 @@
+/* eslint-disable react/function-component-definition, react/destructuring-assignment, react/require-default-props */
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
@@ -76,6 +77,7 @@ WidgetLayout.propTypes = {
   refreshSession: PropTypes.func,
   toggleFullScreen: PropTypes.func,
   isChatOpen: PropTypes.bool,
+  // eslint-disable-next-line react/no-unused-prop-types
   isChatVisible: PropTypes.bool,
   profileAvatar: PropTypes.string,
   showCloseButton: PropTypes.bool,
@@ -85,6 +87,7 @@ WidgetLayout.propTypes = {
   badge: PropTypes.number,
   embedded: PropTypes.bool,
   inputTextFieldHint: PropTypes.string,
+  // eslint-disable-next-line react/forbid-prop-types
   params: PropTypes.object,
   connected: PropTypes.bool,
   connectingText: PropTypes.string,

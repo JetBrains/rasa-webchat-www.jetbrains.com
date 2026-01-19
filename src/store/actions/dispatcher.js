@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/named
 import { store } from '../../index';
 import * as actions from './index';
 
@@ -14,10 +15,12 @@ export function initialize() {
 }
 
 export function connect() {
+  // eslint-disable-next-line import/namespace, import/named
   store.dispatch(actions.connect());
 }
 
 export function disconnect() {
+  // eslint-disable-next-line import/namespace
   store.dispatch(actions.disconnect());
 }
 
@@ -105,6 +108,7 @@ export function newUnreadMessage() {
   store.dispatch(actions.newUnreadMessage());
 }
 
+// eslint-disable-next-line default-param-last
 export function send(playload, text = '', customStore) {
   if (customStore) {
     customStore.dispatch(actions.emitUserMessage(playload));

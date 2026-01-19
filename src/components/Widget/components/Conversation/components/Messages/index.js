@@ -71,6 +71,7 @@ class Messages extends Component {
   handleScroll = () => {
     // If user scrolls to bottom manually, clear unread indicator
     // Only update state if it actually changed to avoid unnecessary re-renders
+    // eslint-disable-next-line react/destructuring-assignment
     if (isUserAtBottom() && this.state.hasUnreadMessages) {
       this.setState({ hasUnreadMessages: false });
     }
@@ -82,6 +83,7 @@ class Messages extends Component {
     return null;
   }
 
+  // eslint-disable-next-line react/sort-comp
   componentDidUpdate(prevProps) {
     const { messages } = this.props;
     const hasNewMessages = prevProps.messages.size < messages.size;
@@ -104,6 +106,7 @@ class Messages extends Component {
     if (this.wasAtBottom) {
       scrollToBottom();
       // Clear unread indicator if we auto-scrolled
+      // eslint-disable-next-line react/destructuring-assignment
       if (this.state.hasUnreadMessages) {
         this.setState({ hasUnreadMessages: false });
       }
@@ -119,6 +122,7 @@ class Messages extends Component {
   }
 
   getComponentToRender = (message, index, isLast) => {
+    // eslint-disable-next-line react/prop-types, react/destructuring-assignment
     const { params } = this.props;
     const ComponentToRender = (() => {
       switch (message.get('type')) {
@@ -141,6 +145,7 @@ class Messages extends Component {
           return connect(
             (store) => ({ store }),
             (dispatch) => ({ dispatch })
+            // eslint-disable-next-line react/destructuring-assignment
           )(this.props.customComponent);
         default:
           return null;
@@ -150,6 +155,7 @@ class Messages extends Component {
       const messageProps = message.get('props');
       return (<ComponentToRender
         id={index}
+        // eslint-disable-next-line react/jsx-props-no-spreading
         {...(messageProps.toJS ? messageProps.toJS() : messageProps)}
         isLast={isLast}
       />);
@@ -171,6 +177,7 @@ class Messages extends Component {
       const groups = [];
       let group = null;
 
+      // eslint-disable-next-line no-nested-ternary
       const dateRenderer = typeof showMessageDate === 'function' ? showMessageDate :
         showMessageDate === true ? formatDate : null;
 
@@ -213,6 +220,7 @@ class Messages extends Component {
       groups.push(group); // finally push last group of messages.
 
       return groups.map((g, index) => (
+        // eslint-disable-next-line react/no-array-index-key
         <div className={`rw-group-message rw-from-${g && g.from}`} key={`group_${index}`}>
           {g.messages}
         </div>
@@ -240,6 +248,7 @@ class Messages extends Component {
           </div>
         )}
         {hasUnreadMessages && (
+          // eslint-disable-next-line react/button-has-type
           <button
             className="rw-new-messages-indicator"
             onClick={this.handleScrollToBottom}
@@ -255,10 +264,15 @@ class Messages extends Component {
 }
 Messages.contextType = ThemeContext;
 Messages.propTypes = {
+  // eslint-disable-next-line react/require-default-props
   messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map),
+  // eslint-disable-next-line react/require-default-props
   profileAvatar: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   customComponent: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
+  // eslint-disable-next-line react/require-default-props
   displayTypingIndication: PropTypes.bool
 };
 

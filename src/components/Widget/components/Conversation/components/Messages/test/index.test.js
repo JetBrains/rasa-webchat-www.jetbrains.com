@@ -25,8 +25,10 @@ describe('<Messages />', () => {
         super(arg);
 
         if (arg) { // only overide new Date();
+          // eslint-disable-next-line no-constructor-return
           return new RealDate(arg);
         }
+        // eslint-disable-next-line no-constructor-return
         return new RealDate(isoDate);
       }
     };
@@ -43,7 +45,7 @@ describe('<Messages />', () => {
     image: 'image',
     dims: { width: 100, height: 100 }
   });
-  /* eslint-disable react/prop-types */
+  /* eslint-disable react/prop-types, react/function-component-definition */
   const Dummy = ({ text }) => <div>{text}</div>;
   /* eslint-enable */
   const customComp = createComponentMessage(Dummy, {

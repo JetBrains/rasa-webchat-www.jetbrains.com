@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types, react/destructuring-assignment, react/sort-comp, prefer-template, react/require-default-props */
 import ImmutablePropTypes from 'react-immutable-proptypes';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -786,6 +787,7 @@ class Widget extends Component {
       // Start 30-second timeout to reset bot processing if backend hangs
       startBotProcessingTimeout(this.props.dispatch);
     }
+    // eslint-disable-next-line no-param-reassign
     event.target.message.value = '';
   }
 
@@ -959,8 +961,10 @@ Widget.defaultProps = {
   autoClearCache: false,
   displayUnreadCount: false,
   tooltipPayload: null,
+  // eslint-disable-next-line react/default-props-match-prop-types
   refreshSessoin: null,
   inputTextFieldHint: 'Type a message...',
+  // eslint-disable-next-line react/default-props-match-prop-types
   oldUrl: '',
   disableTooltips: true,
   defaultHighlightClassname: '',

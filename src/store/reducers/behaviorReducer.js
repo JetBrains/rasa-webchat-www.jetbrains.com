@@ -3,6 +3,7 @@ import { SESSION_NAME } from 'constants';
 import * as actionTypes from '../actions/actionTypes';
 import { getLocalSession, storeParamsTo } from './helper';
 
+// eslint-disable-next-line func-names
 export default function (
   connectingText,
   storage,
@@ -25,6 +26,7 @@ export default function (
     firstChatStarted: false
   });
 
+  // eslint-disable-next-line default-param-last
   return function reducer(state = initialState, action) {
     const storeParams = storeParamsTo(storage);
     switch (action.type) {
@@ -59,6 +61,7 @@ export default function (
         return storeParams(state.update('fullScreenMode', (fullScreenMode) => !fullScreenMode));
       }
       case actionTypes.TOGGLE_INPUT_DISABLED: {
+        // eslint-disable-next-line prefer-destructuring
         const disable = action.disable;
         if (disable !== undefined && disable !== null) {
           return storeParams(state.update('disabledInput', () => disable));

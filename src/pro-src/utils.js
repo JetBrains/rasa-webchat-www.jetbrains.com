@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/prefer-default-export
 export function onRemove(element, callback) {
   const obs = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {

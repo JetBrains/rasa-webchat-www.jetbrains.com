@@ -65,6 +65,7 @@ describe('Metadata store affect app behavior', () => {
     } }]));
   Object.defineProperty(document, 'querySelectorAll', { value: querySelectorAllspyFunc });
 
+  // eslint-disable-next-line no-return-assign
   beforeEach(() => sentToSocket = []);
 
   it('should use the callbackIntent on expected url change', () => {

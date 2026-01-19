@@ -151,11 +151,12 @@ export const authInRasa = async (idToken) => {
   } catch (err) {
     logger.error('authInRasa request failed:', err);
   }
-
+  // eslint-disable-next-line no-unreachable
   return null;
 };
 
 export const refreshTokenReq = async (refreshToken) => {
+  // eslint-disable-next-line prefer-template
   logger.debug('🔄 refreshTokenReq called with token:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
 
   const body = new URLSearchParams([

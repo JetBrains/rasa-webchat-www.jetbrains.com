@@ -1,4 +1,4 @@
-/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/no-static-element-interactions, react/jsx-props-no-spreading */
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
@@ -18,10 +18,12 @@ import closeIcon from 'assets/clear-button-grey.svg';
 import close from 'assets/clear-button.svg';
 import {onRemove,  safeQuerySelectorAll } from 'utils/dom';
 import Badge from './components/Badge';
+// eslint-disable-next-line import/no-named-as-default
 import DiscoveryTooltip from './components/DiscoveryTooltip';
 import './style.scss';
 import ThemeContext from '../../ThemeContext';
 
+// eslint-disable-next-line react/function-component-definition
 const Launcher = ({
   toggle,
   isChatOpen,
@@ -33,9 +35,12 @@ const Launcher = ({
   displayUnreadCount,
   showTooltip,
   lastMessages,
+  // eslint-disable-next-line react/prop-types
   closeTooltip,
   lastUserMessage,
+  // eslint-disable-next-line react/prop-types
   domHighlight,
+  // eslint-disable-next-line react/prop-types
   sendPayload,
   firstChatStarted
 }) => {
@@ -56,7 +61,9 @@ const Launcher = ({
     };
     if (lastUserMessage && lastUserMessage.get('nextMessageIsTooltip')) {
       setReference(lastUserMessage.get('nextMessageIsTooltip'));
+      // eslint-disable-next-line react/prop-types
     } else if (domHighlight && domHighlight.get('selector')) {
+      // eslint-disable-next-line react/prop-types
       setReference(domHighlight.get('selector'));
     } else {
       setReferenceElement(null);
@@ -77,6 +84,7 @@ const Launcher = ({
         }
       }
     ],
+    // eslint-disable-next-line react/prop-types
     placement: (domHighlight && domHighlight.get('tooltipPlacement')) || 'auto'
   });
 
@@ -97,7 +105,7 @@ const Launcher = ({
   if (isChatOpen) className.push('rw-hide-sm');
   if (isChatOpen) className.push('rw-hide');
   if (fullScreenMode && isChatOpen) className.push('rw-full-screen rw-hide');
-
+// eslint-disable-next-line consistent-return
   const getComponentToRender = (message, buttonSeparator = false) => {
     const ComponentToRender = (() => {
       switch (message.get('type')) {
@@ -120,10 +128,11 @@ const Launcher = ({
 
 
   const renderSequenceTooltip = (lastMessagesSeq) => (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div className="rw-slider-safe-zone" onClick={(e) => e.stopPropagation()}>
       <Slider {...sliderSettings}>
         {lastMessagesSeq.map((message) => (
-          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions, react/jsx-key
           <div
             className="rw-tooltip-response"
             onMouseDown={(event) => {
@@ -149,14 +158,17 @@ const Launcher = ({
     ;
 
   const renderTooltipContent = () => (
+    // eslint-disable-next-line react/jsx-fragments
     <React.Fragment>
       <div className="rw-tooltip-close">
+        {/* eslint-disable-next-line react/button-has-type */}
         <button
           onClick={(e) => {
             /* stop the propagation because the popup is also a button
             otherwise it would open the webchat when closing the tooltip */
             e.stopPropagation();
 
+            // eslint-disable-next-line react/prop-types
             const payload = domHighlight.get('tooltipClose')
               if(domHighlight && payload){
                 sendPayload(`/${payload}`)
@@ -180,6 +192,7 @@ const Launcher = ({
       className="rw-tooltip-body"
       ref={setPopperElement}
       style={styles.popper}
+      // eslint-disable-next-line react/jsx-props-no-spreading
       {...attributes.popper}
     >
       {renderTooltipContent()}
@@ -192,7 +205,7 @@ const Launcher = ({
   );
 
   const renderToolTip = () => (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div className="rw-tooltip-body" style={{ backgroundColor: assistBackgoundColor }} onClick={(e) => { e.stopPropagation(); }}>
       {renderTooltipContent()}
       <div className="rw-tooltip-decoration" style={{ backgroundColor: assistBackgoundColor }} />
@@ -211,10 +224,10 @@ const Launcher = ({
 
   return (
     <div className="rw-launcher-wrapper">
-      <button 
-        type="button" 
-        style={{ backgroundColor: mainColor }} 
-        className={className.join(' ')} 
+      <button
+        type="button"
+        style={{ backgroundColor: mainColor }}
+        className={className.join(' ')}
         onClick={toggle}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -238,18 +251,31 @@ const Launcher = ({
 };
 
 Launcher.propTypes = {
+  // eslint-disable-next-line react/require-default-props
   toggle: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   isChatOpen: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   badge: PropTypes.number,
+  // eslint-disable-next-line react/require-default-props
   fullScreenMode: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   openLauncherImage: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   closeImage: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   unreadCount: PropTypes.number,
+  // eslint-disable-next-line react/require-default-props
   displayUnreadCount: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   showTooltip: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   lastUserMessage: PropTypes.oneOfType([ImmutablePropTypes.map, PropTypes.bool]),
+  // eslint-disable-next-line react/require-default-props
   domHighlight: PropTypes.shape({}),
+  // eslint-disable-next-line react/require-default-props
   lastMessages: PropTypes.arrayOf(ImmutablePropTypes.map),
+  // eslint-disable-next-line react/require-default-props
   firstChatStarted: PropTypes.bool
 };
 

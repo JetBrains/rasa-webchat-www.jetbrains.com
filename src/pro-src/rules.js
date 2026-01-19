@@ -86,6 +86,7 @@ export default class RulesHandler {
 
     // We store the hash on the rule object so that it can be used
     // further down the line.
+    // eslint-disable-next-line no-param-reassign
     rule.hash = rulesHash;
 
     const ruleTriggered = this.history.rulesTriggered.find(
@@ -232,6 +233,7 @@ export default class RulesHandler {
     if (listener.visualization === 'pulsating') {
       elem.classList.add('rw-pulsating');
       return () => elem.classList.remove('rw-pulsating');
+      // eslint-disable-next-line no-else-return, no-lonely-if
     } else if (listener.visualization === 'questionMark') {
       const questionMark = document.createElement('img');
       questionMark.src = QuestionMark;
@@ -363,6 +365,7 @@ export default class RulesHandler {
 
     let urlToUse = {};
     if (trigger.url && Array.isArray(trigger.url) && trigger.url.length === 1) {
+      // eslint-disable-next-line prefer-destructuring
       urlToUse = trigger.url[0];
     } else {
       urlToUse = trigger.url;
@@ -460,7 +463,8 @@ export default class RulesHandler {
       }
       this.sendMessage(payload, rules.trigger.when, tooltipSelector);
       if (ruleTriggeredIndex !== -1) {
-        const triggered = this.history.rulesTriggered[ruleTriggeredIndex].triggered;
+        // eslint-disable-next-line prefer-destructuring
+      const triggered = this.history.rulesTriggered[ruleTriggeredIndex].triggered;
         this.history.rulesTriggered[ruleTriggeredIndex] = {
           ...this.history.rulesTriggered[ruleTriggeredIndex],
           triggered: triggered + 1,
@@ -480,6 +484,7 @@ export default class RulesHandler {
   // that we're going to send if neccessary.
   verifyQueryStringAndAddEntities(encodedQueryString, queryObject, payload) {
     const queryStringJson = this.convertQueryStringToJson(encodedQueryString);
+    // eslint-disable-next-line prefer-destructuring
     const { param, value } = queryObject;
     if (!queryObject.sendAsEntity) {
       return queryStringJson[param] && queryStringJson[param] === value;
@@ -500,7 +505,9 @@ export default class RulesHandler {
       .split('&')
       .reduce((json, item) => {
         if (item) {
+          // eslint-disable-next-line no-param-reassign, prefer-destructuring
           item = item.split('=').map((value) => decodeURIComponent(value));
+          // eslint-disable-next-line no-param-reassign, prefer-destructuring
           json[item[0]] = item[1];
         }
         return json;

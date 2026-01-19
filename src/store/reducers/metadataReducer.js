@@ -3,6 +3,7 @@ import { Map, fromJS } from 'immutable';
 import * as actionTypes from '../actions/actionTypes';
 import { getLocalSession, storeMetadataTo } from './helper';
 
+// eslint-disable-next-line func-names
 export default function (storage) {
   const defaultValues = Map({
     linkTarget: '',
@@ -16,6 +17,7 @@ export default function (storage) {
     tooltipSent: Map()
   }).merge(defaultValues);
 
+  // eslint-disable-next-line default-param-last
   return function reducer(state = initialState, action) {
     const storeMetadata = storeMetadataTo(storage);
     switch (action.type) {
