@@ -4,8 +4,6 @@ import { connect } from 'react-redux';
 import './style.scss';
 
 const DiscoveryTooltip = ({ 
-  isVisible, 
-  onClose, 
   firstChatStarted,
   isChatOpen,
   isHovered 
@@ -67,8 +65,6 @@ const DiscoveryTooltip = ({
 };
 
 DiscoveryTooltip.propTypes = {
-  isVisible: PropTypes.bool,
-  onClose: PropTypes.func,
   firstChatStarted: PropTypes.bool,
   isChatOpen: PropTypes.bool,
   isHovered: PropTypes.bool

@@ -26,10 +26,6 @@ class DocViewer extends Component {
     this.setState({ iFrameLoading: false });
   }
 
-  bindActions() {
-    this.iframeLoaded = this.iframeLoaded.bind(this);
-  }
-
   updateIframeSrc() {
     if (this.iframe) this.iframe.src = this.getIframeLink();
     else clearInterval(this.iframeTimeoutId);

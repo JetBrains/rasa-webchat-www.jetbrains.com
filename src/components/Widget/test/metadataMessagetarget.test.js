@@ -1,7 +1,6 @@
 import React from 'react';
 import { Provider } from 'react-redux';
-import { Map } from 'immutable';
-import { mount, shallow } from 'enzyme';
+import { mount } from 'enzyme';
 
 import LocalStorageMock from '../../../../mocks/localStorageMock';
 import Launcher from '../components/Launcher';

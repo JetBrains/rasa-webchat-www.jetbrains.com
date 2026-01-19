@@ -52,7 +52,6 @@ const mapStateToProps = state => ({
 Sender.propTypes = {
   sendMessage: PropTypes.func,
   inputTextFieldHint: PropTypes.string,
-  disabledInput: PropTypes.bool,
   userInput: PropTypes.string,
   isBotProcessing: PropTypes.bool
 };
