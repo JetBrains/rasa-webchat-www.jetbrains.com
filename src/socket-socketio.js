@@ -1,11 +1,11 @@
 import io from 'socket.io-client';
 import logger from './utils/logger';
 
-export default (socketUrl, customData, path, protocolOptions, onError) => {
+export default function (socketUrl, customData, path, protocolOptions, onError) {
   // const options = path ? { path } : {};
   const options = {
     path: '/custom-socket.io',
-    transports: ['polling'],
+    transports: ["polling"],
     // transports: ["websocket", "polling"],  // Try WebSocket first, fallback to polling if blocked
     // upgrade: true,  // Allow upgrade from polling to websocket after successful auth
   };
@@ -15,10 +15,7 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
   logger.debug('Socket.IO: customData:', customData);
   if (customData) {
     options.auth = customData;
-    logger.info(
-      '🔍 Socket.IO: customData.auth_header:',
-      customData.auth_header ? `${customData.auth_header.substring(0, 30)}...` : 'NULL'
-    );
+    logger.info('🔍 Socket.IO: customData.auth_header:', customData.auth_header ? `${customData.auth_header.substring(0, 30)}...` : 'NULL');
 
     // DIAGNOSTIC: Check token validity
     if (customData.auth_header) {
@@ -29,11 +26,7 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
         const timeLeft = decoded.exp - now;
         logger.info('🔍 Socket.IO: Access token EXPIRES IN:', Math.round(timeLeft / 60), 'minutes');
         if (timeLeft < 0) {
-          logger.error(
-            '❌ Socket.IO: Access token is ALREADY EXPIRED!',
-            Math.round(-timeLeft / 60),
-            'minutes ago'
-          );
+          logger.error('❌ Socket.IO: Access token is ALREADY EXPIRED!', Math.round(-timeLeft / 60), 'minutes ago');
         }
       } catch (e) {
         logger.error('❌ Socket.IO: Failed to decode access token:', e);
@@ -43,12 +36,9 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
     // Also pass token via extraHeaders for HTTP polling transport
     if (customData.auth_header) {
       options.extraHeaders = {
-        Authorization: `Bearer ${customData.auth_header}`,
+        Authorization: `Bearer ${customData.auth_header}`
       };
-      logger.info(
-        '🔍 Socket.IO: extraHeaders.Authorization SET:',
-        `Bearer ${customData.auth_header.substring(0, 30)}...`
-      );
+      logger.info('🔍 Socket.IO: extraHeaders.Authorization SET:', `Bearer ${customData.auth_header.substring(0, 30)}...`);
     } else {
       logger.warn('⚠️ Socket.IO: customData.auth_header is MISSING!');
     }
@@ -68,7 +58,7 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
   // Add protocol options if provided (for token updates)
   if (protocolOptions) {
     Object.assign(options, protocolOptions);
-
+    
     // Update Authorization header if token is provided in protocolOptions
     if (protocolOptions.token) {
       if (!options.extraHeaders) {
@@ -89,7 +79,7 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
     const baseUrl = socketUrl.split('?')[0];
 
     // Close all managers that match the base URL (including those with timestamps)
-    Object.keys(window.io.managers).forEach((managerKey) => {
+    Object.keys(window.io.managers).forEach(managerKey => {
       if (managerKey.startsWith(baseUrl)) {
         logger.debug('🧹 Closing existing manager for:', managerKey);
         try {
@@ -105,11 +95,9 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
   const socket = io(socketUrl, options);
 
   // Add method to update auth headers for token refresh (Socket.IO v4 compatible)
-  socket.updateAuthHeaders = (newToken) => {
+  socket.updateAuthHeaders = function(newToken) {
     if (newToken && this.io) {
-      logger.warn(
-        '🔧 Socket.IO v4: AGGRESSIVELY updating ALL auth header locations with new token'
-      );
+      logger.warn('🔧 Socket.IO v4: AGGRESSIVELY updating ALL auth header locations with new token');
       logger.debug('🔧 NEW Authorization header:', `Bearer ${newToken.substring(0, 30)}...`);
 
       const newAuthHeader = `Bearer ${newToken}`;
@@ -118,7 +106,7 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
       // 1. Update socket.auth
       if (this.auth) {
         this.auth.auth_header = newToken;
-        updateCount += 1;
+        updateCount++;
         logger.debug('✅ Updated: socket.auth.auth_header');
       }
 
@@ -128,7 +116,7 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
           this.io.engine.opts.extraHeaders = {};
         }
         this.io.engine.opts.extraHeaders.Authorization = newAuthHeader;
-        updateCount += 1;
+        updateCount++;
         logger.debug('✅ Updated: socket.io.engine.opts.extraHeaders');
       }
 
@@ -138,14 +126,14 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
           this.io.opts.extraHeaders = {};
         }
         this.io.opts.extraHeaders.Authorization = newAuthHeader;
-        updateCount += 1;
+        updateCount++;
         logger.debug('✅ Updated: socket.io.opts.extraHeaders');
 
         if (!this.io.opts.auth) {
           this.io.opts.auth = {};
         }
         this.io.opts.auth.auth_header = newToken;
-        updateCount += 1;
+        updateCount++;
         logger.debug('✅ Updated: socket.io.opts.auth.auth_header');
       }
 
@@ -163,7 +151,7 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
               manager.opts.extraHeaders = {};
             }
             manager.opts.extraHeaders.Authorization = newAuthHeader;
-            updateCount += 1;
+            updateCount++;
             logger.debug('✅ Updated: global manager.opts.extraHeaders');
           }
         }
@@ -277,4 +265,4 @@ export default (socketUrl, customData, path, protocolOptions, onError) => {
   });
 
   return socket;
-};
+}

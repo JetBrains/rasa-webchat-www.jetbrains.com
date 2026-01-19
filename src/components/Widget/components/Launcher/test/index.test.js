@@ -5,31 +5,29 @@ import { mount } from 'enzyme';
 import behavior from '../../../../../store/reducers/behaviorReducer';
 import metadata from '../../../../../store/reducers/metadataReducer';
 
+
 import Launcher from '../index';
 
 const appReducer = combineReducers({ behavior: behavior(), metadata: metadata() });
 const rootReducer = (state, action) => appReducer(state, action);
 
-const storeFactory = (initialState) =>
-  createStore(rootReducer, { behavior: Map(initialState), metadata: Map() });
+const storeFactory = initialState => createStore(rootReducer, { behavior: Map(initialState), metadata: Map() });
 
 describe('<Launcher />', () => {
   const createLauncherComponent = ({
     toggle,
     chatOpened,
     unreadCount = 0,
-    displayUnreadCount = false,
+    displayUnreadCount = false
   }) =>
-    mount(
-      <Launcher
-        store={storeFactory({
-          unreadCount,
-        })}
-        toggle={toggle}
-        isChatOpen={chatOpened}
-        displayUnreadCount={displayUnreadCount}
-      />
-    );
+    mount(<Launcher
+      store={storeFactory({
+        unreadCount
+      })}
+      toggle={toggle}
+      isChatOpen={chatOpened}
+      displayUnreadCount={displayUnreadCount}
+    />);
 
   it('should call toggle prop when clicked', () => {
     const toggle = jest.fn();
@@ -50,7 +48,7 @@ describe('<Launcher />', () => {
         toggle,
         chatOpened,
         unreadCount,
-        displayUnreadCount,
+        displayUnreadCount
       });
       expect(launcherComponent.find('.rw-open-launcher')).toHaveLength(1);
       expect(launcherComponent.find('.rw-close-launcher')).toHaveLength(0);
@@ -64,7 +62,7 @@ describe('<Launcher />', () => {
         toggle,
         chatOpened,
         unreadCount,
-        displayUnreadCount,
+        displayUnreadCount
       });
       expect(launcherComponent.find('.rw-open-launcher')).toHaveLength(1);
       expect(launcherComponent.find('.rw-close-launcher')).toHaveLength(0);
@@ -78,7 +76,7 @@ describe('<Launcher />', () => {
         toggle,
         chatOpened,
         unreadCount,
-        displayUnreadCount,
+        displayUnreadCount
       });
       expect(launcherComponent.find('.rw-open-launcher')).toHaveLength(1);
       expect(launcherComponent.find('.rw-close-launcher')).toHaveLength(0);

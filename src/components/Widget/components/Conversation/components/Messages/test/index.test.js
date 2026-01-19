@@ -7,7 +7,7 @@ import {
   createVideoSnippet,
   createImageSnippet,
   createComponentMessage,
-  createButtons,
+  createButtons
 } from 'helper';
 
 import Messages from '../index';
@@ -24,8 +24,7 @@ describe('<Messages />', () => {
       constructor(arg) {
         super(arg);
 
-        if (arg) {
-          // only overide new Date();
+        if (arg) { // only overide new Date();
           return new RealDate(arg);
         }
         return new RealDate(isoDate);
@@ -42,15 +41,13 @@ describe('<Messages />', () => {
   const srcImage = createImageSnippet({
     title: 'image',
     image: 'image',
-    dims: { width: 100, height: 100 },
+    dims: { width: 100, height: 100 }
   });
   /* eslint-disable react/prop-types */
-  function Dummy({ text }) {
-    return <div>{text}</div>;
-  }
+  const Dummy = ({ text }) => <div>{text}</div>;
   /* eslint-enable */
   const customComp = createComponentMessage(Dummy, {
-    text: 'This is a Dummy Component!',
+    text: 'This is a Dummy Component!'
   });
   const buttons = createButtons({
     text: 'test',
@@ -59,21 +56,30 @@ describe('<Messages />', () => {
         type: 'postback',
         content_type: 'text',
         title: 'Button title 1',
-        payload: '/payload1',
+        payload: '/payload1'
       },
       {
         type: 'web_url',
         content_type: 'text',
         title: 'google',
-        payload: 'http://www.google.ca',
-      },
-    ],
+        payload: 'http://www.google.ca'
+      }
+    ]
   });
 
-  const responseMessages = List([message, srcVideo, srcImage, customComp, buttons]);
+  const responseMessages = List([
+    message,
+    srcVideo,
+    srcImage,
+    customComp,
+    buttons
+  ]);
 
   const messagesComponent = shallow(
-    <Messages.WrappedComponent messages={responseMessages} customComponent={Dummy} />
+    <Messages.WrappedComponent
+      messages={responseMessages}
+      customComponent={Dummy}
+    />
   );
 
   it('should render a Message component', () => {
@@ -100,18 +106,20 @@ describe('<Messages />', () => {
     const today = new Date('2019-01-15T12:00:00');
     const createComponent = (showMessageDate, messageToRender = message) =>
       shallow(
-        <Messages.WrappedComponent
-          messages={List([messageToRender])}
+        (<Messages.WrappedComponent
+          messages={List([
+            messageToRender
+          ])}
           customComponent={Dummy}
           showMessageDate={showMessageDate}
-        />
+        />)
       );
 
-    it("should not render message's date", () => {
+    it('should not render message\'s date', () => {
       expect(createComponent(false).find('.rw-message-date')).toHaveLength(0);
     });
 
-    it("should render today's time", () => {
+    it('should render today\'s time', () => {
       mockDate(today);
       const messageToRender = createNewMessage('Response message 1');
       const renderedComponent = createComponent(true, messageToRender);
@@ -128,11 +136,7 @@ describe('<Messages />', () => {
       const renderedComponent = createComponent(true, messageToRender);
       const date = renderedComponent.find('.rw-message-date');
       expect(date).toHaveLength(1);
-      expect(date.text()).toEqual(
-        `${twoDaysAgo.toLocaleDateString()} ${twoDaysAgo.toLocaleTimeString('en-US', {
-          timeStyle: 'short',
-        })}`
-      );
+      expect(date.text()).toEqual(`${twoDaysAgo.toLocaleDateString()} ${twoDaysAgo.toLocaleTimeString('en-US', { timeStyle: 'short' })}`);
     });
 
     it('should render custom date', () => {

@@ -13,6 +13,14 @@ export function initialize() {
   store.dispatch(actions.initialize());
 }
 
+export function connect() {
+  store.dispatch(actions.connect());
+}
+
+export function disconnect() {
+  store.dispatch(actions.disconnect());
+}
+
 export function addUserMessage(text) {
   store.dispatch(actions.addUserMessage(text));
 }

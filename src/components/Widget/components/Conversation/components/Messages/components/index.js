@@ -4,4 +4,10 @@ import Message from './Message';
 import Carousel from './Carousel';
 import Buttons from './Buttons';
 
-export { Video, Image, Message, Carousel, Buttons };
+export {
+  Video,
+  Image,
+  Message,
+  Carousel,
+  Buttons
+};

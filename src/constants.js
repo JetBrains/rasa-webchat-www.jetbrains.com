@@ -5,45 +5,49 @@ export const SESSION_NAME = 'chat_session';
 
 export const MESSAGE_SENDER = {
   CLIENT: 'client',
-  RESPONSE: 'response',
+  RESPONSE: 'response'
 };
 
 export const MESSAGES_TYPES = {
   TEXT: 'text',
   CAROUSEL: 'carousel',
   VIDREPLY: {
-    VIDEO: 'vidreply',
+    VIDEO: 'vidreply'
   },
   IMGREPLY: {
-    IMAGE: 'imgreply',
+    IMAGE: 'imgreply'
   },
   BUTTONS: 'buttons',
-  CUSTOM_COMPONENT: 'component',
+  CUSTOM_COMPONENT: 'component'
 };
 
 const replybuttons = PropTypes.shape({
   title: PropTypes.string,
   url: PropTypes.string,
   payload: PropTypes.string,
-  type: PropTypes.string,
+  type: PropTypes.string
 });
 
-const senderType = PropTypes.oneOf([MESSAGE_SENDER.CLIENT, MESSAGE_SENDER.RESPONSE]);
+const senderType = PropTypes.oneOf([
+  MESSAGE_SENDER.CLIENT,
+  MESSAGE_SENDER.RESPONSE
+]);
 
 export const NEXT_MESSAGE = 'mrbot_next_message';
 
 export const PROP_TYPES = {
+
   MESSAGE: ImmutablePropTypes.contains({
     type: PropTypes.oneOf([
       MESSAGES_TYPES.TEXT,
       MESSAGES_TYPES.BUTTONS,
       MESSAGES_TYPES.CAROUSEL,
       MESSAGES_TYPES.IMGREPLY.IMAGE,
-      MESSAGES_TYPES.VIDREPLY.VIDEO,
+      MESSAGES_TYPES.VIDREPLY.VIDEO
     ]),
     id: PropTypes.number,
     text: PropTypes.string,
-    sender: senderType,
+    sender: senderType
   }),
 
   CAROUSEL: ImmutablePropTypes.contains({
@@ -54,30 +58,37 @@ export const PROP_TYPES = {
         subtitle: PropTypes.string,
         imageUrl: PropTypes.string,
         buttons: ImmutablePropTypes.listOf(replybuttons),
-        defaultActions: replybuttons,
-      })
-    ),
-    sender: senderType,
+        defaultActions: replybuttons
+      })),
+    sender: senderType
   }),
 
   VIDREPLY: ImmutablePropTypes.contains({
-    type: PropTypes.oneOf([MESSAGES_TYPES.TEXT, MESSAGES_TYPES.VIDREPLY.VIDEO]),
+    type: PropTypes.oneOf([
+      MESSAGES_TYPES.TEXT,
+      MESSAGES_TYPES.VIDREPLY.VIDEO
+    ]),
     id: PropTypes.number,
     title: PropTypes.string,
     src: PropTypes.string,
-    sender: senderType,
+    sender: senderType
   }),
 
   IMGREPLY: ImmutablePropTypes.contains({
-    type: PropTypes.oneOf([MESSAGES_TYPES.TEXT, MESSAGES_TYPES.IMGREPLY.IMAGE]),
+    type: PropTypes.oneOf([
+      MESSAGES_TYPES.TEXT,
+      MESSAGES_TYPES.IMGREPLY.IMAGE
+    ]),
     id: PropTypes.number,
     title: PropTypes.string,
     src: PropTypes.string,
-    sender: senderType,
+    sender: senderType
   }),
 
   BUTTONS: ImmutablePropTypes.contains({
-    type: PropTypes.oneOf([MESSAGES_TYPES.BUTTONS]),
+    type: PropTypes.oneOf([
+      MESSAGES_TYPES.BUTTONS
+    ]),
     id: PropTypes.number,
     text: PropTypes.string,
     hint: PropTypes.string,
@@ -88,6 +99,7 @@ export const PROP_TYPES = {
     getChosenReply: PropTypes.func,
     toggleInputDisabled: PropTypes.func,
     inputState: PropTypes.bool,
-    chosenReply: PropTypes.string,
-  }),
+    chosenReply: PropTypes.string
+  })
+
 };

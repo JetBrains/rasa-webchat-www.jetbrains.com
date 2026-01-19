@@ -7,6 +7,6 @@ export function createComponentMessage(component, props, showAvatar) {
     component,
     props,
     sender: MESSAGE_SENDER.RESPONSE,
-    showAvatar,
+    showAvatar
   });
 }

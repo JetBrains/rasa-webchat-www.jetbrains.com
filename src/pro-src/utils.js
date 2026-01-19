@@ -11,6 +11,6 @@ export function onRemove(element, callback) {
   });
   obs.observe(document, {
     childList: true,
-    subtree: true,
+    subtree: true
   });
 }
