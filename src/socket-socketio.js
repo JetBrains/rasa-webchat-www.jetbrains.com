@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 import logger from './utils/logger';
 
+// eslint-disable-next-line func-names
 export default function (socketUrl, customData, path, protocolOptions, onError) {
   // const options = path ? { path } : {};
   const options = {
@@ -95,6 +96,7 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
   const socket = io(socketUrl, options);
 
   // Add method to update auth headers for token refresh (Socket.IO v4 compatible)
+  // eslint-disable-next-line func-names
   socket.updateAuthHeaders = function(newToken) {
     if (newToken && this.io) {
       logger.warn('🔧 Socket.IO v4: AGGRESSIVELY updating ALL auth header locations with new token');
@@ -106,6 +108,7 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
       // 1. Update socket.auth
       if (this.auth) {
         this.auth.auth_header = newToken;
+        // eslint-disable-next-line no-plusplus
         updateCount++;
         logger.debug('✅ Updated: socket.auth.auth_header');
       }
@@ -116,6 +119,7 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
           this.io.engine.opts.extraHeaders = {};
         }
         this.io.engine.opts.extraHeaders.Authorization = newAuthHeader;
+        // eslint-disable-next-line no-plusplus
         updateCount++;
         logger.debug('✅ Updated: socket.io.engine.opts.extraHeaders');
       }
@@ -126,6 +130,7 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
           this.io.opts.extraHeaders = {};
         }
         this.io.opts.extraHeaders.Authorization = newAuthHeader;
+        // eslint-disable-next-line no-plusplus
         updateCount++;
         logger.debug('✅ Updated: socket.io.opts.extraHeaders');
 
@@ -133,6 +138,7 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
           this.io.opts.auth = {};
         }
         this.io.opts.auth.auth_header = newToken;
+        // eslint-disable-next-line no-plusplus
         updateCount++;
         logger.debug('✅ Updated: socket.io.opts.auth.auth_header');
       }
@@ -151,6 +157,7 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
               manager.opts.extraHeaders = {};
             }
             manager.opts.extraHeaders.Authorization = newAuthHeader;
+            // eslint-disable-next-line no-plusplus
             updateCount++;
             logger.debug('✅ Updated: global manager.opts.extraHeaders');
           }

@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react
 import Widget from '../index';
 
 import RulesHandler, { RULES_HANDLER_SINGLETON } from './rules';
+// eslint-disable-next-line import/no-cycle
 import { rasaWebchatProTypes, rasaWebchatProDefaultTypes } from '../../index';
 
 const RasaWebchatPro = React.memo(
@@ -41,6 +42,7 @@ const RasaWebchatPro = React.memo(
       getSessionId: widget.current.getSessionId
     }));
 
+    // eslint-disable-next-line no-lone-blocks, react/jsx-props-no-spreading
     return <Widget ref={widget} {...{ ...props }} />;
   })
 );

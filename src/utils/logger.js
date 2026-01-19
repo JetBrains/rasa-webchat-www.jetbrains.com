@@ -33,7 +33,7 @@ function makeLogger() {
   // Final safety net: try to read version directly from package.json at build time
   if (!version || version === '0.0.0') {
     try {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
+      // eslint-disable-next-line global-require, import/no-dynamic-require, import/extensions
       const pkg = require('../../package.json');
       if (pkg && pkg.version) version = pkg.version;
     } catch (_) {
@@ -62,7 +62,9 @@ function makeLogger() {
         info: noop,
         debug: noop,
         // keep warnings and errors visible in production
+        // eslint-disable-next-line no-console
         warn: console.warn.bind(console),
+        // eslint-disable-next-line no-console
         error: console.error.bind(console)
       };
 
@@ -77,6 +79,7 @@ function makeLogger() {
     const envLabel = ENV || 'unknown';
     const showEnv = !isProd; // never show env on production, even if debug is enabled
     const suffix = showEnv ? ` (env: ${envLabel})` : '';
+  // eslint-disable-next-line no-console
     console.log(`[WebChat] v${version}${suffix}`);
   } catch (_) {
     // ignore

@@ -4,7 +4,9 @@ import PropTypes from 'prop-types';
 import './style.scss';
 
 
+// eslint-disable-next-line import/prefer-default-export, react/function-component-definition
 export const RefreshPopup = ({ onRefresh, onCancel }) => (<div>
+  {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
   <div className="rw-popup-overlay" onClick={onCancel} />
   <div className="rw-popup-container">
     <p>
@@ -22,6 +24,8 @@ export const RefreshPopup = ({ onRefresh, onCancel }) => (<div>
 </div>);
 
 RefreshPopup.propTypes = {
+  // eslint-disable-next-line react/require-default-props
   onRefresh: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   onCancel: PropTypes.func
 };

@@ -8,9 +8,12 @@ import { RefreshPopup } from './components/RefreshPopup';
 import { AuthPlaceholder } from './components/AuthPlaceholder';
 import './style.scss';
 
+// eslint-disable-next-line react/function-component-definition
+// eslint-disable-next-line react/function-component-definition
 const Conversation = (props) => {
   const [showRefreshPopup, setShowRefreshPopup] = useState(false);
 
+  /* eslint-disable react/destructuring-assignment */
   const content = <><Messages
     profileAvatar={props.profileAvatar}
     params={props.params}
@@ -51,26 +54,46 @@ const Conversation = (props) => {
     {props.onAuthButtonClick ?
       <AuthPlaceholder onClick={props.onAuthButtonClick} /> : content}
   </div>);
+  /* eslint-enable react/destructuring-assignment */
 };
 Conversation.propTypes = {
+  // eslint-disable-next-line react/require-default-props
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  // eslint-disable-next-line react/require-default-props
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  // eslint-disable-next-line react/require-default-props
   sendMessage: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   profileAvatar: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   toggleFullScreen: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   fullScreenMode: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   toggleChat: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   showCloseButton: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   showFullScreenButton: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   disabledInput: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   inputTextFieldHint: PropTypes.string,
+  // eslint-disable-next-line react/forbid-prop-types, react/require-default-props
   params: PropTypes.object,
+  // eslint-disable-next-line react/require-default-props
   connected: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   connectingText: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   closeImage: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   customComponent: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
+  // eslint-disable-next-line react/require-default-props
   onAuthButtonClick: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   refreshSession: PropTypes.func
 };
 

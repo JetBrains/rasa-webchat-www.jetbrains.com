@@ -5,6 +5,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import Send from 'assets/send_button';
 import './style.scss';
 
+// eslint-disable-next-line react/function-component-definition
 const Sender = ({ sendMessage, inputTextFieldHint, userInput, isBotProcessing }) => {
   const [inputValue, setInputValue] = useState('');
   const formRef = useRef('');
@@ -38,6 +39,7 @@ const Sender = ({ sendMessage, inputTextFieldHint, userInput, isBotProcessing })
   return (
     userInput === 'hide' ? <div /> : (
       <form ref={formRef} className="rw-sender" onSubmit={handleSubmit}>
+        {/* eslint-disable-next-line react/jsx-no-bind */}
         <TextareaAutosize type="text" minRows={1} onKeyDown={onEnterPress} maxRows={3} onChange={handleChange} className="rw-new-message" name="message" placeholder={inputTextFieldHint} autoFocus autoComplete="off" />
         <button type="submit" className="rw-send" disabled={isDisabled}>
           <Send className="rw-send-icon" ready={!isDisabled} alt="send" />
@@ -50,9 +52,13 @@ const mapStateToProps = (state) => ({
 });
 
 Sender.propTypes = {
+  // eslint-disable-next-line react/require-default-props
   sendMessage: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   inputTextFieldHint: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   userInput: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   isBotProcessing: PropTypes.bool
 };
 

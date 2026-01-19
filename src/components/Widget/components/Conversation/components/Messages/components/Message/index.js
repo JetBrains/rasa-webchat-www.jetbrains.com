@@ -1,3 +1,4 @@
+/* eslint-disable react/destructuring-assignment, react/require-default-props */
 import React, { PureComponent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';

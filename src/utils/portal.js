@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 
 // This should be deleted when using React 16.x,
 // Use ReactDOM.createPortal() instead
+// eslint-disable-next-line react/prefer-stateless-function
 class Portal extends React.Component {
   constructor() {
     super();
@@ -17,6 +18,7 @@ class Portal extends React.Component {
   }
 
   componentDidUpdate() {
+    // eslint-disable-next-line react/prop-types, react/destructuring-assignment
     ReactDOM.render(<div>{this.props.children}</div>, this.portalElement);
   }
 

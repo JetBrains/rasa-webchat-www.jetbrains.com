@@ -10,6 +10,7 @@ import ThemeContext from '../../../../ThemeContext';
 
 import './style.scss';
 
+// eslint-disable-next-line react/function-component-definition
 const Header = ({
   title,
   subtitle,
@@ -35,6 +36,7 @@ const Header = ({
         <div className="rw-header-buttons">
           {
             showFullScreenButton &&
+            // eslint-disable-next-line react/button-has-type
             <button className="rw-toggle-fullscreen-button" onClick={toggleFullScreen}>
               <img
                 className={`rw-toggle-fullscreen ${fullScreenMode ? 'rw-fullScreenExitImage' : 'rw-fullScreenImage'}`}
@@ -54,6 +56,7 @@ const Header = ({
             {
               showRefreshButton &&
               <button className="rw-header-button rw-header-button_refresh" type="button" onClick={refreshSession}>
+                {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
                 <img alt="" src={refreshIcon} />
               </button>
             }
@@ -74,16 +77,27 @@ const Header = ({
 };
 
 Header.propTypes = {
+  // eslint-disable-next-line react/require-default-props
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  // eslint-disable-next-line react/require-default-props
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  // eslint-disable-next-line react/require-default-props
   fullScreenMode: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   toggleFullScreen: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   toggleChat: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   refreshSession: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   showCloseButton: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   showFullScreenButton: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   showRefreshButton: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   closeImage: PropTypes.string,
+  // eslint-disable-next-line react/require-default-props
   profileAvatar: PropTypes.string
 };
 

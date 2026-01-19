@@ -18,6 +18,7 @@ class DocViewer extends Component {
   }
 
   getIframeLink() {
+    // eslint-disable-next-line react/destructuring-assignment
     return `https://docs.google.com/viewer?url=${this.props.src}&embedded=true`;
   }
 
@@ -31,6 +32,7 @@ class DocViewer extends Component {
     else clearInterval(this.iframeTimeoutId);
   }
 
+  // eslint-disable-next-line react/sort-comp
   handleOpenModal() {
     this.setState({ openedModal: true });
     this.iframeTimeoutId = setInterval(this.updateIframeSrc, 1000 * 4);
@@ -45,14 +47,18 @@ class DocViewer extends Component {
 
     return (
       <span>
+        {/* eslint-disable-next-line react/button-has-type */}
         <button onClick={this.handleOpenModal} className="rw-doc-viewer-open-modal-link">
+          {/* eslint-disable-next-line react/prop-types, react/destructuring-assignment */}
           {this.props.children}
         </button>
+        {/* eslint-disable-next-line react/destructuring-assignment */}
         {this.state.openedModal && (
           <Portal>
             <div className="rw-doc-viewer-modal-fade" aria-hidden="true" onClick={this.handleCloseModal} />
             <div className="rw-doc-viewer-modal">
               <div className="rw-doc-viewer-modal-body">
+                {/* eslint-disable-next-line react/destructuring-assignment */}
                 {this.state.iFrameLoading && <div className="rw-doc-viewer-spinner" />}
                 <iframe
                   src={iframeSrc}

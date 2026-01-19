@@ -14,9 +14,11 @@ import {
 
 import * as actionTypes from '../actions/actionTypes';
 
+// eslint-disable-next-line func-names
 export default function (storage) {
   const initialState = List([]);
 
+  // eslint-disable-next-line default-param-last
   return function reducer(state = initialState, action) {
     const storeMessage = storeMessageTo(storage);
     switch (action.type) {

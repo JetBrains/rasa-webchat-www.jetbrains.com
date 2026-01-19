@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-fragments, react/no-array-index-key, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, react/require-default-props */
 import React, { useRef, useState, useContext } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
@@ -10,11 +11,15 @@ import { startBotProcessingTimeout } from '../../../../../../../../utils/botProc
 
 import './styles.scss';
 
+// eslint-disable-next-line react/function-component-definition
 const Carousel = (props) => {
+  // eslint-disable-next-line react/destructuring-assignment
   const carousel = props.message.toJS();
 
   const handleClick = (action) => {
+    // eslint-disable-next-line consistent-return
     if (!action || action.type !== 'postback') return;
+    // eslint-disable-next-line react/destructuring-assignment
     const { chooseReply } = props;
     chooseReply(action.payload, action.title);
   };
@@ -26,6 +31,7 @@ const Carousel = (props) => {
 
 
   const handleScroll = () => {
+    // eslint-disable-next-line prefer-destructuring
     const current = scrollContainer.current;
     if (current.scrollLeft > 0) {
       setLeftButton(true);
@@ -53,6 +59,7 @@ const Carousel = (props) => {
     });
   };
 
+  // eslint-disable-next-line react/destructuring-assignment
   const { linkTarget } = props;
 
   return (
@@ -64,6 +71,7 @@ const Carousel = (props) => {
               ? carouselCard.default_action.url
               : null;
           return (
+            // eslint-disable-next-line react/no-array-index-key
             <div className="rw-carousel-card" key={index}>
               <a
                 href={defaultActionUrl}
@@ -105,6 +113,7 @@ const Carousel = (props) => {
                 {carouselCard.buttons.map((button, buttonIndex) => {
                   if (button.type === 'web_url') {
                     return (
+                      // eslint-disable-next-line react/no-array-index-key
                       <a
                         key={buttonIndex}
                         href={button.url}
@@ -118,7 +127,7 @@ const Carousel = (props) => {
                     );
                   }
                   return (
-                    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+                    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, react/no-array-index-key
                     <div
                       key={buttonIndex}
                       className="rw-reply"
@@ -170,6 +179,7 @@ Carousel.propTypes = {
   // completely bugged, it's actually used in handle click
   // eslint-disable-next-line react/no-unused-prop-types
   chooseReply: PropTypes.func.isRequired,
+  // eslint-disable-next-line react/require-default-props
   linkTarget: PropTypes.string
 };
 

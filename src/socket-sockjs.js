@@ -6,6 +6,7 @@ import logger from './utils/logger';
 /*
   This implementation mimics the SocketIO implementation.
 */
+// eslint-disable-next-line func-names
 export default function (socketUrl, customData, _path, options) {
   const socket = SockJS(socketUrl + (_path || ''));
   const stomp = Stomp.over(socket);
@@ -37,6 +38,7 @@ export default function (socketUrl, customData, _path, options) {
 
   socketProxy.on('session_request', (payload) => {
     const authData = options.authData || null;
+    // eslint-disable-next-line camelcase
     const session_id = payload?.session_id || null;
     const payloadCustomData = payload?.customData || {};
 
@@ -47,7 +49,9 @@ export default function (socketUrl, customData, _path, options) {
     };
 
     // Include session_id if provided (for session persistence)
+    // eslint-disable-next-line camelcase
     if (session_id) {
+      // eslint-disable-next-line camelcase
       messageContent.session_id = session_id;
     }
 
@@ -74,7 +78,9 @@ export default function (socketUrl, customData, _path, options) {
     logger.error('SockJS error:', error);
   };
 
+  // eslint-disable-next-line consistent-return
   const emitBotUtteredMessage = (message) => {
+      // eslint-disable-next-line no-param-reassign
       delete message.recipient_id;
       socketProxy.emit('bot_uttered', message);
   }
@@ -93,6 +99,7 @@ export default function (socketUrl, customData, _path, options) {
     } else if (message.type === 'CHAT') {
       const agentMessage = JSON.parse(message.content);
       if (agentMessage instanceof Array) {
+        // eslint-disable-next-line no-shadow
         agentMessage.forEach((message) => emitBotUtteredMessage(message))
       } else {
         emitBotUtteredMessage(agentMessage);

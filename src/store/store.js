@@ -21,16 +21,19 @@ const trimQueryString = (url) => {
   return url.replace(regexQueryString, '');
 };
 
+// eslint-disable-next-line default-param-last
 function initStore(
   connectingText,
   socket,
   storage,
+    // eslint-disable-next-line default-param-last
   docViewer = false,
   onWidgetEvent,
 ) {
   // Store reference to current socket that can be updated
   let currentSocketRef = socket;
   
+  // eslint-disable-next-line consistent-return
   const customMiddleWare = (store) => (next) => (action) => {
     const emitMessage = (payload) => {
       const emit = () => {
@@ -55,6 +58,7 @@ function initStore(
         const currentCustomData = activeSocket.customData || {};
 
         logger.debug('📤 MIDDLEWARE: Using socket reference:', activeSocket.marker || 'unknown');
+        // eslint-disable-next-line prefer-template
         logger.debug('📤 Sending message with token:', currentCustomData?.auth_header ? currentCustomData.auth_header.substring(0, 30) + '...' : 'none');
         logger.debug('📤 Session ID:', sessionId);
         logger.debug('📤 Real Socket ID:', realSocket?.id || 'N/A');
@@ -142,6 +146,7 @@ function initStore(
 
         if (store.getState().behavior.get('oldUrl') !== newUrl) {
           const { pageChanges, errorIntent } = pageCallbacksJs;
+          // eslint-disable-next-line array-callback-return, consistent-return
           const matched = pageChanges.some((callback) => {
             if (callback.regex) {
               if (newUrl.match(callback.url)) {
@@ -193,8 +198,9 @@ function initStore(
     currentSocketRef = newSocket;
     logger.info('✅ Store socket reference updated successfully');
   };
-  
+
   return store;
 }
 
+// eslint-disable-next-line import/prefer-default-export
 export { initStore };

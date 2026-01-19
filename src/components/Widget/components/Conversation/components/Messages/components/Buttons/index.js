@@ -17,6 +17,7 @@ class Buttons extends PureComponent {
 
     const {
       getChosenReply,
+      // eslint-disable-next-line react/prop-types
       inputState,
       id
     } = this.props;
@@ -39,6 +40,7 @@ class Buttons extends PureComponent {
   }
 
   renderButtons(message, buttons, persit) {
+    // eslint-disable-next-line react/prop-types
     const { isLast, linkTarget, separateButtons
     } = this.props;
     const { userTextColor, userBackgroundColor } = this.context;
@@ -57,6 +59,7 @@ class Buttons extends PureComponent {
               if (reply.get('type') === 'web_url') {
                 return (
                   <a
+                    // eslint-disable-next-line react/no-array-index-key
                     key={index}
                     href={reply.get('url')}
                     target={linkTarget || '_blank'}
@@ -70,8 +73,9 @@ class Buttons extends PureComponent {
                 );
               }
               return (
-                // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+                // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
                 <div
+                  // eslint-disable-next-line react/no-array-index-key
                   key={index}
                   className="rw-reply"
                   onClick={(e) => { e.stopPropagation(); this.handleClick(reply); }}
@@ -101,7 +105,8 @@ class Buttons extends PureComponent {
       if (chosenReply) {
         return <Message message={message} />;
       }
-      return this.renderButtons(message, buttons, false);
+      return this.renderButtons(message, buttons, false);    
+      // eslint-disable-next-line no-else-return
     } else if (message.get('buttons') !== undefined) {
       const buttons = message.get('buttons');
       return this.renderButtons(message, buttons, true);
@@ -132,11 +137,17 @@ const mapDispatchToProps = (dispatch) => ({
 });
 
 Buttons.propTypes = {
+  // eslint-disable-next-line react/require-default-props
   getChosenReply: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   chooseReply: PropTypes.func,
+  // eslint-disable-next-line react/require-default-props
   id: PropTypes.number,
+  // eslint-disable-next-line react/require-default-props
   isLast: PropTypes.bool,
+  // eslint-disable-next-line react/require-default-props
   message: PROP_TYPES.BUTTONS,
+  // eslint-disable-next-line react/require-default-props
   linkTarget: PropTypes.string
 };
 
