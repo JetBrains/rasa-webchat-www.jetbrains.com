@@ -818,26 +818,25 @@ class Widget extends Component {
     const { socket, customData } = this.props;
     const sessionId = this.getSessionIdWithFallback();
 
-    {
-      logger.info('=== SESSION RESTART ===');
-      logger.debug('Session ID (must not change):', sessionId);
-      logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
-      logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
 
-      // DIAGNOSTIC: Check token expiration during restart
-      if (customData.auth_header) {
-        try {
-          const tokenPayload = customData.auth_header.split('.')[1];
-          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
-          const now = Date.now() / 1000;
-          const timeLeft = decoded.exp - now;
-          logger.info('🔍 RESTART: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
-          if (timeLeft < 0) {
-            logger.error('❌ RESTART: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
-          }
-        } catch (e) {
-          logger.error('❌ RESTART: Failed to decode access token:', e);
+    logger.info('=== SESSION RESTART ===');
+    logger.debug('Session ID (must not change):', sessionId);
+    logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
+    logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
+
+    // DIAGNOSTIC: Check token expiration during restart
+    if (customData.auth_header) {
+      try {
+        const tokenPayload = customData.auth_header.split('.')[1];
+        const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+        const now = Date.now() / 1000;
+        const timeLeft = decoded.exp - now;
+        logger.info('🔍 RESTART: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+        if (timeLeft < 0) {
+          logger.error('❌ RESTART: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
         }
+      } catch (e) {
+        logger.error('❌ RESTART: Failed to decode access token:', e);
       }
     }
 
@@ -848,9 +847,7 @@ class Widget extends Component {
     const cleanCustomData = { ...customData };
     delete cleanCustomData.session_id;
 
-    {
-      logger.debug('Cleaned customData:', cleanCustomData);
-    }
+    logger.debug('Cleaned customData:', cleanCustomData);
 
     this.props.dispatch(clearMessages());
 
@@ -872,7 +869,7 @@ class Widget extends Component {
         toggleChat={() => this.toggleConversation()}
         refreshSession={this.refreshTokenAndRestart}
         toggleFullScreen={() => this.toggleFullScreen()}
-        onSendMessage={event => this.handleMessageSubmit(event)}
+        onSendMessage={(event) => this.handleMessageSubmit(event)}
         title={this.props.title}
         subtitle={this.props.subtitle}
         customData={this.props.customData}
@@ -899,7 +896,7 @@ class Widget extends Component {
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   initialized: state.behavior.get('initialized'),
   connected: state.behavior.get('connected'),
   isChatOpen: state.behavior.get('isChatOpen'),

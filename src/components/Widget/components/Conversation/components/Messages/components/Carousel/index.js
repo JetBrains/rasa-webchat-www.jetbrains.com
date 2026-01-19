@@ -173,11 +173,11 @@ Carousel.propTypes = {
   linkTarget: PropTypes.string
 };
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   linkTarget: state.metadata.get('linkTarget')
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
   chooseReply: (payload, title) => {
     if (title) dispatch(addUserMessage(title));
     dispatch(emitUserMessage(payload));

@@ -12,13 +12,13 @@ import 'slick-carousel/slick/slick-theme.css';
 import { MESSAGES_TYPES } from 'constants';
 import { Image, Message, Buttons } from 'messagesComponents';
 import { showTooltip as showTooltipAction, emitUserMessage} from 'actions';
-import { onRemove } from 'utils/dom';
+
 import openLauncher from 'assets/launcher_button.svg';
 import closeIcon from 'assets/clear-button-grey.svg';
 import close from 'assets/clear-button.svg';
+import {onRemove,  safeQuerySelectorAll } from 'utils/dom';
 import Badge from './components/Badge';
 import DiscoveryTooltip from './components/DiscoveryTooltip';
-import { safeQuerySelectorAll } from 'utils/dom';
 import './style.scss';
 import ThemeContext from '../../ThemeContext';
 
@@ -119,10 +119,10 @@ const Launcher = ({
   };
 
 
-  const renderSequenceTooltip = lastMessagesSeq => (
-    <div className="rw-slider-safe-zone" onClick={e => e.stopPropagation()}>
+  const renderSequenceTooltip = (lastMessagesSeq) => (
+    <div className="rw-slider-safe-zone" onClick={(e) => e.stopPropagation()}>
       <Slider {...sliderSettings}>
-        {lastMessagesSeq.map(message => (
+        {lastMessagesSeq.map((message) => (
           // eslint-disable-next-line jsx-a11y/no-static-element-interactions
           <div
             className="rw-tooltip-response"
@@ -253,7 +253,7 @@ Launcher.propTypes = {
   firstChatStarted: PropTypes.bool
 };
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   lastMessages: (state.messages && (() => {
     const messages = [];
     for (let i = 1; i <= 10; i += 1) {
@@ -283,7 +283,7 @@ const mapStateToProps = state => ({
   domHighlight: state.metadata.get('domHighlight')
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
   closeTooltip: () => dispatch(showTooltipAction(false)),
   sendPayload: (payload) => dispatch(emitUserMessage(payload))
 });

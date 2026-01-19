@@ -24,7 +24,7 @@ export default class RulesHandler {
     this.lastLocationChange = Date.now();
 
     // Here we supersede those events to all redirect them to our custom event
-    window.history.pushState = (f =>
+    window.history.pushState = ((f) =>
       function pushState() {
         const ret = f.apply(this, arguments);
         window.dispatchEvent(new Event('pushstate'));
@@ -32,7 +32,7 @@ export default class RulesHandler {
         return ret;
       })(window.history.pushState);
 
-    window.history.replaceState = (f =>
+    window.history.replaceState = ((f) =>
       function replaceState() {
         const ret = f.apply(this, arguments);
         window.dispatchEvent(new Event('replacestate'));
@@ -89,7 +89,7 @@ export default class RulesHandler {
     rule.hash = rulesHash;
 
     const ruleTriggered = this.history.rulesTriggered.find(
-      ruleInStorage => ruleInStorage.hash === rulesHash
+      (ruleInStorage) => ruleInStorage.hash === rulesHash
     );
     if (!(ruleTriggered && ruleTriggered.triggerLimit)) {
       this.history.rulesTriggered.push({
@@ -198,15 +198,15 @@ export default class RulesHandler {
       timeout: setTimeout(() => {
         // this removes the timeout that just triggered.
         window[RULES_HANDLER_SINGLETON].resetListenersTimeouts = window[RULES_HANDLER_SINGLETON]
-          .resetListenersTimeouts.filter(timeout => timeout.id !== timeoutId);
+          .resetListenersTimeouts.filter((timeout) => timeout.id !== timeoutId);
 
         RulesHandler.removeEventListeners(eventListenersForThisTrigger);
         // this removes the event listners that we just removed from the list used by the cleanup.
         // No need to clean them up anymore.
         window[RULES_HANDLER_SINGLETON].eventListeners = window[RULES_HANDLER_SINGLETON]
           .eventListeners
-          .filter(listener => !eventListenersForThisTrigger
-            .some(eListener => eListener.id === listener.id)
+          .filter((listener) => !eventListenersForThisTrigger
+            .some((eListener) => eListener.id === listener.id)
           );
 
         // We recall this method without placing the vizs,
@@ -222,7 +222,7 @@ export default class RulesHandler {
     if (listener.event && listener.event.includes && listener.event.includes('click')) {
       elem.classList.add('rw-cursor-pointer');
     }
-    const vizRemoval = visualisationObject => () => {
+    const vizRemoval = (visualisationObject) => () => {
       try {
         document.body.removeChild(visualisationObject);
       } catch (e) {
@@ -377,8 +377,8 @@ export default class RulesHandler {
       if (trigger.urlIsSequence) {
         return this.verifyUrlSequence(trigger);
       }
-      return urlToUse.every(url =>
-        this.history.path.some(historyUrl =>
+      return urlToUse.every((url) =>
+        this.history.path.some((historyUrl) =>
           RulesHandler.compareUrls(historyUrl, url.path, url.partialMatch)
         )
       );
@@ -418,7 +418,7 @@ export default class RulesHandler {
 
     if (trigger && (trigger.when === 'limited' || trigger.timeLimit)) {
       ruleTriggeredIndex = this.history.rulesTriggered.findIndex(
-        rule => rule.hash === rules.hash
+        (rule) => rule.hash === rules.hash
       );
     }
 
@@ -441,7 +441,7 @@ export default class RulesHandler {
     const queryString = window.location.search;
     const queryStringCondition =
             !trigger.queryString ||
-            trigger.queryString.every(queryObject =>
+            trigger.queryString.every((queryObject) =>
               this.verifyQueryStringAndAddEntities(queryString, queryObject, payload)
             );
 
@@ -500,7 +500,7 @@ export default class RulesHandler {
       .split('&')
       .reduce((json, item) => {
         if (item) {
-          item = item.split('=').map(value => decodeURIComponent(value));
+          item = item.split('=').map((value) => decodeURIComponent(value));
           json[item[0]] = item[1];
         }
         return json;

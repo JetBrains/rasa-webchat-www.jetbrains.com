@@ -31,7 +31,7 @@ function initStore(
   // Store reference to current socket that can be updated
   let currentSocketRef = socket;
   
-  const customMiddleWare = store => next => (action) => {
+  const customMiddleWare = (store) => (next) => (action) => {
     const emitMessage = (payload) => {
       const emit = () => {
         // CRITICAL: Always use the most current socket reference

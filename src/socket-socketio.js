@@ -79,7 +79,7 @@ export default function (socketUrl, customData, path, protocolOptions, onError) 
     const baseUrl = socketUrl.split('?')[0];
 
     // Close all managers that match the base URL (including those with timestamps)
-    Object.keys(window.io.managers).forEach(managerKey => {
+    Object.keys(window.io.managers).forEach((managerKey) => {
       if (managerKey.startsWith(baseUrl)) {
         logger.debug('🧹 Closing existing manager for:', managerKey);
         try {

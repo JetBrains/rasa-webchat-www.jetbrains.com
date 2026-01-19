@@ -44,7 +44,7 @@ const Sender = ({ sendMessage, inputTextFieldHint, userInput, isBotProcessing })
         </button>
       </form>));
 };
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   userInput: state.metadata.get('userInput'),
   isBotProcessing: state.behavior.get('isBotProcessing')
 });

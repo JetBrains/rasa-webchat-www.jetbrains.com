@@ -139,8 +139,8 @@ class Messages extends Component {
         }
         case MESSAGES_TYPES.CUSTOM_COMPONENT:
           return connect(
-            store => ({ store }),
-            dispatch => ({ dispatch })
+            (store) => ({ store }),
+            (dispatch) => ({ dispatch })
           )(this.props.customComponent);
         default:
           return null;
@@ -266,7 +266,7 @@ Message.defaultTypes = {
   displayTypingIndication: false
 };
 
-export default connect(store => ({
+export default connect((store) => ({
   messages: store.messages,
   displayTypingIndication: store.behavior.get('isBotProcessing')
 }))(Messages);

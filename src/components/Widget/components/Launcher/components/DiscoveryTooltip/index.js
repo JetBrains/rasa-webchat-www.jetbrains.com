@@ -58,7 +58,7 @@ const DiscoveryTooltip = ({
   return (
     <div className="rw-discovery-tooltip">
       <div className="rw-discovery-tooltip__text">
-        Need help? Ask me anything about our products, and I'll find answers or create a support ticket for you
+        Need help? Ask me anything about our products, and I&apos;ll find answers or create a support ticket for you
       </div>
     </div>
   );
@@ -70,7 +70,7 @@ DiscoveryTooltip.propTypes = {
   isHovered: PropTypes.bool
 };
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   isChatOpen: state.behavior.get('isChatOpen')
 });
 

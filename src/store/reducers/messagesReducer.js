@@ -69,7 +69,7 @@ export default function (storage) {
         return initialState;
       }
       case actionTypes.SET_CUSTOM_CSS: {
-        return storeMessage(state.update(state.size - 1, message => message.set('customCss', fromJS(action.customCss))));
+        return storeMessage(state.update(state.size - 1, (message) => message.set('customCss', fromJS(action.customCss))));
       }
       // Pull conversation from storage, parsing as immutable List
       case actionTypes.PULL_SESSION: {

@@ -1,53 +1,89 @@
 module.exports = {
-  "env": {
-    "es6": true,
-    "node": true,
-    "browser": true,
-    "jest": true
+  env: {
+    es6: true,
+    node: true,
+    browser: true,
+    jest: true,
   },
-  "parser": "babel-eslint",
-  "parserOptions": {
-    "ecmaFeatures": {
-      "experimentalObjectRestSpread": true,
-      "jsx": true
+  parser: '@babel/eslint-parser',
+  parserOptions: {
+    requireConfigFile: false,
+    babelOptions: {
+      presets: ['@babel/preset-react'],
     },
-    "sourceType": "module"
+    ecmaFeatures: {
+      jsx: true,
+    },
+    sourceType: 'module',
   },
-  "plugins": [
-    "react",
-    "flowtype"
+  plugins: ['react', 'react-hooks', 'prettier'],
+  extends: [
+    'eslint:recommended',
+    'airbnb',
+    'plugin:react/recommended',
+    'plugin:prettier/recommended',
   ],
-  "extends": [
-    "eslint:recommended",
-    "airbnb",
-    "plugin:react/recommended",
-  ],
-  "globals": {
-    "__DEV__": true,
+  globals: {
+    __DEV__: true,
   },
-  "rules": {
-    "comma-dangle": ["error", "never"],
-    "no-invalid-this": "off",
-    "no-return-assign": "off",
-    "no-param-reassign": "off",
-    "no-nested-ternary": "off",
-    "no-confusing-arrow": "off",
-    "react/require-default-props": "off",
-    "react/jsx-filename-extension": ["error", { "extensions": [".js"] }],
-    "react/prop-types": [2, { ignore: ["style", "children", "dispatch"] } ],
-    "react/prefer-stateless-function": "off",
-    "react/no-array-index-key": "off",
-    "import/prefer-default-export": "off",
-    "import/no-unresolved": "error",
-    "import/extensions": ["error", { js: "never" }],
-    "import/named": "error",
-    "import/default": "error",
-    "import/namespace": "error",
-    "import/no-absolute-path": "error"
+  rules: {
+    // 'prettier/prettier': ['error', { arrowParens: 'always' }],
+    'prettier/prettier': 'off',
+    'prefer-template': 'off',
+    'consistent-return': 'off', 
+    'array-callback-return': 'off',
+    'default-param-last': 'off', 
+    camelcase: 'off', 
+    'prefer-destructuring': 'off', 
+    'arrow-parens': ['error', 'always'],
+    'jsx-a11y/click-events-have-key-events': 'off', 
+    'jsx-a11y/iframe-has-title': 'off',
+    'jsx-a11y/alt-text': 'off',
+    'jsx-a11y/control-has-associated-label': 'off',
+    'jsx-a11y/no-static-element-interactions': 'off',
+    'react/no-this-in-sfc': 'off', 
+    'react/require-default-props': 'off', 
+    'react/jsx-filename-extension': ['error', { extensions: ['.js'] }],
+    // 'react/prop-types': [2, { ignore: ['style', 'children', 'dispatch'] }],
+    'react/prop-types': 'off', 
+    'react/jsx-props-no-spreading': 'off', 
+    'react/sort-comp': 'off', 
+    'react/destructuring-assignment': 'off', 
+    'react/button-has-type': 'off', 
+    'react/jsx-no-bind': 'off', 
+    'react/no-array-index-key': 'off',
+    'react/default-props-match-prop-types': 'off', 
+    'react/forbid-prop-types': 'off', 
+    'react/no-unused-prop-types': 'off',
+    'react/jsx-no-constructed-context-values': 'off',
+    'react/jsx-fragments': 'off',
+    'react/jsx-key': 'off',
+    'react/function-component-definition': 'off',
+    'func-names': 'off',
+    'no-constructor-return': 'off', 
+    'no-param-reassign': 'off', 
+    'no-nested-ternary': 'off',
+    'no-shadow': 'off',
+    'no-plusplus': 'off',
+    'no-else-return': 'off',
+    'no-unsafe-optional-chaining': 'off',
+    'no-return-assign': 'off',
+    'no-use-before-define': 'off',
+    'import/extensions': 'off', 
+    // 'import/extensions': ['error', { js: 'never' }], // add back after solving error
+    'import/namespace': 'off',
+    // 'import/namespace': 'error',
+    'import/no-named-as-default': 'off',
+    'import/named': 'off',
+    'import/no-cycle': 'off',
+    'import/prefer-default-export': 'off', 
+    'import/default': 'error',
+    'import/no-unresolved': 'error',
+    'import/no-absolute-path': 'error',
   },
-  "settings": {
-    "import/resolver": {
-      "babel-module": {}
-    }
-  }
+  settings: {
+    'import/resolver': {
+      'babel-module': {},
+    },
+  },
 };

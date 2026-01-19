@@ -6,7 +6,7 @@ import { Provider } from 'react-redux';
 import Widget from './components/Widget';
 import { initStore } from './store/store';
 import socket from './socket';
-import ThemeContext from '../src/components/Widget/ThemeContext';
+import ThemeContext from "./components/Widget/ThemeContext";
 import logger from './utils/logger';
 import {
   exchangeTokenReq,
@@ -354,7 +354,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
                 // 4. Manually delete Manager from window.io.managers cache
                 if (typeof window !== 'undefined' && window.io && window.io.managers && oldManagerUrl) {
                   logger.debug('🧹 Removing Manager from cache:', oldManagerUrl);
-                  Object.keys(window.io.managers).forEach(key => {
+                  Object.keys(window.io.managers).forEach((key) => {
                     if (key === oldManagerUrl || key.startsWith(oldManagerUrl.split('?')[0])) {
                       logger.debug('🗑️ Deleting Manager:', key);
                       try {
@@ -573,7 +573,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
     // Cleanup all socket managers on unmount
     if (window.io && window.io.managers) {
       logger.debug('🧹 Cleaning up Socket.IO managers on unmount...');
-      Object.keys(window.io.managers).forEach(key => {
+      Object.keys(window.io.managers).forEach((key) => {
         const manager = window.io.managers[key];
         if (manager && manager.close) {
           manager.close();
