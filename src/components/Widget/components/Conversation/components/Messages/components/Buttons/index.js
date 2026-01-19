@@ -16,13 +16,11 @@ class Buttons extends PureComponent {
     this.handleClick = this.handleClick.bind(this);
 
     const {
-      message,
       getChosenReply,
       inputState,
       id
     } = this.props;
 
-    const hint = message.get('hint');
     const chosenReply = getChosenReply(id);
     if (!chosenReply && !inputState) {
       // this.props.toggleInputDisabled();
@@ -63,7 +61,7 @@ class Buttons extends PureComponent {
                     href={reply.get('url')}
                     target={linkTarget || '_blank'}
                     rel="noopener noreferrer"
-                    className={'rw-reply'}
+                    className="rw-reply"
                     style={buttonStyle}
                     onMouseUp={e => e.stopPropagation()}
                   >
@@ -75,7 +73,7 @@ class Buttons extends PureComponent {
                 // eslint-disable-next-line jsx-a11y/no-static-element-interactions
                 <div
                   key={index}
-                  className={'rw-reply'}
+                  className="rw-reply"
                   onClick={(e) => { e.stopPropagation(); this.handleClick(reply); }}
                   style={buttonStyle}
                   onMouseUp={e => e.stopPropagation()}

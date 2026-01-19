@@ -80,7 +80,6 @@ WidgetLayout.propTypes = {
   profileAvatar: PropTypes.string,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
-  hideWhenNotConnected: PropTypes.bool,
   disabledInput: PropTypes.bool,
   fullScreenMode: PropTypes.bool,
   badge: PropTypes.number,

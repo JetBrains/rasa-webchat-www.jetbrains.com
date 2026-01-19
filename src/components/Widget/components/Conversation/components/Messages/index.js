@@ -48,7 +48,6 @@ class Messages extends Component {
     this.state = {
       hasUnreadMessages: false
     };
-    this.messagesEndRef = React.createRef();
   }
 
   componentDidMount() {
@@ -77,13 +76,13 @@ class Messages extends Component {
     }
   }
 
-  getSnapshotBeforeUpdate(prevProps) {
+  getSnapshotBeforeUpdate() {
     // Check if user is at bottom BEFORE the new message is rendered
     this.wasAtBottom = isUserAtBottom();
     return null;
   }
 
-  componentDidUpdate(prevProps, prevState, snapshot) {
+  componentDidUpdate(prevProps) {
     const { messages } = this.props;
     const hasNewMessages = prevProps.messages.size < messages.size;
 

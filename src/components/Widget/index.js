@@ -90,7 +90,7 @@ class Widget extends Component {
     }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate() {
     const { socket } = this.props;
 
     // Check if socket was recreated after token refresh
@@ -587,7 +587,6 @@ class Widget extends Component {
 
   initializeWidget(sendInitPayload = true) {
     const {
-      storage,
       socket,
       dispatch,
       embedded,
@@ -816,7 +815,7 @@ class Widget extends Component {
   }
 
   refresh = () => {
-    const { socket, customData, storage } = this.props;
+    const { socket, customData } = this.props;
     const sessionId = this.getSessionIdWithFallback();
 
     {
@@ -918,9 +917,7 @@ Widget.propTypes = {
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   customData: PropTypes.shape({}),
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
-  initPayload: PropTypes.string,
   profileAvatar: PropTypes.string,
-  refreshSession: PropTypes.func,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
   hideWhenNotConnected: PropTypes.bool,
