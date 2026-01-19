@@ -127,7 +127,7 @@ export function storeLocalSession(storage, key, sid) {
   storage.setItem(key, JSON.stringify(session));
 }
 
-export const storeMessageTo = storage => (conversation) => {
+export const storeMessageTo = (storage) => (conversation) => {
   // Store a conversation List to storage
   const localSession = getLocalSession(storage, SESSION_NAME);
   const newSession = {
@@ -140,7 +140,7 @@ export const storeMessageTo = storage => (conversation) => {
   return conversation;
 };
 
-export const storeParamsTo = storage => (params) => {
+export const storeParamsTo = (storage) => (params) => {
   // Store a params List to storage
   const localSession = getLocalSession(storage, SESSION_NAME);
   const newSession = {
@@ -155,7 +155,7 @@ export const storeParamsTo = storage => (params) => {
 };
 
 
-export const storeMetadataTo = storage => (metadata) => {
+export const storeMetadataTo = (storage) => (metadata) => {
   // Store a params List to storage
   const localSession = getLocalSession(storage, SESSION_NAME);
   const newSession = {

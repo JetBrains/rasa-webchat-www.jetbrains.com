@@ -40,7 +40,7 @@ class Message extends PureComponent {
         <div className="rw-message-text">
           {sender === 'response' ? (
             <ReactMarkdown
-              className={'rw-markdown'}
+              className="rw-markdown"
               source={text}
               linkTarget={(url) => {
                 if (!url.startsWith('mailto') && !url.startsWith('javascript')) { return '_blank'; }
@@ -48,7 +48,7 @@ class Message extends PureComponent {
               }}
               transformLinkUri={null}
               renderers={{
-                link: props =>
+                link: (props) =>
                   docViewer ? (
                     <DocViewer src={props.href}>{props.children}</DocViewer>
                   ) : (
@@ -56,7 +56,7 @@ class Message extends PureComponent {
                       href={props.href}
                       target={linkTarget || '_blank'}
                       rel="noopener noreferrer"
-                      onMouseUp={e => e.stopPropagation()}
+                      onMouseUp={(e) => e.stopPropagation()}
                     >
                       {props.children}
                     </a>
@@ -85,7 +85,7 @@ Message.defaultTypes = {
   linkTarget: '_blank'
 };
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   linkTarget: state.metadata.get('linkTarget'),
   docViewer: state.behavior.get('docViewer')
 });

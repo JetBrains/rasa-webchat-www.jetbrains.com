@@ -60,7 +60,7 @@ const WidgetLayout = (props) => {
   </div>);
 };
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   isChatVisible: state.behavior.get('isChatVisible'),
   isChatOpen: state.behavior.get('isChatOpen'),
   disabledInput: state.behavior.get('disabledInput'),

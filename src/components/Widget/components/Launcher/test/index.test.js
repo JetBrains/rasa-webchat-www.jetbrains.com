@@ -11,7 +11,7 @@ import Launcher from '../index';
 const appReducer = combineReducers({ behavior: behavior(), metadata: metadata() });
 const rootReducer = (state, action) => appReducer(state, action);
 
-const storeFactory = initialState => createStore(rootReducer, { behavior: Map(initialState), metadata: Map() });
+const storeFactory = (initialState) => createStore(rootReducer, { behavior: Map(initialState), metadata: Map() });
 
 describe('<Launcher />', () => {
   const createLauncherComponent = ({
