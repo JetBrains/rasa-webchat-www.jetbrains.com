@@ -1,6 +1,6 @@
-@import 'variables.scss';
+@import "variables.scss";
 
-@import 'common.scss';
+@import "common.scss";
 
 .#{$namespace}conversation-container {
   .#{$namespace}header {
@@ -23,102 +23,105 @@
   }
 }
 
-.#{$namespace}title-wrap {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-  margin: 16px;
-}
-
-.#{$namespace}header-button {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-
-  img {
-    width: 16px;
-    height: 16px;
+  .#{$namespace}title-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    margin: 16px;
   }
 
-  &_refresh img {
-    width: 22px;
-    height: 22px;
+
+  .#{$namespace}header-button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+
+    img {
+      width: 16px;
+      height: 16px;
+    }
+
+    &_refresh img {
+      width: 22px;
+      height: 22px;
+    }
   }
-}
 
 .#{$namespace}header-buttons {
   display: flex;
   align-items: center;
 }
 
-.#{$namespace}header.#{$namespace}with-subtitle {
-  height: 70px;
-  .#{$namespace}avatar {
-    top: 20px;
-  }
-  .#{$namespace}title {
-    top: 11px;
-  }
-  span {
-    bottom: 12px;
-    position: absolute;
-    left: 22px;
-    &.#{$namespace}with-avatar {
-      left: 60px;
+  .#{$namespace}header.#{$namespace}with-subtitle {
+    height: 70px;
+    .#{$namespace}avatar {
+      top: 20px;
+    }
+    .#{$namespace}title {
+      top:11px;
+    }
+    span {
+      bottom: 12px;
+      position: absolute;
+      left: 22px;
+      &.#{$namespace}with-avatar {
+        left: 60px;
+      }
     }
   }
-}
 
-.#{$namespace}title {
-  font-size: 13px;
-  line-height: 20px;
-  font-family: $fontfamily;
-  font-weight: 700;
-  color: $white;
-  text-align: left;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  &.#{$namespace}with-avatar {
-    left: 58px;
+  .#{$namespace}title {
+    font-size: 13px;
+    line-height: 20px;
+    font-family: $fontfamily;
+    font-weight: 700;
+    color: $white;
+    text-align: left;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    &.#{$namespace}with-avatar {
+      left: 58px;
+    }
   }
-}
 
-.#{$namespace}title-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
+  .#{$namespace}title-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
 
-.#{$namespace}toggle-fullscreen-button {
-  @include header-button-fs;
-}
+  .#{$namespace}toggle-fullscreen-button {
+    @include header-button-fs;
+  }
 
-.#{$namespace}toggle-fullscreen {
-  @include header-icon-fs;
-}
+  .#{$namespace}toggle-fullscreen {
+    @include header-icon-fs;
+  }
 
-.#{$namespace}loading {
-  background-color: transparent;
-  color: $white;
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  padding: 5px 0 5px;
-  font-family: $fontfamily;
-  font-size: 14px;
-}
+  .#{$namespace}loading {
+    background-color: transparent;
+    color: $white;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    padding: 5px 0 5px;
+    font-family: $fontfamily;
+    font-size: 14px;
+  }
 
-.#{$namespace}widget-embedded {
+
+&.#{$namespace}widget-embedded {
   .#{$namespace}header {
     display: none;
   }
 }
 
 .#{$namespace}full-screen {
+
   .#{$namespace}header {
     @include header-fs;
   }
@@ -139,11 +142,11 @@
   .#{$namespace}loading {
     @include loading-fs;
   }
-  .#{$namespace}widget-container {
-    .#{$namespace}conversation-container {
-      margin-bottom: 0px;
-    }
-  }
+  &.#{$namespace}widget-container{
+    .#{$namespace}conversation-container{
+    margin-bottom: 0px;
+}}
+
 }
 
 @media screen and (max-width: 800px) {
@@ -156,8 +159,7 @@
       @include title-fs;
     }
 
-    .#{$namespace}toggle-fullscreen-button,
-    .#{$namespace}toggle-fullscreen {
+    .#{$namespace}toggle-fullscreen-button, .#{$namespace}toggle-fullscreen {
       display: none;
     }
 

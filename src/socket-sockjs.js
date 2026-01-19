@@ -6,7 +6,7 @@ import logger from './utils/logger';
 /*
   This implementation mimics the SocketIO implementation.
 */
-export default (socketUrl, customData, _path, options) => {
+export default function (socketUrl, customData, _path, options) {
   const socket = SockJS(socketUrl + (_path || ''));
   const stomp = Stomp.over(socket);
 
@@ -31,30 +31,30 @@ export default (socketUrl, customData, _path, options) => {
     send({
       type: 'CHAT',
       content: JSON.stringify(data),
-      sender: socketProxy.id,
+      sender: socketProxy.id
     });
   });
 
   socketProxy.on('session_request', (payload) => {
     const authData = options.authData || null;
-    const sessionId = payload?.session_id || null;
+    const session_id = payload?.session_id || null;
     const payloadCustomData = payload?.customData || {};
 
     const messageContent = {
       authData,
       ...customData,
-      ...payloadCustomData,
+      ...payloadCustomData
     };
 
     // Include session_id if provided (for session persistence)
-    if (sessionId) {
-      messageContent.session_id = sessionId;
+    if (session_id) {
+      messageContent.session_id = session_id;
     }
 
     send({
       type: 'SESSION_REQUEST',
       content: JSON.stringify(messageContent),
-      sender: 'client',
+      sender: 'client'
     });
   });
 
@@ -63,7 +63,11 @@ export default (socketUrl, customData, _path, options) => {
     socketProxy.id = extractSessionId(socket);
     socketProxy.customData = customData;
     stomp.subscribe(REPLY_TOPIC, socketProxy.onIncomingMessage);
-    stomp.send(SUBSCRIPTION_CHANNEL, {}, JSON.stringify({ type: 'JOIN', sender: socketProxy.id }));
+    stomp.send(
+      SUBSCRIPTION_CHANNEL,
+      {},
+      JSON.stringify({ type: 'JOIN', sender: socketProxy.id })
+    );
   };
 
   socketProxy.onerror = (error) => {
@@ -71,9 +75,9 @@ export default (socketUrl, customData, _path, options) => {
   };
 
   const emitBotUtteredMessage = (message) => {
-    delete message.recipient_id;
-    socketProxy.emit('bot_uttered', message);
-  };
+      delete message.recipient_id;
+      socketProxy.emit('bot_uttered', message);
+  }
 
   socketProxy.onIncomingMessage = (payload) => {
     const message = JSON.parse(payload.body);
@@ -84,14 +88,14 @@ export default (socketUrl, customData, _path, options) => {
       socket.close();
       socketProxy.emit('disconnect', message.content || 'server left');
     } else if (message.type === 'SESSION_CONFIRM') {
-      const props = JSON.parse(message.content);
-      socketProxy.emit('session_confirm', { session_id: socketProxy.id, ...props });
+      const props = JSON.parse(message.content)
+      socketProxy.emit('session_confirm', {session_id: socketProxy.id, ...props});
     } else if (message.type === 'CHAT') {
-      const agentMessages = JSON.parse(message.content);
-      if (agentMessages instanceof Array) {
-        agentMessages.forEach((agentMessage) => emitBotUtteredMessage(agentMessage));
+      const agentMessage = JSON.parse(message.content);
+      if (agentMessage instanceof Array) {
+        agentMessage.forEach(message => emitBotUtteredMessage(message))
       } else {
-        emitBotUtteredMessage(agentMessages);
+        emitBotUtteredMessage(agentMessage);
       }
     }
   };
@@ -109,4 +113,4 @@ export default (socketUrl, customData, _path, options) => {
   };
 
   return socketProxy;
-};
+}

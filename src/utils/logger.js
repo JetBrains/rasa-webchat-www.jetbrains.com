@@ -15,18 +15,16 @@ const isProd = ENV === 'production';
 function makeLogger() {
   const hasWindow = typeof window !== 'undefined';
   let debugEnabled = false;
-
+  
   // Determine version string
   // NOTE: 'PACKAGE_VERSION_TO_BE_REPLACED' is replaced by webpack string-replace-loader
   const PKG_VERSION = 'PACKAGE_VERSION_TO_BE_REPLACED';
-  const envVersion =
-    typeof process !== 'undefined' && process.env && process.env.WEBCHAT_VERSION
-      ? process.env.WEBCHAT_VERSION
-      : undefined;
-  const definedPkgVersion =
-    typeof process !== 'undefined' && process.env && process.env.WEBCHAT_PKG_VERSION
-      ? process.env.WEBCHAT_PKG_VERSION
-      : undefined;
+  const envVersion = (typeof process !== 'undefined' && process.env && process.env.WEBCHAT_VERSION)
+    ? process.env.WEBCHAT_VERSION
+    : undefined;
+  const definedPkgVersion = (typeof process !== 'undefined' && process.env && process.env.WEBCHAT_PKG_VERSION)
+    ? process.env.WEBCHAT_PKG_VERSION
+    : undefined;
   let version = envVersion || definedPkgVersion || PKG_VERSION || '0.0.0';
   // Fallback in case string replace didn't happen
   if (version === 'PACKAGE_VERSION_TO_BE_REPLACED') {
@@ -65,7 +63,7 @@ function makeLogger() {
         debug: noop,
         // keep warnings and errors visible in production
         warn: console.warn.bind(console),
-        error: console.error.bind(console),
+        error: console.error.bind(console)
       };
 
   // Optional prefix to make filtering easier
@@ -89,7 +87,7 @@ function makeLogger() {
     info: wrap(base.info || base.log),
     log: wrap(base.log),
     warn: wrap(base.warn),
-    error: wrap(base.error),
+    error: wrap(base.error)
   };
 }
 

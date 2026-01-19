@@ -11,16 +11,17 @@ export function onRemove(element, callback) {
   });
   obs.observe(document, {
     childList: true,
-    subtree: true,
+    subtree: true
   });
 }
 
+
 export function safeQuerySelectorAll(selector) {
-  let elements;
+  let elements
   try {
     elements = document.querySelectorAll(selector);
   } catch (e) {
-    elements = [];
+    elements = []
   }
-  return elements;
+  return elements
 }

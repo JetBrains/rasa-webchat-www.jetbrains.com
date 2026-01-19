@@ -5,13 +5,11 @@ import Header from '../index';
 
 describe('<Header />', () => {
   const createHeader = ({ toggle, fullScreenMode, showFullScreenButton }) =>
-    shallow(
-      <Header
-        toggleFullScreen={toggle}
-        fullScreenMode={fullScreenMode}
-        showFullScreenButton={showFullScreenButton}
-      />
-    );
+    shallow(<Header
+      toggleFullScreen={toggle}
+      fullScreenMode={fullScreenMode}
+      showFullScreenButton={showFullScreenButton}
+    />);
 
   it('should call toggle prop when clicked', () => {
     const toggle = jest.fn();

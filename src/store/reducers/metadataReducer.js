@@ -3,17 +3,17 @@ import { Map, fromJS } from 'immutable';
 import * as actionTypes from '../actions/actionTypes';
 import { getLocalSession, storeMetadataTo } from './helper';
 
-export default (storage) => {
+export default function (storage) {
   const defaultValues = Map({
     linkTarget: '',
     userInput: '',
     domHighlight: Map(),
     hintText: '',
-    showTooltip: false,
+    showTooltip: false
   });
 
   const initialState = Map({
-    tooltipSent: Map(),
+    tooltipSent: Map()
   }).merge(defaultValues);
 
   return function reducer(state = initialState, action) {
@@ -30,9 +30,7 @@ export default (storage) => {
         return storeMetadata(state.set('userInput', action.userInputState));
       }
       case actionTypes.TRIGGER_TOOLTIP_SENT: {
-        return storeMetadata(
-          state.set('tooltipSent', state.get('tooltipSent').set(action.payloadSent, true))
-        );
+        return storeMetadata(state.set('tooltipSent', state.get('tooltipSent').set(action.payloadSent, true)));
       }
       case actionTypes.SHOW_TOOLTIP: {
         return storeMetadata(state.set('showTooltip', action.visible));
@@ -54,4 +52,4 @@ export default (storage) => {
         return state;
     }
   };
-};
+}

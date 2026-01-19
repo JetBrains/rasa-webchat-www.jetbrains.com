@@ -3,7 +3,13 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import './style.scss';
 
-function DiscoveryTooltip({ firstChatStarted, isChatOpen, isHovered }) {
+const DiscoveryTooltip = ({ 
+  isVisible, 
+  onClose, 
+  firstChatStarted,
+  isChatOpen,
+  isHovered 
+}) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
 
@@ -33,6 +39,8 @@ function DiscoveryTooltip({ firstChatStarted, isChatOpen, isHovered }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [firstChatStarted, isChatOpen]);
 
+
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showTooltip && !event.target.closest('.rw-discovery-tooltip')) {
@@ -52,21 +60,22 @@ function DiscoveryTooltip({ firstChatStarted, isChatOpen, isHovered }) {
   return (
     <div className="rw-discovery-tooltip">
       <div className="rw-discovery-tooltip__text">
-        Need help? Ask me anything about our products, and I&apos;ll find answers or create a
-        support ticket for you
+        Need help? Ask me anything about our products, and I'll find answers or create a support ticket for you
       </div>
     </div>
   );
-}
-
-DiscoveryTooltip.propTypes = {
-  firstChatStarted: PropTypes.bool,
-  isChatOpen: PropTypes.bool,
-  isHovered: PropTypes.bool,
 };
 
-const mapStateToProps = (state) => ({
-  isChatOpen: state.behavior.get('isChatOpen'),
+DiscoveryTooltip.propTypes = {
+  isVisible: PropTypes.bool,
+  onClose: PropTypes.func,
+  firstChatStarted: PropTypes.bool,
+  isChatOpen: PropTypes.bool,
+  isHovered: PropTypes.bool
+};
+
+const mapStateToProps = state => ({
+  isChatOpen: state.behavior.get('isChatOpen')
 });
 
 export { DiscoveryTooltip };

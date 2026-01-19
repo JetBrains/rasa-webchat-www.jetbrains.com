@@ -34,7 +34,7 @@ import {
   evalUrl,
   setCustomCss,
   setFirstChatStarted,
-  setBotProcessing,
+  setBotProcessing
 } from 'actions';
 import { safeQuerySelectorAll } from 'utils/dom';
 import { SESSION_NAME, NEXT_MESSAGE } from 'constants';
@@ -42,10 +42,7 @@ import { isVideo, isImage, isButtons, isText, isCarousel } from './msgProcessor'
 import WidgetLayout from './layout';
 import { storeLocalSession, getLocalSession } from '../../store/reducers/helper';
 import logger from '../../utils/logger';
-import {
-  startBotProcessingTimeout,
-  clearBotProcessingTimeout,
-} from '../../utils/botProcessingTimeout';
+import { startBotProcessingTimeout, clearBotProcessingTimeout } from '../../utils/botProcessingTimeout';
 
 class Widget extends Component {
   constructor(props) {
@@ -59,7 +56,7 @@ class Widget extends Component {
     this.getSessionId = this.getSessionId.bind(this);
     this.getSessionIdWithFallback = this.getSessionIdWithFallback.bind(this);
     this.intervalId = null;
-    this.eventListenerCleaner = () => {};
+    this.eventListenerCleaner = () => { };
     this.socketHandlersRegistered = false; // Track if socket handlers are already registered
   }
 
@@ -75,6 +72,7 @@ class Widget extends Component {
       this.initializeWidget();
       return;
     }
+
 
     const localSession = getLocalSession(storage, SESSION_NAME);
     const lastUpdate = localSession ? localSession.lastUpdate : 0;
@@ -92,7 +90,7 @@ class Widget extends Component {
     }
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
     const { socket } = this.props;
 
     // Check if socket was recreated after token refresh
@@ -228,7 +226,7 @@ class Widget extends Component {
       logger.debug('newMessageTimeout check:', {
         messagesLength: this.messages.length,
         lastIsFinal: this.lastIsFinal,
-        willHideWIP: this.messages.length === 0 && this.lastIsFinal,
+        willHideWIP: this.messages.length === 0 && this.lastIsFinal
       });
       if (this.messages.length === 0 && this.lastIsFinal) {
         setTimeout(() => {
@@ -242,15 +240,16 @@ class Widget extends Component {
   }
 
   propagateMetadata(metadata) {
-    const { dispatch } = this.props;
     const {
-      linkTarget,
+      dispatch
+    } = this.props;
+    const { linkTarget,
       userInput,
       pageChangeCallbacks,
       domHighlight,
       forceOpen,
       forceClose,
-      pageEventCallbacks,
+      pageEventCallbacks
     } = metadata;
     if (linkTarget) {
       dispatch(setLinkTarget(linkTarget));
@@ -290,7 +289,7 @@ class Widget extends Component {
     logger.debug('handleBotUtterance:', {
       text: botUtterance.text?.substring(0, 50),
       isFinal,
-      isChatOpen,
+      isChatOpen
     });
 
     // Store last is_final value to check in newMessageTimeout
@@ -416,17 +415,14 @@ class Widget extends Component {
           } else {
             const rectangle = elements[0].getBoundingClientRect();
 
-            const ElemIsInViewPort =
+            const ElemIsInViewPort = (
               rectangle.top >= 0 &&
-              rectangle.left >= 0 &&
-              rectangle.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-              rectangle.right <= (window.innerWidth || document.documentElement.clientWidth);
+                rectangle.left >= 0 &&
+                rectangle.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rectangle.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
             if (!ElemIsInViewPort) {
-              elements[0].scrollIntoView({
-                block: 'center',
-                inline: 'nearest',
-                behavior: 'smooth',
-              });
+              elements[0].scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
             }
           }
         }, 50);
@@ -437,7 +433,7 @@ class Widget extends Component {
   checkVersionBeforePull() {
     const { storage } = this.props;
     const localSession = getLocalSession(storage, SESSION_NAME);
-    if (localSession && localSession.version !== 'PACKAGE_VERSION_TO_BE_REPLACED') {
+    if (localSession && (localSession.version !== 'PACKAGE_VERSION_TO_BE_REPLACED')) {
       storage.removeItem(SESSION_NAME);
     }
   }
@@ -450,7 +446,7 @@ class Widget extends Component {
       connectOn,
       tooltipPayload,
       tooltipDelay,
-      customData,
+      customData
     } = this.props;
 
     // Skip if handlers already registered to prevent duplicates
@@ -480,7 +476,7 @@ class Widget extends Component {
       logger.info('📤 Sending session_request', {
         session_id: localId || 'null (requesting new)',
         hasAuth: !!customData?.auth_header,
-        socketId: socket.socket?.id,
+        socketId: socket.socket?.id
       });
 
       // DIAGNOSTIC: Check token expiration before session_request
@@ -490,17 +486,9 @@ class Widget extends Component {
           const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
           const now = Date.now() / 1000;
           const timeLeft = decoded.exp - now;
-          logger.info(
-            '🔍 SESSION_REQUEST: Access token expires in:',
-            Math.round(timeLeft / 60),
-            'minutes'
-          );
+          logger.info('🔍 SESSION_REQUEST: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
           if (timeLeft < 0) {
-            logger.error(
-              '❌ SESSION_REQUEST: Using EXPIRED access token! Expired',
-              Math.round(-timeLeft / 60),
-              'minutes ago'
-            );
+            logger.error('❌ SESSION_REQUEST: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
           }
         } catch (e) {
           logger.error('❌ SESSION_REQUEST: Failed to decode access token:', e);
@@ -526,8 +514,9 @@ class Widget extends Component {
 
     // Register session_confirm handler
     socket.on('session_confirm', (sessionObject) => {
-      const remoteId =
-        sessionObject && sessionObject.session_id ? sessionObject.session_id : sessionObject;
+      const remoteId = (sessionObject && sessionObject.session_id)
+        ? sessionObject.session_id
+        : sessionObject;
 
       logger.info(`session_confirm:${socket.socket.id} session_id:${remoteId}`);
 
@@ -539,9 +528,7 @@ class Widget extends Component {
       // If we were trying to preserve a session_id during token refresh
       if (!localId && socket.preservedSessionId) {
         localId = socket.preservedSessionId;
-        logger.info(
-          `Token refresh: requested preserved session_id ${localId}, server returned ${remoteId}`
-        );
+        logger.info(`Token refresh: requested preserved session_id ${localId}, server returned ${remoteId}`);
       }
 
       if (localId !== remoteId) {
@@ -599,7 +586,13 @@ class Widget extends Component {
   }
 
   initializeWidget(sendInitPayload = true) {
-    const { socket, dispatch, embedded, initialized } = this.props;
+    const {
+      storage,
+      socket,
+      dispatch,
+      embedded,
+      initialized
+    } = this.props;
 
     if (!socket.isInitialized()) {
       socket.createSocket();
@@ -630,7 +623,7 @@ class Widget extends Component {
       isChatVisible,
       embedded,
       connected,
-      dispatch,
+      dispatch
     } = this.props;
 
     // Send initial payload when chat is opened or widget is shown
@@ -648,17 +641,9 @@ class Widget extends Component {
           const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
           const now = Date.now() / 1000;
           const timeLeft = decoded.exp - now;
-          logger.info(
-            '🔍 INIT_PAYLOAD (/session_start): Access token expires in:',
-            Math.round(timeLeft / 60),
-            'minutes'
-          );
+          logger.info('🔍 INIT_PAYLOAD (/session_start): Access token expires in:', Math.round(timeLeft / 60), 'minutes');
           if (timeLeft < 0) {
-            logger.error(
-              '❌ INIT_PAYLOAD: Sending /session_start with EXPIRED access token! Expired',
-              Math.round(-timeLeft / 60),
-              'minutes ago'
-            );
+            logger.error('❌ INIT_PAYLOAD: Sending /session_start with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
           }
         } catch (e) {
           logger.error('❌ INIT_PAYLOAD: Failed to decode access token:', e);
@@ -682,7 +667,7 @@ class Widget extends Component {
       connected,
       isChatOpen,
       dispatch,
-      tooltipSent,
+      tooltipSent
     } = this.props;
 
     if (connected && !isChatOpen && !tooltipSent.get(tooltipPayload)) {
@@ -699,11 +684,7 @@ class Widget extends Component {
           const timeLeft = decoded.exp - now;
           logger.info('🔍 TOOLTIP: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
           if (timeLeft < 0) {
-            logger.error(
-              '❌ TOOLTIP: Sending tooltip with EXPIRED access token! Expired',
-              Math.round(-timeLeft / 60),
-              'minutes ago'
-            );
+            logger.error('❌ TOOLTIP: Sending tooltip with EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
           }
         } catch (e) {
           logger.error('❌ TOOLTIP: Failed to decode access token:', e);
@@ -718,7 +699,11 @@ class Widget extends Component {
   }
 
   toggleConversation() {
-    const { isChatOpen, dispatch, disableTooltips } = this.props;
+    const {
+      isChatOpen,
+      dispatch,
+      disableTooltips
+    } = this.props;
     if (isChatOpen && this.delayedMessage) {
       if (!disableTooltips) dispatch(showTooltip(true));
       clearTimeout(this.messageDelayTimeout);
@@ -756,13 +741,15 @@ class Widget extends Component {
     } else if (isButtons(messageClean)) {
       this.props.dispatch(addButtons(messageClean));
     } else if (isCarousel(messageClean)) {
-      this.props.dispatch(addCarousel(messageClean));
+      this.props.dispatch(
+        addCarousel(messageClean)
+      );
     } else if (isVideo(messageClean)) {
       const element = messageClean.attachment.payload;
       this.props.dispatch(
         addVideoSnippet({
           title: element.title,
-          video: element.src,
+          video: element.src
         })
       );
     } else if (isImage(messageClean)) {
@@ -770,7 +757,7 @@ class Widget extends Component {
       this.props.dispatch(
         addImageSnippet({
           title: element.title,
-          image: element.src,
+          image: element.src
         })
       );
     } else {
@@ -803,6 +790,7 @@ class Widget extends Component {
     event.target.message.value = '';
   }
 
+
   // Compose behavior: first try to refresh token (new feature), then perform legacy restart (old behavior)
   refreshTokenAndRestart = () => {
     const { onRefreshToken } = this.props;
@@ -825,37 +813,32 @@ class Widget extends Component {
       this.refresh();
       return Promise.resolve();
     }
-  };
+  }
 
   refresh = () => {
-    const { socket, customData } = this.props;
+    const { socket, customData, storage } = this.props;
     const sessionId = this.getSessionIdWithFallback();
 
-    logger.info('=== SESSION RESTART ===');
-    logger.debug('Session ID (must not change):', sessionId);
-    logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
-    logger.debug(
-      'customData.auth_header:',
-      customData.auth_header ? `${customData.auth_header.substring(0, 20)}...` : 'N/A'
-    );
+    {
+      logger.info('=== SESSION RESTART ===');
+      logger.debug('Session ID (must not change):', sessionId);
+      logger.debug('Socket ID (sender, must not change):', socket.socket ? socket.socket.id : 'N/A');
+      logger.debug('customData.auth_header:', customData.auth_header ? customData.auth_header.substring(0, 20) + '...' : 'N/A');
 
-    // DIAGNOSTIC: Check token expiration during restart
-    if (customData.auth_header) {
-      try {
-        const tokenPayload = customData.auth_header.split('.')[1];
-        const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
-        const now = Date.now() / 1000;
-        const timeLeft = decoded.exp - now;
-        logger.info('🔍 RESTART: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
-        if (timeLeft < 0) {
-          logger.error(
-            '❌ RESTART: Using EXPIRED access token! Expired',
-            Math.round(-timeLeft / 60),
-            'minutes ago'
-          );
+      // DIAGNOSTIC: Check token expiration during restart
+      if (customData.auth_header) {
+        try {
+          const tokenPayload = customData.auth_header.split('.')[1];
+          const decoded = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+          const now = Date.now() / 1000;
+          const timeLeft = decoded.exp - now;
+          logger.info('🔍 RESTART: Access token expires in:', Math.round(timeLeft / 60), 'minutes');
+          if (timeLeft < 0) {
+            logger.error('❌ RESTART: Using EXPIRED access token! Expired', Math.round(-timeLeft / 60), 'minutes ago');
+          }
+        } catch (e) {
+          logger.error('❌ RESTART: Failed to decode access token:', e);
         }
-      } catch (e) {
-        logger.error('❌ RESTART: Failed to decode access token:', e);
       }
     }
 
@@ -866,7 +849,9 @@ class Widget extends Component {
     const cleanCustomData = { ...customData };
     delete cleanCustomData.session_id;
 
-    logger.debug('Cleaned customData:', cleanCustomData);
+    {
+      logger.debug('Cleaned customData:', cleanCustomData);
+    }
 
     this.props.dispatch(clearMessages());
 
@@ -874,12 +859,12 @@ class Widget extends Component {
     socket.emit('user_uttered', {
       message: '/restart',
       customData: cleanCustomData,
-      session_id: sessionId, // TODO: here
+      session_id: sessionId // TODO: here
     });
 
     logger.info('Restart payload sent with session_id:', sessionId);
     logger.info('=== END SESSION RESTART ===');
-  };
+  }
 
   render() {
     return (
@@ -888,7 +873,7 @@ class Widget extends Component {
         toggleChat={() => this.toggleConversation()}
         refreshSession={this.refreshTokenAndRestart}
         toggleFullScreen={() => this.toggleFullScreen()}
-        onSendMessage={(event) => this.handleMessageSubmit(event)}
+        onSendMessage={event => this.handleMessageSubmit(event)}
         title={this.props.title}
         subtitle={this.props.subtitle}
         customData={this.props.customData}
@@ -915,7 +900,7 @@ class Widget extends Component {
   }
 }
 
-const mapStateToProps = (state) => ({
+const mapStateToProps = state => ({
   initialized: state.behavior.get('initialized'),
   connected: state.behavior.get('connected'),
   isChatOpen: state.behavior.get('isChatOpen'),
@@ -926,14 +911,16 @@ const mapStateToProps = (state) => ({
   pageChangeCallbacks: state.behavior.get('pageChangeCallbacks'),
   domHighlight: state.metadata.get('domHighlight'),
   messages: state.messages,
-  firstChatStarted: state.behavior.get('firstChatStarted'),
+  firstChatStarted: state.behavior.get('firstChatStarted')
 });
 
 Widget.propTypes = {
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   customData: PropTypes.shape({}),
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  initPayload: PropTypes.string,
   profileAvatar: PropTypes.string,
+  refreshSession: PropTypes.func,
   showCloseButton: PropTypes.bool,
   showFullScreenButton: PropTypes.bool,
   hideWhenNotConnected: PropTypes.bool,
@@ -967,7 +954,7 @@ Widget.propTypes = {
   messages: ImmutablePropTypes.listOf(ImmutablePropTypes.map),
   onAuthButtonClick: PropTypes.func,
   onRefreshToken: PropTypes.func,
-  firstChatStarted: PropTypes.bool,
+  firstChatStarted: PropTypes.bool
 };
 
 Widget.defaultProps = {
@@ -983,8 +970,7 @@ Widget.defaultProps = {
   oldUrl: '',
   disableTooltips: true,
   defaultHighlightClassname: '',
-  defaultHighlightCss:
-    'animation: 0.5s linear infinite alternate default-botfront-blinker-animation; outline-style: solid;',
+  defaultHighlightCss: 'animation: 0.5s linear infinite alternate default-botfront-blinker-animation; outline-style: solid;',
   // unfortunately it looks like outline-style is not an animatable property on Safari
   defaultHighlightAnimation: `@keyframes default-botfront-blinker-animation {
     0% {
@@ -999,7 +985,7 @@ Widget.defaultProps = {
     100% {
       outline-color: green;
     }
-  }`,
+  }`
 };
 
 export default connect(mapStateToProps, null, null, { forwardRef: true })(Widget);

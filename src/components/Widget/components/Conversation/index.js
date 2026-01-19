@@ -8,54 +8,50 @@ import { RefreshPopup } from './components/RefreshPopup';
 import { AuthPlaceholder } from './components/AuthPlaceholder';
 import './style.scss';
 
-function Conversation(props) {
+const Conversation = (props) => {
   const [showRefreshPopup, setShowRefreshPopup] = useState(false);
 
-  const content = (
-    <>
-      <Messages
-        profileAvatar={props.profileAvatar}
-        params={props.params}
-        customComponent={props.customComponent}
-        showMessageDate={props.showMessageDate}
-      />
-      <Sender
-        sendMessage={props.sendMessage}
-        disabledInput={props.disabledInput}
-        inputTextFieldHint={props.inputTextFieldHint}
-      />
-    </>
-  );
+  const content = <><Messages
+    profileAvatar={props.profileAvatar}
+    params={props.params}
+    customComponent={props.customComponent}
+    showMessageDate={props.showMessageDate}
+  /><Sender
+    sendMessage={props.sendMessage}
+    disabledInput={props.disabledInput}
+    inputTextFieldHint={props.inputTextFieldHint}
+  /></>;
+
 
   const handleRefreshClick = () => {
     props.refreshSession();
     setShowRefreshPopup(false);
   };
 
-  return (
-    <div className="rw-conversation-container">
-      {showRefreshPopup ? (
-        <RefreshPopup onRefresh={handleRefreshClick} onCancel={() => setShowRefreshPopup(false)} />
-      ) : null}
-      <Header
-        title={props.title}
-        subtitle={props.subtitle}
-        toggleChat={props.toggleChat}
-        refreshSession={() => setShowRefreshPopup(true)}
-        toggleFullScreen={props.toggleFullScreen}
-        fullScreenMode={props.fullScreenMode}
-        showCloseButton={props.showCloseButton}
-        showFullScreenButton={props.showFullScreenButton}
-        showRefreshButton={!props.onAuthButtonClick}
-        connected={props.connected}
-        connectingText={props.connectingText}
-        closeImage={props.closeImage}
-        profileAvatar={props.profileAvatar}
-      />
-      {props.onAuthButtonClick ? <AuthPlaceholder onClick={props.onAuthButtonClick} /> : content}
-    </div>
-  );
-}
+  return (<div className="rw-conversation-container">
+    {showRefreshPopup ? <RefreshPopup
+      onRefresh={handleRefreshClick}
+      onCancel={() => setShowRefreshPopup(false)}
+    /> : null}
+    <Header
+      title={props.title}
+      subtitle={props.subtitle}
+      toggleChat={props.toggleChat}
+      refreshSession={() => setShowRefreshPopup(true)}
+      toggleFullScreen={props.toggleFullScreen}
+      fullScreenMode={props.fullScreenMode}
+      showCloseButton={props.showCloseButton}
+      showFullScreenButton={props.showFullScreenButton}
+      showRefreshButton={!props.onAuthButtonClick}
+      connected={props.connected}
+      connectingText={props.connectingText}
+      closeImage={props.closeImage}
+      profileAvatar={props.profileAvatar}
+    />
+    {props.onAuthButtonClick ?
+      <AuthPlaceholder onClick={props.onAuthButtonClick} /> : content}
+  </div>);
+};
 Conversation.propTypes = {
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
@@ -75,7 +71,7 @@ Conversation.propTypes = {
   customComponent: PropTypes.func,
   showMessageDate: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
   onAuthButtonClick: PropTypes.func,
-  refreshSession: PropTypes.func,
+  refreshSession: PropTypes.func
 };
 
 export default Conversation;

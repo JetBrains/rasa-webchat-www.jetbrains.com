@@ -13,7 +13,11 @@ const store = initStore('dummy', stubSocket, localStorage);
 describe('Metadata store affect input behavior', () => {
   const senderCompoment = mount(
     <Provider store={store}>
-      <Sender sendMessage={() => {}} inputTextFieldHint="dummy" disabledInput={false} />
+      <Sender
+        sendMessage={() => {}}
+        inputTextFieldHint="dummy"
+        disabledInput={false}
+      />
     </Provider>
   );
 
@@ -31,6 +35,7 @@ describe('Metadata store affect input behavior', () => {
     expect(senderCompoment.find('textarea.rw-new-message').prop('disabled')).toEqual(true);
   });
 
+
   it('should hide the input', () => {
     expect(senderCompoment.find('textarea.rw-new-message')).toHaveLength(1);
     expect(senderCompoment.find('textarea.rw-new-message').prop('disabled')).toEqual(false);
@@ -39,3 +44,4 @@ describe('Metadata store affect input behavior', () => {
     expect(senderCompoment.find('textarea.rw-new-message')).toHaveLength(0);
   });
 });
+
