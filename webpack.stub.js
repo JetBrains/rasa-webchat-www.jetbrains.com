@@ -1,6 +1,6 @@
 const path = require('path');
-const { version } = require('./package.json');
 const webpack = require('webpack');
+const { version } = require('./package.json');
 
 // Terminal banner
 try {
@@ -12,35 +12,39 @@ module.exports = {
   output: {
     path: path.join(__dirname, '/lib'),
     filename: 'chat-off.js',
-    library: 'WebChat',
-    libraryTarget: 'umd'
+    library: {
+      name: 'WebChat',
+      type: 'umd',
+      export: 'default',
+    },
+    clean: true,
   },
   resolve: {
-    extensions: ['.js']
+    extensions: ['.js', '.jsx', '.ts', '.tsx'],
   },
   mode: 'production',
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|jsx|ts|tsx)$/,
         exclude: /node_modules/,
         use: [
           {
             loader: 'string-replace-loader',
             options: {
               search: 'PACKAGE_VERSION_TO_BE_REPLACED',
-              replace: version
-            }
+              replace: version,
+            },
           },
-          { loader: 'babel-loader' }
-        ]
-      }
-    ]
+          { loader: 'babel-loader' },
+        ],
+      },
+    ],
   },
   plugins: [
     new webpack.DefinePlugin({
       'process.env.ENVIRONMENT': JSON.stringify('stub'),
-      'process.env.WEBCHAT_PKG_VERSION': JSON.stringify(version)
-    })
-  ]
+      'process.env.WEBCHAT_PKG_VERSION': JSON.stringify(version),
+    }),
+  ],
 };

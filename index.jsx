@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import PropTypes from 'prop-types';
 import RasaWebchatPro from './src/pro-src/rules-wrapper';
 
@@ -11,9 +11,7 @@ class RasaWebchatProWithRules extends React.Component {
     const { connectOn } = props;
     let { withRules } = props;
     if (connectOn === 'open' && withRules === true) {
-      throw new Error(
-        "You can't use rules and connect on open, you have to use connect on mount"
-      );
+      throw new Error("You can't use rules and connect on open, you have to use connect on mount");
     }
     this.webchatRef = null;
     if (withRules === undefined) {
@@ -21,7 +19,7 @@ class RasaWebchatProWithRules extends React.Component {
     }
     this.state = {
       propsRetrieved: !withRules,
-      rulesApplied: !withRules
+      rulesApplied: !withRules,
     };
     this.setRef = this.setRef.bind(this);
     this.handleSessionConfirm = this.handleSessionConfirm.bind(this);
@@ -44,12 +42,12 @@ class RasaWebchatProWithRules extends React.Component {
     const { innerRef } = this.props;
     this.setState({
       // The OR makes it work even without the augmented webchat channel
-      propsRetrieved: { ...sessionObject.props }
+      propsRetrieved: { ...sessionObject.props },
     });
     if (
       ((innerRef && innerRef.current) || this.webchatRef.updateRules) &&
-              sessionObject.props &&
-              sessionObject.props.rules
+      sessionObject.props &&
+      sessionObject.props.rules
     ) {
       setTimeout(() => {
         if (innerRef && innerRef.current) {
@@ -74,20 +72,24 @@ class RasaWebchatProWithRules extends React.Component {
     delete propsToApply.rules;
     return (
       <div
-        className={this.props.embedded || (propsToApply && propsToApply.embedded) ? 'rw-pro-widget-embedded' : ''}
+        className={
+          this.props.embedded || (propsToApply && propsToApply.embedded)
+            ? 'rw-pro-widget-embedded'
+            : ''
+        }
       >
         <RasaWebchatPro
           ref={this.setRef}
           {...{
             ...propsToApply,
-            ...this.props
+            ...this.props,
           }}
           onSocketEvent={
             withRules
               ? {
-                session_confirm: this.handleSessionConfirm,
-                ...onSocketEvent
-              }
+                  session_confirm: this.handleSessionConfirm,
+                  ...onSocketEvent,
+                }
               : { ...onSocketEvent }
           }
         />
@@ -145,24 +147,24 @@ export const rasaWebchatProTypes = {
           PropTypes.shape({
             param: PropTypes.string,
             value: PropTypes.string,
-            sendAsEntity: PropTypes.bool
+            sendAsEntity: PropTypes.bool,
           })
         ),
         eventListeners: PropTypes.arrayOf(
           PropTypes.shape({
             selector: PropTypes.string.isRequired,
-            event: PropTypes.string.isRequired
+            event: PropTypes.string.isRequired,
           })
-        )
-      })
+        ),
+      }),
     })
   ),
-  triggerEventListenerUpdateRate: PropTypes.number
+  triggerEventListenerUpdateRate: PropTypes.number,
 };
 
 RasaWebchatProWithRules.propTypes = {
   ...rasaWebchatProTypes,
-  innerRef: PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ current: PropTypes.object })])
+  innerRef: PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ current: PropTypes.object })]),
 };
 
 export const rasaWebchatProDefaultTypes = {
@@ -180,14 +182,14 @@ export const rasaWebchatProDefaultTypes = {
   badge: 0,
   embedded: false,
   params: {
-    storage: 'local'
+    storage: 'local',
   },
   docViewer: false,
   showCloseButton: true,
   showFullScreenButton: false,
   displayUnreadCount: false,
   showMessageDate: false,
-  customMessageDelay: (message) => {
+  customMessageDelay: message => {
     let delay = message.length * 30;
     if (delay > 3 * 1000) delay = 3 * 1000;
     if (delay < 800) delay = 800;
@@ -197,12 +199,14 @@ export const rasaWebchatProDefaultTypes = {
   tooltipDelay: 500,
   withRules: true,
   rules: null,
-  triggerEventListenerUpdateRate: 500
+  triggerEventListenerUpdateRate: 500,
 };
 
 export default React.forwardRef((props, ref) => (
   <RasaWebchatProWithRules innerRef={ref} {...props} />
 ));
+
+let rootInstance = null;
 
 export const selfMount = (props, element = null) => {
   const load = () => {
@@ -211,9 +215,13 @@ export const selfMount = (props, element = null) => {
       node.setAttribute('id', 'rasaWebchatPro');
       document.body.appendChild(node);
     }
-    const mountElement = element || document.getElementById('rasaWebchatPro')
+    const mountElement = element || document.getElementById('rasaWebchatPro');
     const webchatPro = React.createElement(RasaWebchatProWithRules, props);
-    ReactDOM.render(webchatPro, mountElement);
+
+    if (!rootInstance) {
+      rootInstance = ReactDOM.createRoot(mountElement);
+    }
+    rootInstance.render(webchatPro);
   };
   if (document.readyState === 'complete') {
     load();

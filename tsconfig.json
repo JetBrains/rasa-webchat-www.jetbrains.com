@@ -1,0 +1,50 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": "./src",
+    "paths": {
+      "constants": [
+        "constants.js"
+      ],
+      "assets/*": [
+        "../assets/*"
+      ],
+      "tests-mocks/*": [
+        "../mocks/*"
+      ],
+      "actions/*": [
+        "store/actions/*"
+      ],
+      "helper": [
+        "store/reducers/helper.js"
+      ],
+      "messagesComponents/*": [
+        "components/Widget/components/Conversation/components/Messages/components/*"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "index.jsx",
+    "assets",
+    "dev"
+  ]
+}

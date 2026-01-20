@@ -1,9 +1,9 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const dotenv = require('dotenv');
+const webpack = require('webpack');
 const { version } = require('./package.json');
 // eslint-disable-next-line import/no-extraneous-dependencies
-const webpack = require('webpack');
 
 const env = dotenv.config({ path: path.resolve(process.cwd(), '.env') }).parsed || {};
 
@@ -25,58 +25,72 @@ module.exports = {
   output: {
     path: path.join(__dirname, '/lib'),
     filename: 'index.js',
-    library: 'WebChat',
-    libraryTarget: 'umd'
+    library: {
+      name: 'WebChat',
+      type: 'umd',
+      export: 'default',
+    },
+    clean: true,
   },
   devServer: {
-    stats: 'errors-only',
+    hot: true,
     host: process.env.HOST, // Defaults to `localhost`
-    port: process.env.PORT, // Defaults to 8080
-    open: false, // Don't open the page in browser automatically
-    contentBase: path.resolve(__dirname, '/lib')
+    port: process.env.PORT || 8080,
+    open: false,
+    static: {
+      directory: path.resolve(__dirname, 'lib'),
+    },
+    devMiddleware: {
+      stats: 'errors-only',
+    },
   },
   resolve: {
-    extensions: ['.js', '.jsx']
+    extensions: ['.js', '.jsx', '.ts', '.tsx'],
   },
   mode: 'development',
   devtool: 'eval-source-map',
   module: {
-    rules: [{
-      test: /\.(js|jsx)$/,
-      exclude: /node_modules/,
-      use: [
-        {
-          loader: 'string-replace-loader',
-          options: {
-            search: 'PACKAGE_VERSION_TO_BE_REPLACED',
-            replace: version
-          }
+    rules: [
+      {
+        test: /\.(js|jsx|ts|tsx)$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'string-replace-loader',
+            options: {
+              search: 'PACKAGE_VERSION_TO_BE_REPLACED',
+              replace: version,
+            },
+          },
+          { loader: 'babel-loader' },
+        ],
+      },
+      {
+        test: /\.scss$/,
+        use: [
+          { loader: 'style-loader' },
+          { loader: 'css-loader' },
+          {
+            loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                includePaths: [path.resolve(__dirname, 'src/scss/')],
+              },
+            },
+          },
+        ],
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.(jpg|png|gif|svg|woff|ttf|eot)$/,
+        use: {
+          loader: 'url-loader',
         },
-        { loader: 'babel-loader' }
-      ]
-    }, {
-      test: /\.scss$/,
-      use: [
-        { loader: 'style-loader' },
-        { loader: 'css-loader' },
-        {
-          loader: 'sass-loader',
-          options: {
-            sassOptions: {
-              includePaths: [path.resolve(__dirname, 'src/scss/')]
-            }          
-          }
-        }
-      ]
-    }, {
-      test: /\.css$/,
-      use: ['style-loader', 'css-loader']
-    }, {
-      test: /\.(jpg|png|gif|svg|woff|ttf|eot)$/,
-      use: {
-        loader: 'url-loader'
-      }
-    }]
+      },
+    ],
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -84,12 +98,12 @@ module.exports = {
       filename: 'index.html',
       inject: false,
       template: 'dev/src/index.html',
-      showErrors: true
+      showErrors: true,
     }),
     new webpack.DefinePlugin({
       ...envKeys,
       'process.env.ENVIRONMENT': JSON.stringify(envName),
-      'process.env.WEBCHAT_PKG_VERSION': JSON.stringify(version)
-    })
-  ]
+      'process.env.WEBCHAT_PKG_VERSION': JSON.stringify(version),
+    }),
+  ],
 };

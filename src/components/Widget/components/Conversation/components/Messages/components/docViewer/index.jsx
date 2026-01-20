@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import Portal from 'utils/portal';
+import Portal from 'utils/portal.tsx';
 import './style.scss';
 
 class DocViewer extends Component {
@@ -13,7 +13,7 @@ class DocViewer extends Component {
     this.handleCloseModal = this.handleCloseModal.bind(this);
     this.state = {
       openedModal: false,
-      iFrameLoading: true
+      iFrameLoading: true,
     };
   }
 
@@ -55,7 +55,11 @@ class DocViewer extends Component {
         {/* eslint-disable-next-line react/destructuring-assignment */}
         {this.state.openedModal && (
           <Portal>
-            <div className="rw-doc-viewer-modal-fade" aria-hidden="true" onClick={this.handleCloseModal} />
+            <div
+              className="rw-doc-viewer-modal-fade"
+              aria-hidden="true"
+              onClick={this.handleCloseModal}
+            />
             <div className="rw-doc-viewer-modal">
               <div className="rw-doc-viewer-modal-body">
                 {/* eslint-disable-next-line react/destructuring-assignment */}
@@ -72,7 +76,11 @@ class DocViewer extends Component {
                 />
               </div>
               <div className="rw-doc-viewer-modal-footer">
-                <button type="button" className="rw-doc-viewer-close-modal" onClick={this.handleCloseModal}>
+                <button
+                  type="button"
+                  className="rw-doc-viewer-close-modal"
+                  onClick={this.handleCloseModal}
+                >
                   X
                 </button>
               </div>
@@ -85,7 +93,7 @@ class DocViewer extends Component {
 }
 
 DocViewer.propTypes = {
-  src: PropTypes.string.isRequired
+  src: PropTypes.string.isRequired,
 };
 
 export default DocViewer;

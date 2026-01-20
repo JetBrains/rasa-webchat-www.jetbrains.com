@@ -1,3 +1,6 @@
 import { selfMount } from './index';
 
-export default selfMount;
+const WebChat = selfMount;
+WebChat.default = selfMount;
+
+export default WebChat;

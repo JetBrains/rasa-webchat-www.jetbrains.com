@@ -30,7 +30,7 @@ module.exports = {
     // 'prettier/prettier': ['error', { arrowParens: 'always' }],
     'prettier/prettier': 'off',
     'arrow-parens': ['error', 'always'],
-    'react/jsx-filename-extension': ['error', { extensions: ['.js'] }],
+    'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
     'react/prop-types': [2, { ignore: ['style', 'children', 'dispatch'] }],
     'import/extensions': ['error', { js: 'never' }],
     'import/namespace': 'error',

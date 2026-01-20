@@ -1,22 +1,19 @@
 /* eslint-disable func-names */
-import Enzyme from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
+// Enzyme is deprecated and does not support React 18/19.
+// Tests should be migrated to React Testing Library.
 
-Enzyme.configure({ adapter: new Adapter() });
 window.matchMedia =
   window.matchMedia ||
-  function () {
+  function() {
     return {
       matches: false,
       addListener() {},
-      removeListener() {}
+      removeListener() {},
     };
   };
 
 window.requestAnimationFrame =
   window.requestAnimationFrame ||
-  function (callback) {
+  function(callback) {
     setTimeout(callback, 0);
   };
-
-Enzyme.configure({ adapter: new Adapter() });
