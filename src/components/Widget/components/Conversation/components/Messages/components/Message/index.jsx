@@ -1,7 +1,8 @@
-/* eslint-disable react/destructuring-assignment, react/require-default-props */
-import React, { PureComponent } from 'react';
+/* eslint-disable react/require-default-props */
+import React, { useContext } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';
+import remarkGfm from 'remark-gfm';
 import PropTypes from 'prop-types';
 
 import { PROP_TYPES } from 'constants';
@@ -9,60 +10,51 @@ import DocViewer from '../docViewer';
 import './styles.scss';
 import ThemeContext from '../../../../../../ThemeContext';
 
-class Message extends PureComponent {
-  render() {
-    const { docViewer, linkTarget } = this.props;
-    const sender = this.props.message.get('sender');
-    const text = this.props.message.get('text');
-    const customCss =
-      this.props.message.get('customCss') && this.props.message.get('customCss').toJS();
+function Message({ message, docViewer, linkTarget }) {
+  const sender = message.get('sender');
+  const text = message.get('text');
+  const customCss = message.get('customCss') && message.get('customCss').toJS();
 
-    if (customCss && customCss.style === 'class') {
-      customCss.css = customCss.css.replace(/^\./, '');
-    }
+  if (customCss && customCss.style === 'class') {
+    customCss.css = customCss.css.replace(/^\./, '');
+  }
 
-    const {
-      userTextColor,
-      userBackgroundColor,
-      assistTextColor,
-      assistBackgoundColor,
-    } = this.context;
-    let style;
-    if (sender === 'response' && customCss && customCss.style === 'class') {
-      style = undefined;
-    } else if (sender === 'response' && customCss && customCss.style) {
-      style = { cssText: customCss.css };
-    } else if (sender === 'response') {
-      style = { color: assistTextColor, backgroundColor: assistBackgoundColor };
-    } else if (sender === 'client') {
-      style = { color: userTextColor, backgroundColor: userBackgroundColor };
-    }
+  const { userTextColor, userBackgroundColor, assistTextColor, assistBackgoundColor } = useContext(
+    ThemeContext
+  );
 
-    const conditionalCn =
-      sender === 'response' && customCss && customCss.style === 'class'
-        ? `rw-response ${customCss.css ? customCss.css : ''}`
-        : `rw-${sender}`;
+  let style;
+  if (sender === 'response' && customCss && customCss.style === 'class') {
+    style = undefined;
+  } else if (sender === 'response' && customCss && customCss.style) {
+    style = { cssText: customCss.css };
+  } else if (sender === 'response') {
+    style = { color: assistTextColor, backgroundColor: assistBackgoundColor };
+  } else if (sender === 'client') {
+    style = { color: userTextColor, backgroundColor: userBackgroundColor };
+  }
 
-    return (
-      <div className={conditionalCn} style={style}>
-        <div className="rw-message-text">
-          {sender === 'response' ? (
+  const conditionalCn =
+    sender === 'response' && customCss && customCss.style === 'class'
+      ? `rw-response ${customCss.css ? customCss.css : ''}`
+      : `rw-${sender}`;
+
+  return (
+    <div className={conditionalCn} style={style}>
+      <div className="rw-message-text">
+        {sender === 'response' ? (
+          <div className="rw-markdown">
             <ReactMarkdown
-              className="rw-markdown"
-              linkTarget={(url) => {
-                if (!url.startsWith('mailto') && !url.startsWith('javascript')) {
-                  return '_blank';
-                }
-                return undefined;
-              }}
-              transformLinkUri={null}
+              remarkPlugins={[remarkGfm]}
               components={{
                 // eslint-disable-next-line react/no-unstable-nested-components
                 a: (props) =>
                   docViewer ? (
+                    // eslint-disable-next-line react/prop-types
                     <DocViewer src={props.href}>{props.children}</DocViewer>
                   ) : (
                     <a
+                      // eslint-disable-next-line react/prop-types
                       href={props.href}
                       target={linkTarget || '_blank'}
                       rel="noopener noreferrer"
@@ -75,16 +67,15 @@ class Message extends PureComponent {
             >
               {text}
             </ReactMarkdown>
-          ) : (
-            text
-          )}
-        </div>
+          </div>
+        ) : (
+          text
+        )}
       </div>
-    );
-  }
+    </div>
+  );
 }
 
-Message.contextType = ThemeContext;
 Message.propTypes = {
   message: PROP_TYPES.MESSAGE,
   docViewer: PropTypes.bool,
