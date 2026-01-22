@@ -9,8 +9,10 @@ yarn-error.log
 
 # Build files
 lib
-module
 .idea/
+
+# AI files
+.junie/
 
 # Test files
 coverage

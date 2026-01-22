@@ -82,7 +82,7 @@ script.async = true;
 - Persistent sessions
 - Typing indications
 - Smart delay between messages
-- Easy to import in a script tag or as a React Component
+- Easy to import in a script tag
 
 ## 🔥 Promo: check out our other cool open source project
 
@@ -124,36 +124,6 @@ however this will not work with versions below 1.0.0. If you do not specify a ve
 
 About images: `width` and `height` define the size in pixels that images in messages are crop-scaled to. If not present, the image will scale to the maximum width of the container and the image.
 
-### As a React component
-
-Install the [npm package](https://npmjs.com/rasa-webchat):
-```bash
-npm install rasa-webchat
-```
-
-Then:
-
-```javascript
-import Widget from 'rasa-webchat';
-
-function CustomWidget = () => {
-  return (
-    <Widget
-      initPayload={"/get_started"}
-      socketUrl={"http://localhost:5500"}
-      socketPath={"/socket.io/"}
-      customData={{"language": "en"}} // arbitrary custom data. Stay minimal as this will be added to the socket
-      title={"Title"}
-    />
-  )
-}
-```
-
-- Make sure to have the prop `embedded`
-set to `true` if you don't want to see the launcher.
-
-
-
 ## Parameters
 | Prop / Param                 | Default value          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 |------------------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -175,7 +145,7 @@ set to `true` if you don't want to see the launcher.
 | `customMessageDelay`   | See below          | This prop is a function, the function take a message string as an argument. The defined function will be called everytime a message is received and the returned value will be used as a milliseconds delay before displaying a new message.                                                                                                                                                                                                                                                                                 |
 | `params`               | See below          | Essentially used to customize the image size, also used to change storage options.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `storage`              | `"local"`          | ⚠️ This is not a prop, it has to be passed inside the params object above. <br> Specifies the storage location of the conversation state in the browser. `"session"` defines the state to be stored in the session storage. The session storage persists on reload of the page, and is cleared after the browser or tab is closed, or when `sessionStorage.clear()`is called. `"local"` defines the state to be stored in the local stoage. The local storage persists after the the browser is closed, and is cleared when the cookies of the browser are cleared, or when `localStorage.clear()`is called. |
-| `customComponent`      | `null`             | Custom component to be used with custom responses. E.g.: `customComponent={ (messageData) => (<div>Custom React component</div>)}`. Please note that this can only be used if you call the webchat from a React application as you can't write a component in pure Javscript. |
+| `customComponent`      | `null`             | Custom component to be used with custom responses. E.g.: `customComponent={ (messageData) => (<div>Custom React component</div>)}`. |
 | `onWidgetEvent`        | `{}`             | call custom code on a specific widget event ( `onChatOpen`, `onChatClose`, `onChatHidden`, are available for now ), add a function to the desired object property in the props to have it react to the event. |
 
 ### Additional Examples
@@ -310,30 +280,3 @@ hierarchy:
 | .rw-imageFrame             | a container for sending images                                      |
 | .rw-videoFrame             | a container for sending video                                       |
 
-
-## Contributors
-[@PHLF](https://github.com/phlf)
-[@znat](https://github.com/znat)
-[@TheoTomalty](https://github.com/TheoTomalty)
-[@Hub4IT](https://github.com/Hub4IT)
-[@dliuproduction](https://github.com/dliuproduction)
-[@MatthieuJnon](https://github.com/MatthieuJnon)
-[@mofortin](https://github.com/mofortin)
-[@GuillaumeTech](https://github.com/GuillaumeTech)
-                                 
-<br/>
-<h2 align="center">License</h2>
-
-Copyright (C) 2021 Dialogue Technologies Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.(C) 2021 Dialogue Technologies Inc. All rights reserved.

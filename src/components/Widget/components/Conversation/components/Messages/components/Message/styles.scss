@@ -1,11 +1,9 @@
-@import "variables.scss";
-
-@import "common.scss";
+@import 'variables.scss';
+@import 'common.scss';
 
 .#{$namespace}conversation-container {
-
-
-  ol, ul {
+  ol,
+  ul {
     list-style: none;
   }
 
@@ -25,11 +23,16 @@
       img {
         max-width: 100%;
       }
+      ol,
+      ul {
+        margin: 0;
+        padding-left: 0;
+      }
     }
   }
 
   .#{$namespace}client {
-    @include message-bubble(rgba(255, 255, 255, 0.70), #19191C, 24px 24px 0 24px);
+    @include message-bubble(rgba(255, 255, 255, 0.7), #19191c, 24px 24px 0 24px);
     max-width: 85%;
     margin-left: auto;
     font-size: 13px;
@@ -41,15 +44,14 @@
   }
 
   .#{$namespace}response {
-    @include message-bubble(rgba(255, 255, 255, 0.10), #fff, 24px 24px 0 24px);
+    @include message-bubble(rgba(255, 255, 255, 0.1), #fff, 24px 24px 0 24px);
     overflow-wrap: break-word;
   }
 
   /* For markdown elements created with default styles */
   .#{$namespace}message-text {
     margin: 0;
-    .#{$namespace}markdown{
+    .#{$namespace}markdown {
     }
   }
-
 }
