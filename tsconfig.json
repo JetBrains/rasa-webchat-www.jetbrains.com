@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
     "allowJs": true,
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -26,9 +27,6 @@
       ],
       "assets/*": [
         "../assets/*"
-      ],
-      "tests-mocks/*": [
-        "../mocks/*"
       ],
       "actions/*": [
         "store/actions/*"
