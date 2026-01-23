@@ -8,63 +8,49 @@ logger.info('🔍 AUTH-UTILS: process.env.ENVIRONMENT:', process.env.ENVIRONMENT
 logger.log('🔍 Current environment:', environment);
 logger.log('🔍 RASA_URL_STAGE:', process.env.RASA_URL_STAGE);
 
-// Function to get URL based on environment
 const getEnvUrl = (localUrl, devUrl, stageUrl, prodUrl) => {
   if (environment === 'production') return prodUrl;
   if (environment === 'staging') return stageUrl;
   if (environment === 'development') return devUrl;
   if (environment === 'local') return localUrl;
-  return stageUrl; // default to staging
+
+  return stageUrl;
 };
 
-// Rasa endpoint with automatic /webhooks/rest/webhook suffix
-const rasaBaseUrl = getEnvUrl(
-  process.env.RASA_URL_LOCAL,
-  process.env.RASA_URL_DEV,
-  process.env.RASA_URL_STAGE,
-  process.env.RASA_URL_PROD
-);
-export const rasaEndpoint = `${rasaBaseUrl}/webhooks/rest/webhook`;
-
-// Auth URLs
-export const authBaseUrl = getEnvUrl(
+const authBaseUrl = getEnvUrl(
   process.env.AUTH_BASE_URL_LOCAL,
   process.env.AUTH_BASE_URL_DEV,
   process.env.AUTH_BASE_URL_STAGE,
   process.env.AUTH_BASE_URL_PROD
 );
 
-export const tokenEndpoint = getEnvUrl(
+const tokenEndpoint = getEnvUrl(
   process.env.TOKEN_ENDPOINT_LOCAL,
   process.env.TOKEN_ENDPOINT_DEV,
   process.env.TOKEN_ENDPOINT_STAGE,
   process.env.TOKEN_ENDPOINT_PROD
 );
 
-const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=100, left=100';
-
-// Client ID
-export const clientId = getEnvUrl(
+const clientId = getEnvUrl(
   process.env.CLIENT_ID_LOCAL,
   process.env.CLIENT_ID_DEV,
   process.env.CLIENT_ID_STAGE,
   process.env.CLIENT_ID_PROD
 );
 
-// Redirect URI
-export const redirectUri = getEnvUrl(
+const redirectUri = getEnvUrl(
   process.env.REDIRECT_URI_LOCAL,
   process.env.REDIRECT_URI_DEV,
   process.env.REDIRECT_URI_STAGE,
   process.env.REDIRECT_URI_PROD
 );
 
-// Scope
-export const scope = process.env.SCOPE || 'openid offline_access r_assets';
+const scope = process.env.SCOPE || 'openid offline_access r_assets';
 
-export function generateCodeVerifier(length = 64) {
+function generateCodeVerifier(length = 64) {
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
+
   return btoa(String.fromCharCode(...array))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -72,12 +58,11 @@ export function generateCodeVerifier(length = 64) {
     .slice(0, length);
 }
 
-
 const codeVerifier = generateCodeVerifier();
 
 export const state = crypto.randomUUID();
 
-export async function hashToBase64Url(input) {
+async function hashToBase64Url(input) {
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
 
@@ -90,6 +75,7 @@ export async function hashToBase64Url(input) {
     .replace(/[=]+$/, '');
 }
 
+const strWindowFeatures = 'toolbar=no, menubar=no, width=600, height=700, top=100, left=100';
 
 export const getAuthCode = async () => {
   const codeChallenge = await hashToBase64Url(codeVerifier);
@@ -101,7 +87,7 @@ export const getAuthCode = async () => {
     client_id: clientId,
     redirect_uri: redirectUri,
     scope,
-    state
+    state,
   };
 
   const queryString = new URLSearchParams(params).toString();
@@ -115,63 +101,40 @@ export const exchangeTokenReq = async (code) => {
     ['client_id', clientId],
     ['redirect_uri', redirectUri],
     ['code_verifier', codeVerifier],
-    ['state', state]
+    ['state', state],
   ]);
 
   const res = await fetch(tokenEndpoint, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: body.toString()
+    body: body.toString(),
   });
 
   return res.json();
 };
 
-// TODO: wtf?
-export const authInRasa = async (idToken) => {
-  try {
-    const response = await fetch(rasaEndpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: 'test_user',
-        message: '/session_start',
-        metadata: {
-          auth_header: idToken
-        }
-      })
-    });
-
-    return await response.json();
-  } catch (err) {
-    logger.error('authInRasa request failed:', err);
-  }
-  // eslint-disable-next-line no-unreachable
-  return null;
-};
-
 export const refreshTokenReq = async (refreshToken) => {
-  // eslint-disable-next-line prefer-template
-  logger.debug('🔄 refreshTokenReq called with token:', refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL');
+  logger.debug(
+    '🔄 refreshTokenReq called with token:',
+    // eslint-disable-next-line prefer-template
+    refreshToken ? refreshToken.substring(0, 20) + '...' : 'NULL'
+  );
 
   const body = new URLSearchParams([
     ['refresh_token', refreshToken],
     ['grant_type', 'refresh_token'],
-    ['client_id', clientId]
+    ['client_id', clientId],
   ]);
 
   try {
     const response = await fetch(tokenEndpoint, {
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       method: 'POST',
-      body: body.toString()
+      body: body.toString(),
     });
 
     logger.debug('🔄 refreshTokenReq response status:', response.status);
@@ -185,7 +148,7 @@ export const refreshTokenReq = async (refreshToken) => {
     const data = await response.json();
     logger.debug('🔄 refreshTokenReq response data:', {
       has_id_token: !!data.id_token,
-      has_refresh_token: !!data.refresh_token
+      has_refresh_token: !!data.refresh_token,
     });
 
     return data;
@@ -224,19 +187,6 @@ export const getIsTokenValid = (token) => {
   }
 };
 
-export const getEmailFromToken = (token) => {
-  if (!token) return null;
-
-  try {
-    const payload = getTokenPayload(token);
-    const { email } = JSON.parse(payload) || {};
-
-    return email || null;
-  } catch (e) {
-    return null;
-  }
-};
-
 export const getTokenExpirationTime = (token) => {
   if (!token) return null;
 
@@ -249,4 +199,3 @@ export const getTokenExpirationTime = (token) => {
     return null;
   }
 };
-

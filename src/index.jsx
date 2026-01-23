@@ -1,4 +1,4 @@
-/* eslint-disable react/no-this-in-sfc, react/jsx-no-constructed-context-values, react/require-default-props, camelcase, prefer-template, prefer-destructuring */
+/* eslint-disable react/no-this-in-sfc, react/jsx-no-constructed-context-values, react/require-default-props, camelcase, prefer-template */
 import React, { forwardRef, useEffect, useRef, useState, useCallback } from 'react';
 
 import PropTypes from 'prop-types';
@@ -324,7 +324,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
             // Reconnect socket to ensure fresh token in all requests
             if (instanceSocket.current && instanceSocket.current.socket && instanceSocket.current.socket.connected) {
                 const oldSocketId = instanceSocket.current.socket.id;
-                const sessionId = instanceSocket.current.sessionId;
+                const { sessionId } = instanceSocket.current;
 
                 // Preserve session_id for reconnection - save to instanceSocket, not socket (which will be destroyed)
                 instanceSocket.current.preservedSessionId = sessionId;
@@ -598,8 +598,7 @@ const ConnectedWidget = forwardRef((props, ref) => {
     }
 
     if (event.data?.type === 'oauth-code') {
-      const code = event.data.code;
-      const popupState = event.data.popupState;
+      const { code, popupState } = event.data;
 
       // eslint-disable-next-line no-unsafe-optional-chaining
       logger.debug('📨 Received OAuth callback:', { code: code?.substring(0, 10) + '...', popupState });

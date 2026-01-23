@@ -4,11 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import './style.scss';
 
-const DiscoveryTooltip = ({ 
-  firstChatStarted,
-  isChatOpen,
-  isHovered 
-}) => {
+const DiscoveryTooltip = ({ firstChatStarted, isChatOpen, isHovered }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
 
@@ -38,8 +34,6 @@ const DiscoveryTooltip = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [firstChatStarted, isChatOpen]);
 
-
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showTooltip && !event.target.closest('.rw-discovery-tooltip')) {
@@ -59,7 +53,8 @@ const DiscoveryTooltip = ({
   return (
     <div className="rw-discovery-tooltip">
       <div className="rw-discovery-tooltip__text">
-        Need help? Ask me anything about our products, and I&apos;ll find answers or create a support ticket for you
+        Need help? Ask me anything about our products, and I&apos;ll find answers or create a
+        support ticket for you
       </div>
     </div>
   );
@@ -68,12 +63,11 @@ const DiscoveryTooltip = ({
 DiscoveryTooltip.propTypes = {
   firstChatStarted: PropTypes.bool,
   isChatOpen: PropTypes.bool,
-  isHovered: PropTypes.bool
+  isHovered: PropTypes.bool,
 };
 
 const mapStateToProps = (state) => ({
-  isChatOpen: state.behavior.get('isChatOpen')
+  isChatOpen: state.behavior.get('isChatOpen'),
 });
 
-export { DiscoveryTooltip };
 export default connect(mapStateToProps)(DiscoveryTooltip);
