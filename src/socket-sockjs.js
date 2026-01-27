@@ -7,7 +7,7 @@ import logger from './utils/logger';
   This implementation mimics the SocketIO implementation.
 */
 // eslint-disable-next-line func-names
-export default function (socketUrl, customData, _path, options) {
+export default function(socketUrl, customData, _path, options) {
   const socket = SockJS(socketUrl + (_path || ''));
   const stomp = Stomp.over(socket);
 
@@ -32,33 +32,30 @@ export default function (socketUrl, customData, _path, options) {
     send({
       type: 'CHAT',
       content: JSON.stringify(data),
-      sender: socketProxy.id
+      sender: socketProxy.id,
     });
   });
 
   socketProxy.on('session_request', (payload) => {
     const authData = options.authData || null;
-    // eslint-disable-next-line camelcase
-    const session_id = payload?.session_id || null;
+    const sessionId = payload?.session_id || null;
     const payloadCustomData = payload?.customData || {};
 
     const messageContent = {
       authData,
       ...customData,
-      ...payloadCustomData
+      ...payloadCustomData,
     };
 
-    // Include session_id if provided (for session persistence)
-    // eslint-disable-next-line camelcase
-    if (session_id) {
-      // eslint-disable-next-line camelcase
-      messageContent.session_id = session_id;
+    // Include sessionId if provided (for session persistence)
+    if (sessionId) {
+      messageContent.session_id = sessionId;
     }
 
     send({
       type: 'SESSION_REQUEST',
       content: JSON.stringify(messageContent),
-      sender: 'client'
+      sender: 'client',
     });
   });
 
@@ -67,11 +64,7 @@ export default function (socketUrl, customData, _path, options) {
     socketProxy.id = extractSessionId(socket);
     socketProxy.customData = customData;
     stomp.subscribe(REPLY_TOPIC, socketProxy.onIncomingMessage);
-    stomp.send(
-      SUBSCRIPTION_CHANNEL,
-      {},
-      JSON.stringify({ type: 'JOIN', sender: socketProxy.id })
-    );
+    stomp.send(SUBSCRIPTION_CHANNEL, {}, JSON.stringify({ type: 'JOIN', sender: socketProxy.id }));
   };
 
   socketProxy.onerror = (error) => {
@@ -80,10 +73,10 @@ export default function (socketUrl, customData, _path, options) {
 
   // eslint-disable-next-line consistent-return
   const emitBotUtteredMessage = (message) => {
-      // eslint-disable-next-line no-param-reassign
-      delete message.recipient_id;
-      socketProxy.emit('bot_uttered', message);
-  }
+    // eslint-disable-next-line no-param-reassign
+    delete message.recipient_id;
+    socketProxy.emit('bot_uttered', message);
+  };
 
   socketProxy.onIncomingMessage = (payload) => {
     const message = JSON.parse(payload.body);
@@ -94,13 +87,13 @@ export default function (socketUrl, customData, _path, options) {
       socket.close();
       socketProxy.emit('disconnect', message.content || 'server left');
     } else if (message.type === 'SESSION_CONFIRM') {
-      const props = JSON.parse(message.content)
-      socketProxy.emit('session_confirm', {session_id: socketProxy.id, ...props});
+      const props = JSON.parse(message.content);
+      socketProxy.emit('session_confirm', { session_id: socketProxy.id, ...props });
     } else if (message.type === 'CHAT') {
       const agentMessage = JSON.parse(message.content);
       if (agentMessage instanceof Array) {
         // eslint-disable-next-line no-shadow
-        agentMessage.forEach((message) => emitBotUtteredMessage(message))
+        agentMessage.forEach((message) => emitBotUtteredMessage(message));
       } else {
         emitBotUtteredMessage(agentMessage);
       }

@@ -249,10 +249,6 @@ hierarchy:
         |-- .rw-replies
               |-- .rw-reply
               |-- .rw-response
-        |-- .rw-snippet
-              |-- .rw-snippet-title
-              |-- .rw-snippet-details
-              |-- .rw-link
         |-- .rw-imageFrame
         |-- .rw-videoFrame
   |-- .rw-sender
@@ -276,7 +272,6 @@ hierarchy:
 | .rw-loading                | the loading status element of the header                            |
 | .rw-message                | the boxes holding the messages of client and response               |
 | .rw-replies                | the area that gives quick reply options                             |
-| .rw-snippet                | a component for describing links                                    |
 | .rw-imageFrame             | a container for sending images                                      |
 | .rw-videoFrame             | a container for sending video                                       |
 

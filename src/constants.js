@@ -3,6 +3,9 @@ import ImmutablePropTypes from 'react-immutable-proptypes';
 
 export const SESSION_NAME = 'chat_session';
 
+export const TOKEN_KEY = 'chat_token';
+export const TOKEN_REFRESH_KEY = 'chat_refresh_token';
+
 export const MESSAGE_SENDER = {
   CLIENT: 'client',
   RESPONSE: 'response'

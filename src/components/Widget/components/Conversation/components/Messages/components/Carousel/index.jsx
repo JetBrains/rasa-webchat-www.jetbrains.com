@@ -1,4 +1,4 @@
-/* eslint-disable react/jsx-fragments, react/no-array-index-key, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, react/require-default-props */
+/* eslint-disable  react/no-array-index-key, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, react/require-default-props */
 import React, { useRef, useState, useContext } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
@@ -29,10 +29,8 @@ const Carousel = (props) => {
   const [rightButton, setRightButton] = useState(true);
   const { mainColor, assistTextColor } = useContext(ThemeContext);
 
-
   const handleScroll = () => {
-    // eslint-disable-next-line prefer-destructuring
-    const current = scrollContainer.current;
+    const { current } = scrollContainer;
     if (current.scrollLeft > 0) {
       setLeftButton(true);
     } else {
@@ -48,14 +46,14 @@ const Carousel = (props) => {
   const handleLeftArrow = () => {
     scrollContainer.current.scrollTo({
       left: scrollContainer.current.scrollLeft - 230,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   };
 
   const handleRightArrow = () => {
     scrollContainer.current.scrollTo({
       left: scrollContainer.current.scrollLeft + 230,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   };
 
@@ -63,7 +61,7 @@ const Carousel = (props) => {
   const { linkTarget } = props;
 
   return (
-    <React.Fragment>
+    <>
       <div className="rw-carousel-container" ref={scrollContainer} onScroll={() => handleScroll()}>
         {carousel.elements.map((carouselCard, index) => {
           const defaultActionUrl =
@@ -154,7 +152,9 @@ const Carousel = (props) => {
             role="button"
             tabIndex={0}
           >
-            <div className="rw-arrow" alt="left carousel arrow" ><Arrow /></div>
+            <div className="rw-arrow" alt="left carousel arrow">
+              <Arrow />
+            </div>
           </div>
         )}
         {rightButton && (
@@ -165,14 +165,15 @@ const Carousel = (props) => {
             role="button"
             tabIndex={0}
           >
-            <div className="rw-arrow" alt="right carousel arrow"><Arrow /></div>
+            <div className="rw-arrow" alt="right carousel arrow">
+              <Arrow />
+            </div>
           </div>
         )}
       </div>
-    </React.Fragment>
+    </>
   );
 };
-
 
 Carousel.propTypes = {
   message: PROP_TYPES.CAROUSEL,
@@ -180,11 +181,11 @@ Carousel.propTypes = {
   // eslint-disable-next-line react/no-unused-prop-types
   chooseReply: PropTypes.func.isRequired,
   // eslint-disable-next-line react/require-default-props
-  linkTarget: PropTypes.string
+  linkTarget: PropTypes.string,
 };
 
 const mapStateToProps = (state) => ({
-  linkTarget: state.metadata.get('linkTarget')
+  linkTarget: state.metadata.get('linkTarget'),
 });
 
 const mapDispatchToProps = (dispatch) => ({
@@ -194,7 +195,7 @@ const mapDispatchToProps = (dispatch) => ({
     dispatch(setBotProcessing(true));
     // Start 30-second timeout to reset bot processing if backend hangs
     startBotProcessingTimeout(dispatch);
-  }
+  },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Carousel);
